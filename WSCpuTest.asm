@@ -424,52 +424,10 @@ mulsFailed:
 testDivu8:
 	mov si, testingDivuStr
 	call writeString
-	mov si, testingInputStr
+	mov si, testDivInputStr
 	call writeString
 
-;	mov word [es:inputVal1], 2
-;	mov word [es:inputVal2], 10
-;	mov word [es:expectedResult1], 5
-	mov word [es:expectedFlags], 0xFA43
-	mov byte [es:isTesting], 1
-
-;	call testDivu8Single
-
-;	mov word [es:inputVal1], 3
-;	mov word [es:inputVal2], 100
-;	mov word [es:expectedResult1], 0x0121
-;	mov word [es:expectedFlags], 0xFA03
-;	call testDivu8Single
-
-;	mov word [es:inputVal1], 7
-;	mov word [es:inputVal2], 111
-;	mov word [es:expectedResult1], 0x060F
-;	mov word [es:expectedFlags], 0xFA03
-;	call testDivu8Single
-
-;	mov word [es:inputVal1], 7
-;	mov word [es:inputVal2], 1111
-;	mov word [es:expectedResult1], 0x059E
-;	mov word [es:expectedFlags], 0xFA03
-;	call testDivu8Single
-
-;	mov word [es:inputVal1], 0
-;	mov word [es:inputVal2], 1111
-;	mov word [es:expectedResult1], 0x0457
-;	mov word [es:expectedFlags], 0xFA03
-;	call testDivu8Single
-
-;	mov word [es:inputVal1], 0
-;	mov word [es:inputVal2], 0
-;	mov word [es:expectedResult1], 0x0000
-;	mov word [es:expectedFlags], 0xFA43
-;	call testDivu8Single
-
-;	mov word [es:inputVal1], 0x55
-;	mov word [es:inputVal2], 0
-;	mov word [es:expectedResult1], 0x0000
-;	mov word [es:expectedFlags], 0xFA03
-;	call testDivu8Single
+	mov byte [es:isTesting], 2
 
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
@@ -583,7 +541,7 @@ calcDivuResult:
 	mov byte [es:expectedException], 0
 	xor bx, bx
 	xor cx, cx
-	mov dx, 0xfa03
+	mov dx, 0xfa03				; Expected flags
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
 	mov [es:expectedResult1], ax
@@ -771,15 +729,24 @@ vblankInterruptHandler:
 	out IO_SCR2_SCRL_X, ax
 
 	mov al, [es:isTesting]
-	cmp al, 0
-	jz skipValuePrint
+	cmp al, 1
+	jnz skipValue8x8Print
 	mov byte [es:cursorXPos], 17
 	mov al, [es:inputVal2]
 	call printHexB
 	mov byte [es:cursorXPos], 23
 	mov al, [es:inputVal1]
 	call printHexB
-
+	jmp skipValuePrint
+skipValue8x8Print:
+	cmp al, 2
+	jnz skipValuePrint
+	mov byte [es:cursorXPos], 17
+	mov ax, [es:inputVal2]
+	call printHexW
+	mov byte [es:cursorXPos], 25
+	mov al, [es:inputVal1]
+	call printHexB
 skipValuePrint:
 acknowledgeVBlankInterrupt:
 	mov al, INT_VBLANK_START
@@ -980,10 +947,14 @@ alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
 headLineStr: db "WonderSwan CPU Test 20220504", 0
-testingMuluStr: db "Test Unsigned Multiplication", 0
-testingMulsStr: db "Test Signed Multiplication", 10, 0
-testingDivuStr: db "Test Unsigned Division", 10, 0
-testingDivsStr: db "Test Signed Division", 10, 0
+testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
+testingMulsStr: db "Signed Multiplication 8*8", 10, 0
+testingMulu16Str: db "Unsigned Multiplication 16*16", 0
+testingMuls16Str: db "Signed Multiplication 16*16", 10, 0
+testingDivuStr: db "Unsigned Division 16/8", 10, 0
+testingDivsStr: db "Signed Division 16/8", 10, 0
+testingDivu32Str: db "Unsigned Division 32/16", 10, 0
+testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
 testDivInputStr: db "Testing Input: 0x0000, 0x00", 0
 inputStr: db "Input: 0x", 0
