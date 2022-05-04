@@ -175,15 +175,17 @@ monoFontLoop:
 	mov al, BG_ON
 	out IO_DISPLAY_CTRL, al
 
-;	call testMulu8
-;	cmp al, 0
-;	jnz skipTests
+	call testMulu8
+	cmp al, 0
+	jnz skipTests
 
-;	call testMuls8
-;	cmp al, 0
-;	jnz skipTests
+	call testMuls8
+	cmp al, 0
+	jnz skipTests
 
 	call testDivu8
+;	cmp al, 0
+;	jnz skipTests
 
 skipTests:
 ;-----------------------------------------------------------------------------
@@ -469,6 +471,8 @@ testDivu8:
 ;	mov word [es:expectedFlags], 0xFA03
 ;	call testDivu8Single
 
+	mov al, KEYPAD_READ_BUTTONS
+	out IO_KEYPAD, al
 	xor cx, cx
 	xor dx, dx
 testDivuLoop:
@@ -476,8 +480,13 @@ testDivuLoop:
 	mov [es:inputVal2], cx
 	call calcDivuResult
 	call testDivu8Single
-	cmp al, 0
-	jnz stopDivuTest
+;	cmp al, 0
+;	jnz stopDivuTest
+hold:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz hold
+
 	inc cx
 	jnz testDivuLoop
 	inc dl
@@ -498,6 +507,7 @@ testDivu8Single:
 	push bx
 	push cx
 
+	mov byte [es:testedException], 0
 	pushf
 	pop ax
 	and ax, 0xF700
@@ -516,9 +526,15 @@ testDivu8Single:
 	cmp ax, bx
 	jnz divuFailed
 	mov bx, [es:expectedFlags]
-	cmp cx, bx
-;	jnz divuFailed
+	xor cx, bx
+	and cx, 0xffbF				; Clear Zero flag
+	jnz divuFailed
+	mov al, [es:testedException]
+	mov bl, [es:expectedException]
+	cmp al, bl
+	jnz divuFailed
 
+	mov byte [es:testedException], 0
 	pushf
 	pop ax
 	or ax, 0x08FF
@@ -537,8 +553,13 @@ testDivu8Single:
 	cmp ax, bx
 	jnz divuFailed
 	mov bx, [es:expectedFlags]
-	cmp cx, bx
-;	jnz divuFailed
+	xor cx, bx
+	and cx, 0xffbF				; Clear Zero flag
+	jnz divuFailed
+	mov al, [es:testedException]
+	mov bl, [es:expectedException]
+	cmp al, bl
+	jnz divuFailed
 
 	xor ax, ax
 	pop cx
@@ -557,18 +578,21 @@ calcDivuResult:
 	push ax
 	push bx
 	push cx
+	push dx
 
+	mov byte [es:expectedException], 0
 	xor bx, bx
 	xor cx, cx
+	mov dx, 0xfa03
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
 	mov [es:expectedResult1], ax
+	cmp bl, 0
+	jz divuError
+	cmp ah, bl
+	jnc divuError
 	cmp ax, 0
 	jz divuDone
-	cmp bl, 0
-	jz divuDone
-	cmp ah, bl
-	jnc divuDone
 divuLoop:
 	sub ax, bx
 	jc divuSetRes
@@ -577,13 +601,23 @@ divuLoop:
 
 divuSetRes:
 	add ax, bx
-	mov [es:expectedResult1+1], al
-	mov [es:expectedResult1], cl
+	mov ah, al
+	mov al, cl
+	mov [es:expectedResult1], ax
+divuSetZ:			; This is wrong!
+;	cmp ah, 0
+;	jnz divuDone
+;	or dl, 0x40
 divuDone:
+	mov [es:expectedFlags], dx
+	pop dx
 	pop cx
 	pop bx
 	pop ax
 	ret
+divuError:
+	mov byte [es:expectedException], 1
+	jmp divuSetZ
 ;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
 ;-----------------------------------------------------------------------------
@@ -614,6 +648,13 @@ printFailedResult:
 	call writeString
 	mov ax, [es:expectedFlags]
 	call printHexW
+	mov al, ' '
+	int 0x10
+	mov al, 'X'
+	int 0x10
+	mov al, [es:expectedException]
+	add al, '0'
+	int 0x10
 	mov al, 10
 	int 0x10
 
@@ -627,11 +668,31 @@ printFailedResult:
 	call writeString
 	mov ax, [es:testedFlags]
 	call printHexW
+	mov al, ' '
+	int 0x10
+	mov al, 'X'
+	int 0x10
+	mov al, [es:testedException]
+	add al, '0'
+	int 0x10
 	mov al, 10
 	int 0x10
 
 	ret
 
+;-----------------------------------------------------------------------------
+; Clear tilemap line.
+;-----------------------------------------------------------------------------
+clearLine:
+	xor bh, bh
+	mov bl, [es:cursorYPos]
+	and bl, 0x1F
+	shl bx, 6		; ax * MAP_TWIDTH
+	mov di, backgroundMap
+	mov cx, MAP_TWIDTH
+	mov ax, BG_CHR( ' ', 0, 0, 0, 0 ) ; BG_CHR(tile,pal,bank,hflip,vflip)
+	rep stosw
+	ret
 ;-----------------------------------------------------------------------------
 ; Clear foreground tilemap.
 ;-----------------------------------------------------------------------------
@@ -678,7 +739,7 @@ printHexB:
 	shr al, 0x04
 	call printNibble
 	pop ax
-	and al, 0x0F
+	and al, 0x0f
 printNibble:
 	cmp al, 0x09
 	jg .letter
@@ -686,7 +747,7 @@ printNibble:
 	int 0x10
 	ret
 .letter:
-	add al, 'A' - 0xA
+	add al, 'a' - 0xa
 	int 0x10
 	ret
 ;-----------------------------------------------------------------------------
@@ -734,7 +795,8 @@ acknowledgeVBlankInterrupt:
 ; It is called if a division error occurs.
 ;-----------------------------------------------------------------------------
 divisionErrorHandler:
-	mov word [es:WSC_PALETTES], 0xF0F
+;	mov word [es:WSC_PALETTES], 0xF0F
+	mov byte [es:testedException], 1
 	iret
 
 ;-----------------------------------------------------------------------------
@@ -782,8 +844,16 @@ outputCharHandler:
 newLine:
 	mov bl, [es:cursorYPos]
 	inc bl
+	mov al, bl
+	sub al, SCREEN_THEIGHT
+	jle notAtEnd
 	and bl, 0x7F
+	or bl, 0x40
+	shl al, 3
+	mov [es:bgYPos], al
+notAtEnd:
 	mov [es:cursorYPos], bl
+	call clearLine
 	xor cl, cl
 endOutput:
 	mov [es:cursorXPos], cl
@@ -801,21 +871,7 @@ main_game_loop:
 	mov bl, [es:enemySpawnPosition]
 	sub bl, 1
 	mov [es:enemySpawnPosition], bl
-	mov al, 34
-;	div bl
-;	cmp bl, 0
-;	jnz notIllegal
-;	db 0xD8
-;	db 0x0f, 0x20		; ADD4S
-;	db 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90
-;notIllegal:
 
-	mov al, [es:cursorYPos]
-	sub al, SCREEN_THEIGHT
-	jle notAtEnd
-	shl al, 3
-	mov [es:bgYPos], al
-notAtEnd:
 	hlt					; Wait until next interrupt
 
 ;	mov bl, [es:enemySpawnPosition]
@@ -923,7 +979,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220501", 0
+headLineStr: db "WonderSwan CPU Test 20220504", 0
 testingMuluStr: db "Test Unsigned Multiplication", 0
 testingMulsStr: db "Test Signed Multiplication", 10, 0
 testingDivuStr: db "Test Unsigned Division", 10, 0
@@ -933,8 +989,8 @@ testDivInputStr: db "Testing Input: 0x0000, 0x00", 0
 inputStr: db "Input: 0x", 0
 expectedStr: db "Expected Result:", 10, 0
 testedStr: db "Tested Result:", 10, 0
-valueStr: db "Value: 0x",0
-flagsStr: db " Flags: 0x",0
+valueStr: db "Value:0x",0
+flagsStr: db " Flags:0x",0
 okStr: db "Ok! ", 10, 0
 preFlagStr: db "PreF: ", 0
 postFlagStr: db "PostF: ", 0
@@ -961,12 +1017,14 @@ SECTION .bss start=0x0100 ; Keep space for Int Vectors
 	testedResult1: resw 1
 	testedResult2: resw 1
 	testedFlags: resw 1
+	testedException: resw 1		; If a (division) exceptioon occurred.
 
 	expectedResult1: resw 1
 	expectedResult2: resw 1
 	expectedFlags: resw 1
+	expectedException: resw 1
 
-	isTesting: resb 1		; If currently running test.
+	isTesting: resb 1			; If currently running test.
 
 	enemySpawnPosition: resb 1 ; this is used to decide the Y coordinate
 							   ; of the enemy car when it spawns
