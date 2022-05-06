@@ -175,17 +175,21 @@ monoFontLoop:
 	mov al, BG_ON
 	out IO_DISPLAY_CTRL, al
 
-	call testMulu8
-	cmp al, 0
-	jnz skipTests
-
-	call testMuls8
-	cmp al, 0
-	jnz skipTests
-
-	call testDivu8
+;	call testMulu8
 ;	cmp al, 0
 ;	jnz skipTests
+
+;	call testMuls8
+;	cmp al, 0
+;	jnz skipTests
+
+;	call testDivu8
+;	cmp al, 0
+;	jnz skipTests
+
+	call testDivs8
+	cmp al, 0
+	jnz skipTests
 
 skipTests:
 ;-----------------------------------------------------------------------------
@@ -577,6 +581,193 @@ divuError:
 	mov byte [es:expectedException], 1
 	jmp divuSetZ
 ;-----------------------------------------------------------------------------
+; Test signed division of all word/byte values.
+;-----------------------------------------------------------------------------
+testDivs8:
+	mov si, testingDivsStr
+	call writeString
+	mov si, testDivInputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+
+	mov al, KEYPAD_READ_BUTTONS
+	out IO_KEYPAD, al
+	xor cx, cx
+	xor dx, dx
+testDivsLoop:
+	mov [es:inputVal1], dl
+	mov [es:inputVal2], cx
+	call calcDivsResult
+	call testDivs8Single
+;	cmp al, 0
+;	jnz stopDivsTest
+	mov byte [es:isTesting], 2
+holds:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz holds
+
+	inc cx
+	jnz testDivsLoop
+	inc dl
+	jnz testDivsLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+stopDivsTest:
+	ret
+
+;-----------------------------------------------------------------------------
+testDivs8Single:
+	push bx
+	push cx
+
+	mov byte [es:testedException], 0
+	pushf
+	pop ax
+	and ax, 0xF700
+	push ax
+
+	mov bl, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	popf
+	idiv bl
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz divsFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	and cx, 0xf73a				; Clear some flags
+	jnz divsFailed
+	mov al, [es:testedException]
+	mov bl, [es:expectedException]
+	cmp al, bl
+	jnz divsFailed
+
+	mov byte [es:testedException], 0
+	pushf
+	pop ax
+	or ax, 0x08FF
+	push ax
+
+	mov cl, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	popf
+	idiv cl
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz divsFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	and cx, 0xf73a				; Clear some flags
+	jnz divsFailed
+	mov al, [es:testedException]
+	mov bl, [es:expectedException]
+	cmp al, bl
+	jnz divsFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+divsFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+calcDivsResult:
+	push ax
+	push bx
+	push cx
+	push dx
+
+	mov byte [es:expectedException], 0
+	mov al, [es:inputVal1]
+	cbw
+	mov bx, ax
+	mov ax, [es:inputVal2]
+	mov [es:expectedResult1], ax
+	mov dl, ah
+	mov dh, ah
+	xor dh, bh
+	cmp bx, 0
+	jz divsError
+	jns denPos
+	neg bx
+denPos:
+	cmp ax, 0
+	jz divsDone
+	jns enumPos
+	neg ax
+enumPos:
+	mov cx, ax
+	shr cx, 7
+	cmp cx, bx
+	jnc divsError
+	xor cx, cx
+divsLoop:
+	sub ax, bx
+	jc divsSetRes
+	inc cl
+	jmp divsLoop
+
+divsSetRes:
+	add ax, bx
+	cmp dh, 0
+	jns resultPos
+	neg cl
+resultPos:
+	cmp dl, 0
+	jns restPos
+	neg al
+restPos:
+	mov ah, al
+	mov al, cl
+	mov [es:expectedResult1], ax
+divsSetP:			; This is wrong!
+;	cmp ah, 0
+;	jnz divsDone
+;	or dl, 0x04
+divsDone:
+	mov dx, 0xf282				; Expected flags
+	mov [es:expectedFlags], dx
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+divsError:
+	cmp ax, 0x8000
+	jnz divsErrCnt
+	cmp bl, 0x00
+	jnz divsErrCnt
+	mov ax, 0x0081
+	mov [es:expectedResult1], ax
+	jmp divsSetP
+divsErrCnt:
+	mov byte [es:expectedException], 1
+	jmp divsSetP
+;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
 ;-----------------------------------------------------------------------------
 printFailedResult:
@@ -812,10 +1003,9 @@ newLine:
 	mov bl, [es:cursorYPos]
 	inc bl
 	mov al, bl
-	sub al, SCREEN_THEIGHT
+	sub al, SCREEN_THEIGHT-1
 	jle notAtEnd
-	and bl, 0x7F
-	or bl, 0x40
+;	or bl, 0x80
 	shl al, 3
 	mov [es:bgYPos], al
 notAtEnd:
