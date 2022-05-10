@@ -843,7 +843,7 @@ testAamSingle:
 	jnz aamFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-;	jnz aamFailed
+	jnz aamFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
 	cmp al, bl
@@ -871,7 +871,7 @@ testAamSingle:
 	jnz aamFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-;	jnz aamFailed
+	jnz aamFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
 	cmp al, bl
@@ -907,7 +907,7 @@ calcAamResult:
 	cmp bl, 0
 	jz aamError
 	cmp al, 0
-	jz aamDone
+	jz aamSetFlags
 	xor ah, ah
 aamLoop:
 	sub al, bl
@@ -918,10 +918,19 @@ aamLoop:
 aamSetRes:
 	add al, bl
 	mov [es:expectedResult1], ax
-aamSetZ:			; This is wrong!
-;	cmp ah, 0
-;	jnz aamDone
-;	or dl, 0x40
+aamSetFlags:
+	and al, 0xff		; Set flags from al
+	jnz aamNoZ
+	or dl,0x40			; Zero flag
+	and al, 0xff		; Set flags from al
+aamNoZ:
+	jns aamNoS
+	or dl,0x80			; Sign flag
+	and al, 0xff		; Set flags from al
+aamNoS:
+	jpo aamNoP
+	or dl,0x04			; Parity flag
+aamNoP:
 aamDone:
 	mov [es:expectedFlags], dx
 	pop dx
@@ -930,8 +939,13 @@ aamDone:
 	pop ax
 	ret
 aamError:
+	or dx, 0x0801		; Overflow & Carry flag
+	test al, 0xc0
+	jnz aamErrNoZ
+	or dl, 0x40			; Zero flag
+aamErrNoZ:
 	mov byte [es:expectedException], 1
-	jmp aamSetZ
+	jmp aamDone
 
 ;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
