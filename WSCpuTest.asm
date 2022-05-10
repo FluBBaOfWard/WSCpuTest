@@ -187,16 +187,22 @@ monoFontLoop:
 ;	cmp al, 0
 ;	jnz skipTests
 
-	call testDivs8
+;	call testDivs8
+;	cmp al, 0
+;	jnz skipTests
+
+	call testAam
 	cmp al, 0
 	jnz skipTests
 
+;	call testAamSingle
+
 skipTests:
 ;-----------------------------------------------------------------------------
-; Done initializing... We can now start the main game loop.
+; Done initializing... We can now start the main loop.
 ;-----------------------------------------------------------------------------
-	; Start main game loop
-	jmp main_game_loop
+	; Start main loop
+	jmp main_loop
 
 ;-----------------------------------------------------------------------------
 ; Test unsigned multiplication of all byte values.
@@ -768,6 +774,166 @@ divsErrCnt:
 	mov byte [es:expectedException], 1
 	jmp divsSetP
 ;-----------------------------------------------------------------------------
+; Test unsigned division of all byte/byte values.
+;-----------------------------------------------------------------------------
+testAam:
+	mov si, testingAamStr
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	mov al, KEYPAD_READ_BUTTONS
+	out IO_KEYPAD, al
+	xor cx, cx
+testAamLoop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcAamResult
+	call testAamSingle
+;	cmp al, 0
+;	jnz stopAamTest
+hold2:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz hold2
+
+	inc cx
+	jnz testAamLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+stopAamTest:
+	ret
+
+;-----------------------------------------------------------------------------
+testAamSingle:
+	push bx
+	push cx
+
+	mov byte [es:selfModifyingCode], 0xd4	; AAM
+	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
+
+	pushf
+	pop ax
+	and ax, 0xF700
+	push ax
+
+	mov byte [es:testedException], 0
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov ah, al
+	mov [es:selfModifyingCode+1], bl	; dividend
+
+	popf
+	call 0x0000:selfModifyingCode
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aamFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+;	jnz aamFailed
+	mov al, [es:testedException]
+	mov bl, [es:expectedException]
+	cmp al, bl
+	jnz aamFailed
+
+	pushf
+	pop ax
+	or ax, 0x08FF
+	push ax
+
+	mov byte [es:testedException], 0
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov ah, al
+	mov [es:selfModifyingCode+1], bl	; dividend
+	popf
+	call 0x0000:selfModifyingCode
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aamFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+;	jnz aamFailed
+	mov al, [es:testedException]
+	mov bl, [es:expectedException]
+	cmp al, bl
+	jnz aamFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+aamFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcAamResult:
+	push ax
+	push bx
+	push cx
+	push dx
+
+	mov byte [es:expectedException], 0
+	xor ax, ax
+	xor bx, bx
+	xor cx, cx
+	mov dx, 0xf202				; Expected flags
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov ah, al
+	mov [es:expectedResult1], ax
+	cmp bl, 0
+	jz aamError
+	cmp al, 0
+	jz aamDone
+	xor ah, ah
+aamLoop:
+	sub al, bl
+	jc aamSetRes
+	inc ah
+	jmp aamLoop
+
+aamSetRes:
+	add al, bl
+	mov [es:expectedResult1], ax
+aamSetZ:			; This is wrong!
+;	cmp ah, 0
+;	jnz aamDone
+;	or dl, 0x40
+aamDone:
+	mov [es:expectedFlags], dx
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+aamError:
+	mov byte [es:expectedException], 1
+	jmp aamSetZ
+
+;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
 ;-----------------------------------------------------------------------------
 printFailedResult:
@@ -1021,14 +1187,10 @@ endOutput:
 
 ;-----------------------------------------------------------------------------
 ;
-; BEGIN main game area
+; BEGIN main area
 ;
 ;-----------------------------------------------------------------------------
-main_game_loop:
-	mov bl, [es:enemySpawnPosition]
-	sub bl, 1
-	mov [es:enemySpawnPosition], bl
-
+main_loop:
 	hlt					; Wait until next interrupt
 
 ;	mov bl, [es:enemySpawnPosition]
@@ -1059,12 +1221,12 @@ dontPrint:
 ;	test al, PAD_DOWN
 ;	jnz move_down
 
-	; No input, restart main game loop
-	jmp main_game_loop
+	; No input, restart main loop
+	jmp main_loop
 
 ;-----------------------------------------------------------------------------
 ;
-; END main game area
+; END main area
 ;
 ;-----------------------------------------------------------------------------
 
@@ -1145,6 +1307,7 @@ testingDivuStr: db "Unsigned Division 16/8", 10, 0
 testingDivsStr: db "Signed Division 16/8", 10, 0
 testingDivu32Str: db "Unsigned Division 32/16", 10, 0
 testingDivs32Str: db "Signed Division 32/16", 10, 0
+testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
 testDivInputStr: db "Testing Input: 0x0000, 0x00", 0
 inputStr: db "Input: 0x", 0
@@ -1161,33 +1324,32 @@ author: db "Written by Fredrik Ahlström, 2022"
 	ROM_HEADER initialize, MYSEGMENT, RH_WS_COLOR, RH_ROM_4MBITS, RH_NO_SRAM, RH_HORIZONTAL
 
 SECTION .bss start=0x0100 ; Keep space for Int Vectors
-	globalFrameCounter: resw 1
-	bgPos:
-	bgXPos: resb 1
-	bgYPos: resb 1
-	fgPos:
-	fgXPos: resb 1
-	fgYPos: resb 1
-	cursorPos:
-	cursorXPos: resb 1
-	cursorYPos: resb 1
 
-	inputVal1: resw 1
-	inputVal2: resw 1
+globalFrameCounter: resw 1
+bgPos:
+bgXPos: resb 1
+bgYPos: resb 1
+fgPos:
+fgXPos: resb 1
+fgYPos: resb 1
+cursorPos:
+cursorXPos: resb 1
+cursorYPos: resb 1
 
-	testedResult1: resw 1
-	testedResult2: resw 1
-	testedFlags: resw 1
-	testedException: resw 1		; If a (division) exceptioon occurred.
+inputVal1: resw 1
+inputVal2: resw 1
 
-	expectedResult1: resw 1
-	expectedResult2: resw 1
-	expectedFlags: resw 1
-	expectedException: resw 1
+testedResult1: resw 1
+testedResult2: resw 1
+testedFlags: resw 1
+testedException: resw 1		; If a (division) exception occurred.
 
-	isTesting: resb 1			; If currently running test.
+expectedResult1: resw 1
+expectedResult2: resw 1
+expectedFlags: resw 1
+expectedException: resw 1
 
-	enemySpawnPosition: resb 1 ; this is used to decide the Y coordinate
-							   ; of the enemy car when it spawns
-							   ; by adding to it based on player input
-							   ; to "randomize" it a bit :)
+isTesting: resb 1			; If currently running test.
+dummy: resb 1
+
+selfModifyingCode: resb 8
