@@ -829,6 +829,7 @@ testAamSingle:
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
 	mov ah, al
+	xor ah, 0xa5
 	mov [es:selfModifyingCode+1], bl	; dividend
 
 	popf
@@ -855,10 +856,9 @@ testAamSingle:
 	push ax
 
 	mov byte [es:testedException], 0
-	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
 	mov ah, al
-	mov [es:selfModifyingCode+1], bl	; dividend
+	xor ah, 0xa5
 	popf
 	call 0x0000:selfModifyingCode
 	pushf
@@ -890,24 +890,18 @@ aamFailed:
 	ret
 ;-----------------------------------------------------------------------------
 calcAamResult:
-	push ax
 	push bx
-	push cx
 	push dx
 
 	mov byte [es:expectedException], 0
-	xor ax, ax
-	xor bx, bx
-	xor cx, cx
 	mov dx, 0xf202				; Expected flags
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
 	mov ah, al
+	xor ah, 0xa5
 	mov [es:expectedResult1], ax
 	cmp bl, 0
 	jz aamError
-	cmp al, 0
-	jz aamSetFlags
 	xor ah, ah
 aamLoop:
 	sub al, bl
@@ -918,26 +912,16 @@ aamLoop:
 aamSetRes:
 	add al, bl
 	mov [es:expectedResult1], ax
-aamSetFlags:
-	and al, 0xff		; Set flags from al
-	jnz aamNoZ
-	or dl,0x40			; Zero flag
-	and al, 0xff		; Set flags from al
-aamNoZ:
-	jns aamNoS
-	or dl,0x80			; Sign flag
-	and al, 0xff		; Set flags from al
-aamNoS:
-	jpo aamNoP
-	or dl,0x04			; Parity flag
-aamNoP:
+	pushf
+	pop ax
+	and al,0xc4			; Mask Zero, Sign & Parity
+	or dl, al
 aamDone:
 	mov [es:expectedFlags], dx
 	pop dx
-	pop cx
 	pop bx
-	pop ax
 	ret
+
 aamError:
 	or dx, 0x0801		; Overflow & Carry flag
 	test al, 0xc0
