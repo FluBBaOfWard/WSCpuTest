@@ -183,6 +183,10 @@ monoFontLoop:
 ;	cmp al, 0
 ;	jnz skipTests
 
+	call testAad
+	cmp al, 0
+	jnz skipTests
+
 ;	call testDivu8
 ;	cmp al, 0
 ;	jnz skipTests
@@ -191,11 +195,9 @@ monoFontLoop:
 ;	cmp al, 0
 ;	jnz skipTests
 
-	call testAam
-	cmp al, 0
-	jnz skipTests
-
-;	call testAamSingle
+;	call testAam
+;	cmp al, 0
+;	jnz skipTests
 
 skipTests:
 ;-----------------------------------------------------------------------------
@@ -429,6 +431,141 @@ mulsFailed:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test unsigned multiplication + addition of all word & byte values.
+;-----------------------------------------------------------------------------
+testAad:
+	mov si, testingAadStr
+	call writeString
+	mov si, testDivInputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+
+	mov al, KEYPAD_READ_BUTTONS
+	out IO_KEYPAD, al
+	xor cx, cx
+	xor dx, dx
+testAadLoop:
+	mov [es:inputVal1], dl
+	mov [es:inputVal2], cx
+	call calcAadResult
+	call testAadSingle
+;	cmp al, 0
+;	jnz stopAadTest
+hold3:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz hold3
+
+	inc cx
+	jnz testAadLoop
+	inc dl
+	jnz testAadLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+stopAadTest:
+	ret
+
+;-----------------------------------------------------------------------------
+testAadSingle:
+	push bx
+	push cx
+
+	mov byte [es:selfModifyingCode], 0xd5	; AAD
+	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
+
+	pushf
+	pop ax
+	and ax, 0xF700
+	push ax
+
+	mov bl, [es:inputVal1]
+	mov [es:selfModifyingCode+1], bl	; dividend
+
+	mov ax, [es:inputVal2]
+	popf
+	call 0x0000:selfModifyingCode
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aadFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+;	jnz aadFailed
+
+	pushf
+	pop ax
+	or ax, 0x08FF
+	push ax
+
+	mov ax, [es:inputVal2]
+	popf
+	call 0x0000:selfModifyingCode
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aadFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+;	jnz aadFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+aadFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcAadResult:
+	push bx
+	push dx
+
+	mov bl, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov bh, al
+	xor al, al
+	cmp bl, 0
+	jz aadSetRes
+aadLoop:
+	add al, ah
+	dec bl
+	jnz aadLoop
+
+aadSetRes:
+	add al, bh
+	xor ah, ah
+	mov [es:expectedResult1], ax
+	pushf
+	pop ax
+	mov dx, 0xf202				; Expected flags
+	and al,0xc4			; Mask Zero, Sign & Parity
+	or dl, al
+
+	mov [es:expectedFlags], dx
+	pop dx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test unsigned division of all word/byte values.
 ;-----------------------------------------------------------------------------
 testDivu8:
@@ -478,7 +615,7 @@ testDivu8Single:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0xf700
 	push ax
 
 	mov bl, [es:inputVal1]
@@ -495,7 +632,7 @@ testDivu8Single:
 	jnz divuFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xffbF				; Clear Zero flag
+	and cx, 0xffbf				; Clear Zero flag
 	jnz divuFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
@@ -505,7 +642,7 @@ testDivu8Single:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x08ff
 	push ax
 
 	mov cl, [es:inputVal1]
@@ -522,7 +659,7 @@ testDivu8Single:
 	jnz divuFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xffbF				; Clear Zero flag
+	and cx, 0xffbf				; Clear Zero flag
 	jnz divuFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
@@ -1306,6 +1443,7 @@ testingDivsStr: db "Signed Division 16/8", 10, 0
 testingDivu32Str: db "Unsigned Division 32/16", 10, 0
 testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
+testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
 testDivInputStr: db "Testing Input: 0x0000, 0x00", 0
 inputStr: db "Input: 0x", 0
