@@ -501,7 +501,7 @@ testAadSingle:
 	jnz aadFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-;	jnz aadFailed
+	jnz aadFailed
 
 	pushf
 	pop ax
@@ -521,7 +521,7 @@ testAadSingle:
 	jnz aadFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-;	jnz aadFailed
+	jnz aadFailed
 
 	xor ax, ax
 	pop cx
@@ -537,7 +537,6 @@ aadFailed:
 ;-----------------------------------------------------------------------------
 calcAadResult:
 	push bx
-	push dx
 
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
@@ -552,16 +551,11 @@ aadLoop:
 
 aadSetRes:
 	add al, bh
+	pushf
 	xor ah, ah
 	mov [es:expectedResult1], ax
-	pushf
-	pop ax
-	mov dx, 0xf202				; Expected flags
-	and al,0xc4			; Mask Zero, Sign & Parity
-	or dl, al
-
-	mov [es:expectedFlags], dx
-	pop dx
+	pop ax							; All flags are from the last add.
+	mov [es:expectedFlags], ax
 	pop bx
 	ret
 
