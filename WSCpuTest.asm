@@ -1,8 +1,8 @@
 ;-----------------------------------------------------------------------------
 ;
-;  Swan Test
+;  WonderSwan CPU Test
 ;         by Fredrik Ahlström, 2022
-;         https://github.com/FluBBaOfWard
+;         https://github.com/FluBBaOfWard/WSCpuTest
 ;
 ;  For more information on the hardware specs, port descriptions, sprite
 ;  format, etc., see the hardware.txt file in the wonderdev root directory.
@@ -11,7 +11,7 @@
 ;  A          - Start
 ;
 ;  Assemble with: 
-;                   nasm -f bin -o %romname%.wsc %romname%.asm
+;                   nasm -f bin -o WSCpuTest.wsc WSCpuTest.asm
 ;
 ;-----------------------------------------------------------------------------
 
@@ -175,6 +175,10 @@ monoFontLoop:
 	mov al, BG_ON
 	out IO_DISPLAY_CTRL, al
 
+	call testSPStack
+	cmp al, 0
+	jnz skipTests
+
 ;	call testMulu8
 ;	cmp al, 0
 ;	jnz skipTests
@@ -183,9 +187,9 @@ monoFontLoop:
 ;	cmp al, 0
 ;	jnz skipTests
 
-	call testAad
-	cmp al, 0
-	jnz skipTests
+;	call testAad
+;	cmp al, 0
+;	jnz skipTests
 
 ;	call testDivu8
 ;	cmp al, 0
@@ -206,6 +210,28 @@ skipTests:
 	; Start main loop
 	jmp main_loop
 
+;-----------------------------------------------------------------------------
+; Test pushing SP to stack.
+;-----------------------------------------------------------------------------
+testSPStack:
+	mov si, testingSPStackStr
+	call writeString
+
+	push sp				; save SP on stack to look at
+	pop bx				; get SP saved on stack
+	cmp bx,sp
+	jz spStackFailed
+
+spStackOk:
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+spStackFailed:
+	mov si, failedStr
+	call writeString
+	mov ax, 1
+	ret
 ;-----------------------------------------------------------------------------
 ; Test unsigned multiplication of all byte values.
 ;-----------------------------------------------------------------------------
@@ -1045,7 +1071,7 @@ aamSetRes:
 	mov [es:expectedResult1], ax
 	pushf
 	pop ax
-	and al,0xc4			; Mask Zero, Sign & Parity
+	and al,0xc4			; Mask Sign, Zero & Parity
 	or dl, al
 aamDone:
 	mov [es:expectedFlags], dx
@@ -1427,7 +1453,8 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220504", 0
+headLineStr: db "WonderSwan CPU Test 20220516", 0
+testingSPStackStr: db "Pushing SP to stack", 10, 0
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
 testingMulu16Str: db "Unsigned Multiplication 16*16", 0
@@ -1446,6 +1473,7 @@ testedStr: db "Tested Result:", 10, 0
 valueStr: db "Value:0x",0
 flagsStr: db " Flags:0x",0
 okStr: db "Ok! ", 10, 0
+failedStr: db "Failed! ", 10, 0
 preFlagStr: db "PreF: ", 0
 postFlagStr: db "PostF: ", 0
 hexPrefixStr: db " 0x",0

@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220501)
+# WonderSwan CPU Test V0.0.1 (20220516)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -15,11 +15,30 @@ B to go back.
 ## Building:
 	I use nasm https://nasm.us/ by running "nasm -f bin -o WSCpuTest.wsc WSCpuTest.asm".
 
-## How do the undefine flags work?
+## How do the undefine flags / undocumented op-codes work?
+
+### Push SP to stack
+8086/80186
+{
+	SP      = SP - 2
+	[SS:SP] = SP
+}
+
 ### Mul
 Mulu/Muls/IMul change all the undefined flags.
-AuxCarry, Parity & Sign are always cleared, Zero is always set.
+AuxCarry, Parity & Sign are always cleared.
+Zero is always set.
+Carry and Overflow is set if the result doesn't fit in 8 bits for 8bit multiplies.
 
+### Div
+
+### AAM / CVTBD
+The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10.
+So it's basically a byte by byte divide.
+
+### AAD / CVTDB
+The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL
+and AH is allways zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
 
 ## Controls:
 Use WS X1-X4 to navigate the menus. A to select, B to go back.
@@ -31,4 +50,4 @@ Fredrik Ahlström
 
 Twitter @TheRealFluBBa
 
-http://www.github.com/FluBBaOfWard
+https://github.com/FluBBaOfWard/WSCpuTest
