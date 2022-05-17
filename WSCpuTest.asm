@@ -180,6 +180,13 @@ monoFontLoop:
 	mov al, BG_ON
 	out IO_DISPLAY_CTRL, al
 
+	mov al, KEYPAD_READ_BUTTONS
+	out IO_KEYPAD, al
+
+	call testDaa
+	cmp al, 0
+	jnz skipTests
+
 	call testEqu
 	cmp al, 0
 	jnz skipTests
@@ -223,6 +230,10 @@ monoFontLoop:
 	call testAam
 	cmp al, 0
 	jnz skipTests
+
+;	call testDaa
+;	cmp al, 0
+;	jnz skipTests
 
 	call testSPStack
 	cmp al, 0
@@ -1007,8 +1018,6 @@ testAad:
 	mov byte [es:selfModifyingCode], 0xd5	; AAD
 	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
 
-	mov al, KEYPAD_READ_BUTTONS
-	out IO_KEYPAD, al
 	xor cx, cx
 	xor dx, dx
 testAadLoop:
@@ -1133,8 +1142,6 @@ testDivu8:
 
 	mov byte [es:isTesting], 2
 
-	mov al, KEYPAD_READ_BUTTONS
-	out IO_KEYPAD, al
 	xor cx, cx
 	xor dx, dx
 testDivuLoop:
@@ -1291,8 +1298,6 @@ testDivs8:
 
 	mov byte [es:isTesting], 2
 
-	mov al, KEYPAD_READ_BUTTONS
-	out IO_KEYPAD, al
 	xor cx, cx
 	xor dx, dx
 testDivsLoop:
@@ -1480,8 +1485,6 @@ testAam:
 	mov byte [es:selfModifyingCode], 0xd4	; AAM
 	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
 
-	mov al, KEYPAD_READ_BUTTONS
-	out IO_KEYPAD, al
 	xor cx, cx
 testAamLoop:
 	mov [es:inputVal1], cl
@@ -1622,6 +1625,177 @@ aamError:
 aamErrNoZ:
 	mov byte [es:expectedException], 1
 	jmp aamDone
+
+;-----------------------------------------------------------------------------
+; Test Decimal Adjust of all byte values & AC + CY.
+;-----------------------------------------------------------------------------
+testDaa:
+	mov si, testingDaaStr
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testDaaLoop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcDaaResult
+	call testDaaSingle
+	cmp al, 0
+	jnz stopDaaTest
+continueDaa:
+	inc cx
+	cmp cx, 0x400
+	jnz testDaaLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopDaaTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueDaa
+	ret
+
+;-----------------------------------------------------------------------------
+testDaaSingle:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov bl, [es:inputVal2]
+	test bl, 1
+	jz daaTestNoCY
+	or al, 0x01
+daaTestNoCY:
+	test bl, 2
+	jz daaTestNoAC
+	or al, 0x10
+daaTestNoAC:
+	push ax
+
+	mov al, [es:inputVal1]
+	mov ah, al
+	xor ah, 0xa5
+
+	popf
+	daa
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz daaFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz daaFailed
+
+	pushf
+	pop ax
+	or ax, 0x78ee
+	mov bl, [es:inputVal2]
+	test bl, 1
+	jz daaTest2NoCY
+	or al, 0x01
+daaTest2NoCY:
+	test bl, 2
+	jz daaTest2NoAC
+	or al, 0x10
+daaTest2NoAC:
+	push ax
+
+	mov al, [es:inputVal1]
+	mov ah, al
+	xor ah, 0xa5
+	popf
+	daa
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz daaFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz daaFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+daaFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcDaaResult:
+	push bx
+	push dx
+
+	xor dl, dl
+	mov al, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	mov dl, al
+	mov ah, al
+	mov bh, al
+	shl bh, 4
+	cmp bh, 0xA0
+	jc daaNoAC
+	or bl, 2
+daaNoAC:
+	test bl, 2
+	jz daaNoLowAdd
+	add dx, 0x06
+daaNoLowAdd:
+	cmp dx, 0xA0
+	jc daaNoCY
+	or bl, 1
+daaNoCY:
+	test bl, 1
+	jz daaNoHighAdd
+	add dl, 0x60
+daaNoHighAdd:
+	mov al, dl
+daaSetRes:
+	mov dx, 0xf202				; Expected flags
+	test bl, 1
+	jz daaSkipCY
+	or dl, 0x01
+daaSkipCY:
+	test bl, 2
+	jz daaSkipAC
+	or dl, 0x10
+daaSkipAC:
+	mov bl, ah
+	cmp al, bl
+	jno daaSkipOV
+	or dx, 0x800
+daaSkipOV:
+	xor ah, 0xa5
+	mov [es:expectedResult1], ax
+	lea bx, PZSTable
+	xlat				; Fetch Sign, Zero & Parity
+	or dl, al
+	mov [es:expectedFlags], dx
+	pop dx
+	pop bx
+	ret
 
 ;-----------------------------------------------------------------------------
 ; Test pushing SP to stack.
@@ -2101,6 +2275,10 @@ testingDivu32Str: db "Unsigned Division 32/16", 10, 0
 testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
+testingDaaStr: db "DAA/ADJ4A", 10, 0
+testingDasStr: db "DAS/ADJ4S", 10, 0
+testingAaaStr: db "AAA/ADJBA", 10, 0
+testingAasStr: db "AAS/ADJBS", 10, 0
 testingSPStackStr: db "Pushing SP to stack", 10, 0
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
 test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
