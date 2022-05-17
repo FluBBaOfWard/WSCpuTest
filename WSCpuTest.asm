@@ -28,6 +28,9 @@ SECTION .data
 	spriteTable equ backgroundMap - SPR_TABLE_SIZE
 
 	COLLISION_RADIUS equ 6
+	PSR_S equ 0x80
+	PSR_P equ 0x04
+	PSR_Z equ 0x40
 
 SECTION .text
 	;PADDING 15
@@ -175,7 +178,15 @@ monoFontLoop:
 	mov al, BG_ON
 	out IO_DISPLAY_CTRL, al
 
-	call testSPStack
+	call testAnd8
+	cmp al, 0
+	jnz skipTests
+
+	call testOr8
+	cmp al, 0
+	jnz skipTests
+
+	call testXor8
 	cmp al, 0
 	jnz skipTests
 
@@ -200,6 +211,10 @@ monoFontLoop:
 ;	jnz skipTests
 
 ;	call testAam
+;	cmp al, 0
+;	jnz skipTests
+
+;	call testSPStack
 ;	cmp al, 0
 ;	jnz skipTests
 
@@ -233,6 +248,321 @@ spStackFailed:
 	mov ax, 1
 	ret
 ;-----------------------------------------------------------------------------
+; Test logical AND of all byte values.
+;-----------------------------------------------------------------------------
+testAnd8:
+	mov si, testingAnd8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+	mov word [es:expectedResult1], 0
+
+	mov cx, 0
+testAnd8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	mov al, cl
+	and al, ch
+	mov [es:expectedResult1], al
+	lea bx, PZSTable
+	xlat
+	mov ah, 0xF2
+	or al, 0x02
+	mov [es:expectedFlags], ax
+	call testAnd8Single
+;	cmp al, 0
+;	jnz stopAnd8Test
+hold4:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz hold4
+	inc cx
+	jnz testAnd8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+stopAnd8Test:
+	ret
+
+;-----------------------------------------------------------------------------
+testAnd8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0xF700
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	and al, bl
+	pushf
+
+	mov [es:testedResult1], al
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	cmp ax, cx
+	jnz and8Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz and8Failed
+
+	pushf
+	pop ax
+	or ax, 0x08FF
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov cl, [es:inputVal2]
+	popf
+	and al, cl
+	pushf
+
+	mov [es:testedResult1], ax
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	cmp ax, cx
+	jnz and8Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz and8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+and8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test logical OR of all byte values.
+;-----------------------------------------------------------------------------
+testOr8:
+	mov si, testingOr8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+	mov word [es:expectedResult1], 0
+
+	mov cx, 0
+testOr8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	mov al, cl
+	or al, ch
+	mov [es:expectedResult1], al
+	lea bx, PZSTable
+	xlat
+	mov ah, 0xF2
+	or al, 0x02
+	mov [es:expectedFlags], ax
+	call testOr8Single
+;	cmp al, 0
+;	jnz stopOr8Test
+hold5:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz hold5
+	inc cx
+	jnz testOr8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+stopOr8Test:
+	ret
+
+;-----------------------------------------------------------------------------
+testOr8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0xF700
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	or al, bl
+	pushf
+
+	mov [es:testedResult1], al
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	cmp ax, cx
+	jnz or8Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz or8Failed
+
+	pushf
+	pop ax
+	or ax, 0x08FF
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov cl, [es:inputVal2]
+	popf
+	or al, cl
+	pushf
+
+	mov [es:testedResult1], ax
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	cmp ax, cx
+	jnz or8Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz or8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+or8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test logical XOR of all byte values.
+;-----------------------------------------------------------------------------
+testXor8:
+	mov si, testingXor8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+	mov word [es:expectedResult1], 0
+
+	mov cx, 0
+testXor8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	mov al, cl
+	xor al, ch
+	mov [es:expectedResult1], al
+	lea bx, PZSTable
+	xlat
+	mov ah, 0xF2
+	or al, 0x02
+	mov [es:expectedFlags], ax
+	call testXor8Single
+;	cmp al, 0
+;	jnz stopXor8Test
+hold6:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz hold6
+	inc cx
+	jnz testXor8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+stopXor8Test:
+	ret
+
+;-----------------------------------------------------------------------------
+testXor8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0xF700
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	xor al, bl
+	pushf
+
+	mov [es:testedResult1], al
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	cmp ax, cx
+	jnz xor8Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz xor8Failed
+
+	pushf
+	pop ax
+	or ax, 0x08FF
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov cl, [es:inputVal2]
+	popf
+	xor al, cl
+	pushf
+
+	mov [es:testedResult1], ax
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	cmp ax, cx
+	jnz xor8Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz xor8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+xor8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test unsigned multiplication of all byte values.
 ;-----------------------------------------------------------------------------
 testMulu8:
@@ -242,7 +572,6 @@ testMulu8:
 	call writeString
 
 	mov word [es:inputVal2], 0
-	mov word [es:expectedFlags], 0xF242
 	mov byte [es:isTesting], 1
 
 	mov cx, 0
@@ -257,14 +586,11 @@ testMuluLoop:
 	mov [es:inputVal2], ch
 skipMuluVal2:
 	mov [es:expectedResult1], bx
-	mov ax, [es:expectedFlags]
+	mov ax, 0xF242
 	cmp bh, 0
-	jz clrMuluOverflow
+	jz noMuluOverflow
 	or ax, 0x0801
-	jmp muluOverflowDone
-clrMuluOverflow:
-	and ax, 0xF7FE
-muluOverflowDone:
+noMuluOverflow:
 	mov [es:expectedFlags], ax
 	call testMulu8Single
 	cmp al, 0
@@ -305,7 +631,7 @@ testMulu8Single:
 	cmp ax, cx
 	jnz muluFailed
 	mov cx, [es:expectedFlags]
-	cmp bx, cx
+	xor bx, cx
 	jnz muluFailed
 
 	pushf
@@ -326,7 +652,7 @@ testMulu8Single:
 	cmp ax, cx
 	jnz muluFailed
 	mov cx, [es:expectedFlags]
-	cmp bx, cx
+	xor bx, cx
 	jnz muluFailed
 
 	xor ax, ax
@@ -350,7 +676,6 @@ testMuls8:
 	mov si, testingInputStr
 	call writeString
 
-	mov word [es:expectedFlags], 0xF242
 	mov byte [es:isTesting], 1
 
 	mov cx, 0
@@ -370,17 +695,14 @@ noNeg:
 	mov [es:inputVal2], ch
 skipMulsVal2:
 	mov [es:expectedResult1], bx
-	mov ax, [es:expectedFlags]
+	mov ax, 0xF242
 	sar bx, 7
-	jz clrMulsOverflow
+	jz noMulsOverflow
 	not bx
 	cmp bx, 0
-	jz clrMulsOverflow
+	jz noMulsOverflow
 	or ax, 0x0801
-	jmp mulsOverflowDone
-clrMulsOverflow:
-	and ax, 0xF7FE
-mulsOverflowDone:
+noMulsOverflow:
 	mov [es:expectedFlags], ax
 	call testMuls8Single
 	cmp al, 0
@@ -420,7 +742,7 @@ testMuls8Single:
 	cmp ax, bx
 	jnz mulsFailed
 	mov bx, [es:expectedFlags]
-	cmp cx, bx
+	xor cx, bx
 	jnz mulsFailed
 
 	pushf
@@ -441,7 +763,7 @@ testMuls8Single:
 	cmp ax, bx
 	jnz mulsFailed
 	mov bx, [es:expectedFlags]
-	cmp cx, bx
+	xor cx, bx
 	jnz mulsFailed
 
 	xor ax, ax
@@ -1391,6 +1713,24 @@ dontPrint:
 
 	align 2
 
+PZSTable:
+	db PSR_Z|PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
+	db 0      , PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
+	db 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0 ,PSR_P, 0, PSR_P, PSR_P, 0
+	db PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
+	db 0      , PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
+	db PSR_P,       0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
+	db PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
+	db 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
+	db PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S
+	db PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S
+	db PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S
+	db PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S
+	db PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S
+	db PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S
+	db PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S
+	db PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S
+
 FontTilePalette:
 	dw 0xFFF, 0x000
 
@@ -1455,6 +1795,9 @@ alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
 headLineStr: db "WonderSwan CPU Test 20220516", 0
 testingSPStackStr: db "Pushing SP to stack", 10, 0
+testingAnd8Str: db "Logical 8 bit AND", 10, 0
+testingOr8Str: db "Logical 8 bit OR", 10, 0
+testingXor8Str: db "Logical 8 bit XOR", 10, 0
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
 testingMulu16Str: db "Unsigned Multiplication 16*16", 0

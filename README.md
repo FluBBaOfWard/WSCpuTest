@@ -24,11 +24,15 @@ B to go back.
 	[SS:SP] = SP
 }
 
+## AND, OR & XOR
+AuxCarry, Carry & Overflow are always cleared.
+Sign, Zero & Parity are set according to result.
+
 ### Mul
 Mulu/Muls/IMul change all the undefined flags.
 AuxCarry, Parity & Sign are always cleared.
 Zero is always set.
-Carry and Overflow is set if the result doesn't fit in 8 bits for 8bit multiplies.
+Carry & Overflow is set if the result doesn't fit in 8 bits for 8bit multiplies.
 
 ### Div
 
