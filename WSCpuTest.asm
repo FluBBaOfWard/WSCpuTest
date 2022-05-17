@@ -71,6 +71,8 @@ initialize:
 ; Initialize variables
 ;-----------------------------------------------------------------------------
 	mov word [es:globalFrameCounter], 0
+	mov word [es:lfsr1], 0x0234
+	mov word [es:lfsr2], 0x1234
 
 ;-----------------------------------------------------------------------------
 ; Initialize video
@@ -178,6 +180,10 @@ monoFontLoop:
 	mov al, BG_ON
 	out IO_DISPLAY_CTRL, al
 
+	call testEqu
+	cmp al, 0
+	jnz skipTests
+
 	call testAnd8
 	cmp al, 0
 	jnz skipTests
@@ -230,6 +236,125 @@ skipTests:
 	jmp main_loop
 
 ;-----------------------------------------------------------------------------
+; Test equality by CMP, SUB & XOR of all byte/word values.
+;-----------------------------------------------------------------------------
+testEqu:
+	mov si, testingEquStr
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	mov cl, 0
+testEqu8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], cl
+	mov al, cl
+	cmp al, cl
+	jnz equ8Failed
+	sub al, cl
+	jnz equ8Failed
+	mov al, cl
+	xor al, cl
+	jnz equ8Failed
+continueEqu8:
+	inc cl
+	jnz testEqu8Loop
+
+	mov cl, 0
+testNeq8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], cl
+	mov al, cl
+	inc al
+	cmp al, cl
+	jz neq8Failed
+	sub al, cl
+	jz neq8Failed
+	mov al, cl
+	inc al
+	xor al, cl
+	jz neq8Failed
+continueNeq8:
+	inc cl
+	jnz testNeq8Loop
+
+	hlt
+	mov al, 10
+	int 0x10
+	mov si, test16x16InputStr
+	call writeString
+	mov byte [es:isTesting], 3
+
+	mov cx, 0
+testEqu16Loop:
+	mov [es:inputVal1], cx
+	mov [es:inputVal2], cx
+	mov ax, cx
+	cmp ax, cx
+	jnz equ16Failed
+	sub ax, cx
+	jnz equ16Failed
+	mov ax, cx
+	xor ax, cx
+	jnz equ16Failed
+continueEqu16:
+	inc cx
+	jnz testEqu16Loop
+
+	mov cx, 0
+testNeq16Loop:
+	mov [es:inputVal1], cx
+	mov [es:inputVal2], cx
+	mov ax, cx
+	inc ax
+	cmp ax, cx
+	jz neq16Failed
+	sub ax, cx
+	jz neq16Failed
+	mov ax, cx
+	inc ax
+	xor ax, cx
+	jz neq16Failed
+continueNeq16:
+	inc cx
+	jnz testNeq16Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+equ8Failed:
+	call printFailedResult
+	call checkKeyInput
+	cmp al, 0
+	jnz continueEqu8
+	ret
+neq8Failed:
+	call printFailedResult
+	call checkKeyInput
+	cmp al, 0
+	jnz continueNeq8
+	ret
+equ16Failed:
+	call printFailedResult
+	call checkKeyInput
+	cmp al, 0
+	jnz continueEqu16
+	ret
+neq16Failed:
+	call printFailedResult
+	call checkKeyInput
+	cmp al, 0
+	jnz continueNeq16
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test logical AND of all byte values.
 ;-----------------------------------------------------------------------------
 testAnd8:
@@ -254,12 +379,9 @@ testAnd8Loop:
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testAnd8Single
-;	cmp al, 0
-;	jnz stopAnd8Test
-hold4:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz hold4
+	cmp al, 0
+	jnz stopAnd8Test
+continueAnd8:
 	inc cx
 	jnz testAnd8Loop
 
@@ -270,7 +392,11 @@ hold4:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopAnd8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueAnd8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -359,12 +485,9 @@ testOr8Loop:
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testOr8Single
-;	cmp al, 0
-;	jnz stopOr8Test
-hold5:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz hold5
+	cmp al, 0
+	jnz stopOr8Test
+continueOr8:
 	inc cx
 	jnz testOr8Loop
 
@@ -375,7 +498,11 @@ hold5:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopOr8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueOr8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -462,12 +589,9 @@ testTest8Loop:
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testTest8Single
-;	cmp al, 0
-;	jnz stopTest8Test
-hold7:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz hold7
+	cmp al, 0
+	jnz stopTest8Test
+continueTest8:
 	inc cx
 	jnz testTest8Loop
 
@@ -478,7 +602,11 @@ hold7:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopTest8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueTest8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -559,12 +687,9 @@ testXor8Loop:
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testXor8Single
-;	cmp al, 0
-;	jnz stopXor8Test
-hold6:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz hold6
+	cmp al, 0
+	jnz stopXor8Test
+continueXor8:
 	inc cx
 	jnz testXor8Loop
 
@@ -575,7 +700,11 @@ hold6:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopXor8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueXor8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -672,6 +801,7 @@ noMuluOverflow:
 	call testMulu8Single
 	cmp al, 0
 	jnz stopMuluTest
+continueMulu:
 	inc cx
 	jnz testMuluLoop
 
@@ -682,7 +812,11 @@ noMuluOverflow:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopMuluTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueMulu
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -784,6 +918,7 @@ noMulsOverflow:
 	call testMuls8Single
 	cmp al, 0
 	jnz stopMulsTest
+continueMuls:
 	inc cx
 	jnz testMulsLoop
 
@@ -793,7 +928,11 @@ noMulsOverflow:
 	int 0x10
 	mov si, okStr
 	call writeString
+	ret
 stopMulsTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueMuls
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -861,10 +1000,12 @@ mulsFailed:
 testAad:
 	mov si, testingAadStr
 	call writeString
-	mov si, testDivInputStr
+	mov si, test16x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 2
+	mov byte [es:selfModifyingCode], 0xd5	; AAD
+	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
 
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
@@ -875,13 +1016,9 @@ testAadLoop:
 	mov [es:inputVal2], cx
 	call calcAadResult
 	call testAadSingle
-;	cmp al, 0
-;	jnz stopAadTest
-hold3:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz hold3
-
+	cmp al, 0
+	jnz stopAadTest
+continueAad:
 	inc cx
 	jnz testAadLoop
 	inc dl
@@ -894,16 +1031,17 @@ hold3:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopAadTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueAad
 	ret
 
 ;-----------------------------------------------------------------------------
 testAadSingle:
 	push bx
 	push cx
-
-	mov byte [es:selfModifyingCode], 0xd5	; AAD
-	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
 
 	pushf
 	pop ax
@@ -990,7 +1128,7 @@ aadSetRes:
 testDivu8:
 	mov si, testingDivuStr
 	call writeString
-	mov si, testDivInputStr
+	mov si, test16x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 2
@@ -1004,13 +1142,9 @@ testDivuLoop:
 	mov [es:inputVal2], cx
 	call calcDivuResult
 	call testDivu8Single
-;	cmp al, 0
-;	jnz stopDivuTest
-hold:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz hold
-
+	cmp al, 0
+	jnz stopDivuTest
+continueDivu:
 	inc cx
 	jnz testDivuLoop
 	inc dl
@@ -1023,7 +1157,11 @@ hold:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopDivuTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueDivu
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -1148,7 +1286,7 @@ divuError:
 testDivs8:
 	mov si, testingDivsStr
 	call writeString
-	mov si, testDivInputStr
+	mov si, test16x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 2
@@ -1162,14 +1300,10 @@ testDivsLoop:
 	mov [es:inputVal2], cx
 	call calcDivsResult
 	call testDivs8Single
-;	cmp al, 0
-;	jnz stopDivsTest
+	cmp al, 0
+	jnz stopDivsTest
+continueDivs:
 	mov byte [es:isTesting], 2
-holds:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz holds
-
 	inc cx
 	jnz testDivsLoop
 	inc dl
@@ -1182,7 +1316,11 @@ holds:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopDivsTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueDivs
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -1339,6 +1477,8 @@ testAam:
 	call writeString
 
 	mov byte [es:isTesting], 1
+	mov byte [es:selfModifyingCode], 0xd4	; AAM
+	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
 
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
@@ -1348,13 +1488,9 @@ testAamLoop:
 	mov [es:inputVal2], ch
 	call calcAamResult
 	call testAamSingle
-;	cmp al, 0
-;	jnz stopAamTest
-hold2:
-	in al, IO_KEYPAD
-	test al, PAD_A
-	jnz hold2
-
+	cmp al, 0
+	jnz stopAamTest
+continueAam:
 	inc cx
 	jnz testAamLoop
 
@@ -1365,16 +1501,17 @@ hold2:
 	mov si, okStr
 	call writeString
 	xor ax, ax
+	ret
 stopAamTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueAam
 	ret
 
 ;-----------------------------------------------------------------------------
 testAamSingle:
 	push bx
 	push cx
-
-	mov byte [es:selfModifyingCode], 0xd4	; AAM
-	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
 
 	pushf
 	pop ax
@@ -1493,8 +1630,8 @@ testSPStack:
 	mov si, testingSPStackStr
 	call writeString
 
-	push sp				; save SP on stack to look at
-	pop bx				; get SP saved on stack
+	push sp				; Save SP on stack to look at
+	pop bx				; Get SP saved on stack
 	cmp bx,sp
 	jz spStackFailed
 
@@ -1509,6 +1646,50 @@ spStackFailed:
 	mov ax, 1
 	ret
 
+;-----------------------------------------------------------------------------
+; Wait for input, A continue, B cancel.
+;-----------------------------------------------------------------------------
+checkKeyInput:
+	hlt
+	in al, IO_KEYPAD
+	test al, PAD_A | PAD_B
+	jnz checkKeyInput		; Make sure no input is held before.
+keyLoop:
+	hlt
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz keyContinue
+	test al, PAD_B
+	jnz keyCancel
+	jmp keyLoop
+keyContinue:
+	mov al, 1
+	ret
+keyCancel:
+	xor al, al
+	ret
+;-----------------------------------------------------------------------------
+; Gets a new number from LFSR1
+;-----------------------------------------------------------------------------
+getLFSR1Value:
+	mov ax, [es:lfsr1]
+	shr ax, 1
+	jnc noTaps1
+	xor ax, 0xD008
+noTaps1:
+	mov [es:lfsr1], ax
+	ret
+;-----------------------------------------------------------------------------
+; Gets a new number from LFSR2
+;-----------------------------------------------------------------------------
+getLFSR2Value:
+	mov ax, [es:lfsr2]
+	shr ax, 1
+	jnc noTaps2
+	xor ax, 0xD008
+noTaps2:
+	mov [es:lfsr2], ax
+	ret
 ;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
 ;-----------------------------------------------------------------------------
@@ -1545,8 +1726,6 @@ printFailedResult:
 	int 0x10
 	mov al, [es:expectedException]
 	add al, '0'
-	int 0x10
-	mov al, 10
 	int 0x10
 
 	mov si, testedStr
@@ -1663,6 +1842,8 @@ vblankInterruptHandler:
 	out IO_SCR2_SCRL_X, ax
 
 	mov al, [es:isTesting]
+	cmp al, 0
+	jz skipValuePrint
 	cmp al, 1
 	jnz skipValue8x8Print
 	mov byte [es:cursorXPos], 17
@@ -1674,13 +1855,23 @@ vblankInterruptHandler:
 	jmp skipValuePrint
 skipValue8x8Print:
 	cmp al, 2
-	jnz skipValuePrint
+	jnz skipValue16x8Print
 	mov byte [es:cursorXPos], 17
 	mov ax, [es:inputVal2]
 	call printHexW
 	mov byte [es:cursorXPos], 25
 	mov al, [es:inputVal1]
 	call printHexB
+	jmp skipValuePrint
+skipValue16x8Print:
+	cmp al, 3
+	jnz skipValuePrint
+	mov byte [es:cursorXPos], 15
+	mov ax, [es:inputVal2]
+	call printHexW
+	mov byte [es:cursorXPos], 23
+	mov ax, [es:inputVal1]
+	call printHexW
 skipValuePrint:
 acknowledgeVBlankInterrupt:
 	mov al, INT_VBLANK_START
@@ -1748,7 +1939,8 @@ newLine:
 	mov al, bl
 	sub al, SCREEN_THEIGHT-1
 	jle notAtEnd
-;	or bl, 0x80
+	and bl, 0x1f
+	or bl, 0x40
 	shl al, 3
 	mov [es:bgYPos], al
 notAtEnd:
@@ -1894,7 +2086,7 @@ alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
 headLineStr: db "WonderSwan CPU Test 20220517",10 , 0
-testingSPStackStr: db "Pushing SP to stack", 10, 0
+testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
 testingTest8Str: db "Logical 8 bit TEST", 10, 0
@@ -1909,8 +2101,10 @@ testingDivu32Str: db "Unsigned Division 32/16", 10, 0
 testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
+testingSPStackStr: db "Pushing SP to stack", 10, 0
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
-testDivInputStr: db "Testing Input: 0x0000, 0x00", 0
+test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
+test16x16InputStr: db "Testing Inp: 0x0000, 0x0000", 0
 inputStr: db "Input: 0x", 0
 expectedStr: db "Expected Result:", 10, 0
 testedStr: db "Tested Result:", 10, 0
@@ -1937,6 +2131,9 @@ fgYPos: resb 1
 cursorPos:
 cursorXPos: resb 1
 cursorYPos: resb 1
+
+lfsr1: resw 1
+lfsr2: resw 1
 
 inputVal1: resw 1
 inputVal2: resw 1
