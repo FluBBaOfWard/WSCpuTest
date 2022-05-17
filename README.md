@@ -37,6 +37,10 @@ So it's basically a byte by byte divide.
 The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL
 and AH is allways zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
 
+### DAA / ADJ4A
+
+### DAS / ADJ4S
+
 ### Push SP to stack
 8086/80186
 {

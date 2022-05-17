@@ -183,7 +183,7 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-	call testDaa
+	call testDas
 	cmp al, 0
 	jnz skipTests
 
@@ -231,7 +231,11 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
-;	call testDaa
+	call testDaa
+	cmp al, 0
+	jnz skipTests
+
+;	call testDas
 ;	cmp al, 0
 ;	jnz skipTests
 
@@ -1627,7 +1631,7 @@ aamErrNoZ:
 	jmp aamDone
 
 ;-----------------------------------------------------------------------------
-; Test Decimal Adjust of all byte values & AC + CY.
+; Test Decimal Adjust after Addition of all byte values & AC + CY.
 ;-----------------------------------------------------------------------------
 testDaa:
 	mov si, testingDaaStr
@@ -1748,7 +1752,7 @@ calcDaaResult:
 	push bx
 	push dx
 
-	xor dl, dl
+	xor dh, dh
 	mov al, [es:inputVal1]
 	mov bl, [es:inputVal2]
 	mov dl, al
@@ -1787,6 +1791,178 @@ daaSkipAC:
 	jno daaSkipOV
 	or dx, 0x800
 daaSkipOV:
+	xor ah, 0xa5
+	mov [es:expectedResult1], ax
+	lea bx, PZSTable
+	xlat				; Fetch Sign, Zero & Parity
+	or dl, al
+	mov [es:expectedFlags], dx
+	pop dx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test Decimal Adjust after Subtraction of all byte values & AC + CY.
+;-----------------------------------------------------------------------------
+testDas:
+	mov si, testingDasStr
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testDasLoop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcDasResult
+	call testDasSingle
+	cmp al, 0
+	jnz stopDasTest
+continueDas:
+	inc cx
+	cmp cx, 0x400
+	jnz testDasLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopDasTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueDas
+	ret
+
+;-----------------------------------------------------------------------------
+testDasSingle:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov bl, [es:inputVal2]
+	test bl, 1
+	jz dasTestNoCY
+	or al, 0x01
+dasTestNoCY:
+	test bl, 2
+	jz dasTestNoAC
+	or al, 0x10
+dasTestNoAC:
+	push ax
+
+	mov al, [es:inputVal1]
+	mov ah, al
+	xor ah, 0xa5
+
+	popf
+	das
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz dasFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz dasFailed
+
+	pushf
+	pop ax
+	or ax, 0x78ee
+	mov bl, [es:inputVal2]
+	test bl, 1
+	jz dasTest2NoCY
+	or al, 0x01
+dasTest2NoCY:
+	test bl, 2
+	jz dasTest2NoAC
+	or al, 0x10
+dasTest2NoAC:
+	push ax
+
+	mov al, [es:inputVal1]
+	mov ah, al
+	xor ah, 0xa5
+	popf
+	das
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz dasFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz dasFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+dasFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcDasResult:
+	push bx
+	push dx
+
+	xor dh, dh
+	mov al, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	mov dl, al
+	mov ah, al
+	mov bh, al
+	shl bh, 4
+
+	cmp dl, 0x9A
+	jc dasNoCY
+	or bl, 1
+dasNoCY:
+	test bl, 1
+	jz dasNoHighSub
+	sub dl, 0x60
+dasNoHighSub:
+	cmp bh, 0xA0
+	jc dasNoAC
+	or bl, 2
+dasNoAC:
+	test bl, 2
+	jz dasNoLowSub
+	sub dl, 0x06
+dasNoLowSub:
+	mov al, dl
+dasSetRes:
+	mov dx, 0xf202				; Expected flags
+	test bl, 1
+	jz dasSkipCY
+	or dl, 0x01
+dasSkipCY:
+	test bl, 2
+	jz dasSkipAC
+	or dl, 0x10
+dasSkipAC:
+	mov bl, ah
+	cmp al, bl
+	jno dasSkipOV
+	or dx, 0x800
+dasSkipOV:
 	xor ah, 0xa5
 	mov [es:expectedResult1], ax
 	lea bx, PZSTable
