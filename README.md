@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220516)
+# WonderSwan CPU Test V0.0.1 (20220517)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -17,14 +17,7 @@ B to go back.
 
 ## How do the undefine flags / undocumented op-codes work?
 
-### Push SP to stack
-8086/80186
-{
-	SP      = SP - 2
-	[SS:SP] = SP
-}
-
-## AND, OR & XOR
+### AND, OR & XOR
 AuxCarry, Carry & Overflow are always cleared.
 Sign, Zero & Parity are set according to result.
 
@@ -43,6 +36,13 @@ So it's basically a byte by byte divide.
 ### AAD / CVTDB
 The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL
 and AH is allways zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
+
+### Push SP to stack
+8086/80186
+{
+	SP      = SP - 2
+	[SS:SP] = SP
+}
 
 ## Controls:
 Use WS X1-X4 to navigate the menus. A to select, B to go back.

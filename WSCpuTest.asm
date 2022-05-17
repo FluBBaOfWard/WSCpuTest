@@ -22,7 +22,7 @@
 SECTION .data
 	%include "WonderSwan.inc"
 
-	MYSEGMENT equ 0xF000
+	MYSEGMENT equ 0xf000
 	foregroundMap equ WS_TILE_BANK - MAP_SIZE
 	backgroundMap equ foregroundMap - MAP_SIZE
 	spriteTable equ backgroundMap - SPR_TABLE_SIZE
@@ -159,7 +159,7 @@ monoFontLoop:
 	mov cx, 2
 	rep movsw
 
-	mov al, 0xF0
+	mov al, 0xf0
 	out IO_LCD_GRAY_01, al
 	mov ax, 0x0010
 	out IOw_SCR_LUT_0, ax
@@ -183,6 +183,10 @@ monoFontLoop:
 	jnz skipTests
 
 	call testOr8
+	cmp al, 0
+	jnz skipTests
+
+	call testTest8
 	cmp al, 0
 	jnz skipTests
 
@@ -210,13 +214,13 @@ monoFontLoop:
 ;	cmp al, 0
 ;	jnz skipTests
 
-;	call testAam
-;	cmp al, 0
-;	jnz skipTests
+	call testAam
+	cmp al, 0
+	jnz skipTests
 
-;	call testSPStack
-;	cmp al, 0
-;	jnz skipTests
+	call testSPStack
+	cmp al, 0
+	jnz skipTests
 
 skipTests:
 ;-----------------------------------------------------------------------------
@@ -225,28 +229,6 @@ skipTests:
 	; Start main loop
 	jmp main_loop
 
-;-----------------------------------------------------------------------------
-; Test pushing SP to stack.
-;-----------------------------------------------------------------------------
-testSPStack:
-	mov si, testingSPStackStr
-	call writeString
-
-	push sp				; save SP on stack to look at
-	pop bx				; get SP saved on stack
-	cmp bx,sp
-	jz spStackFailed
-
-spStackOk:
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
-spStackFailed:
-	mov si, failedStr
-	call writeString
-	mov ax, 1
-	ret
 ;-----------------------------------------------------------------------------
 ; Test logical AND of all byte values.
 ;-----------------------------------------------------------------------------
@@ -268,7 +250,7 @@ testAnd8Loop:
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
 	xlat
-	mov ah, 0xF2
+	mov ah, 0xf2
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testAnd8Single
@@ -298,7 +280,7 @@ testAnd8Single:
 
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	xor ah, ah
@@ -320,7 +302,7 @@ testAnd8Single:
 
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	xor ah, ah
@@ -373,7 +355,7 @@ testOr8Loop:
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
 	xlat
-	mov ah, 0xF2
+	mov ah, 0xf2
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testOr8Single
@@ -403,7 +385,7 @@ testOr8Single:
 
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	xor ah, ah
@@ -425,7 +407,7 @@ testOr8Single:
 
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	xor ah, ah
@@ -458,6 +440,101 @@ or8Failed:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test logical TEST of all byte values.
+;-----------------------------------------------------------------------------
+testTest8:
+	mov si, testingTest8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	mov cx, 0
+testTest8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	mov al, cl
+	and al, ch
+	lea bx, PZSTable
+	xlat
+	mov ah, 0xf2
+	or al, 0x02
+	mov [es:expectedFlags], ax
+	call testTest8Single
+;	cmp al, 0
+;	jnz stopTest8Test
+hold7:
+	in al, IO_KEYPAD
+	test al, PAD_A
+	jnz hold7
+	inc cx
+	jnz testTest8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+stopTest8Test:
+	ret
+
+;-----------------------------------------------------------------------------
+testTest8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	test al, bl
+	pushf
+
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz test8Failed
+
+	pushf
+	pop ax
+	or ax, 0x78ff
+	push ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	mov cl, [es:inputVal2]
+	popf
+	test al, cl
+	pushf
+
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz test8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+test8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test logical XOR of all byte values.
 ;-----------------------------------------------------------------------------
 testXor8:
@@ -478,7 +555,7 @@ testXor8Loop:
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
 	xlat
-	mov ah, 0xF2
+	mov ah, 0xf2
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testXor8Single
@@ -508,7 +585,7 @@ testXor8Single:
 
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	xor ah, ah
@@ -530,7 +607,7 @@ testXor8Single:
 
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	xor ah, ah
@@ -586,7 +663,7 @@ testMuluLoop:
 	mov [es:inputVal2], ch
 skipMuluVal2:
 	mov [es:expectedResult1], bx
-	mov ax, 0xF242
+	mov ax, 0xf242
 	cmp bh, 0
 	jz noMuluOverflow
 	or ax, 0x0801
@@ -615,7 +692,7 @@ testMulu8Single:
 
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	mov al, [es:inputVal1]
@@ -636,7 +713,7 @@ testMulu8Single:
 
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	mov al, [es:inputVal1]
@@ -695,7 +772,7 @@ noNeg:
 	mov [es:inputVal2], ch
 skipMulsVal2:
 	mov [es:expectedResult1], bx
-	mov ax, 0xF242
+	mov ax, 0xf242
 	sar bx, 7
 	jz noMulsOverflow
 	not bx
@@ -726,7 +803,7 @@ testMuls8Single:
 
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	mov al, [es:inputVal1]
@@ -747,7 +824,7 @@ testMuls8Single:
 
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	mov al, [es:inputVal1]
@@ -830,7 +907,7 @@ testAadSingle:
 
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	mov bl, [es:inputVal1]
@@ -853,7 +930,7 @@ testAadSingle:
 
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	mov ax, [es:inputVal2]
@@ -957,7 +1034,7 @@ testDivu8Single:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	and ax, 0xf700
+	and ax, 0x8700
 	push ax
 
 	mov bl, [es:inputVal1]
@@ -984,7 +1061,7 @@ testDivu8Single:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	or ax, 0x08ff
+	or ax, 0x78ff
 	push ax
 
 	mov cl, [es:inputVal1]
@@ -1116,7 +1193,7 @@ testDivs8Single:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	mov bl, [es:inputVal1]
@@ -1143,7 +1220,7 @@ testDivs8Single:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	mov cl, [es:inputVal1]
@@ -1301,7 +1378,7 @@ testAamSingle:
 
 	pushf
 	pop ax
-	and ax, 0xF700
+	and ax, 0x8700
 	push ax
 
 	mov byte [es:testedException], 0
@@ -1331,7 +1408,7 @@ testAamSingle:
 
 	pushf
 	pop ax
-	or ax, 0x08FF
+	or ax, 0x78ff
 	push ax
 
 	mov byte [es:testedException], 0
@@ -1391,9 +1468,8 @@ aamLoop:
 aamSetRes:
 	add al, bl
 	mov [es:expectedResult1], ax
-	pushf
-	pop ax
-	and al,0xc4			; Mask Sign, Zero & Parity
+	lea bx, PZSTable
+	xlat				; Fetch Sign, Zero & Parity
 	or dl, al
 aamDone:
 	mov [es:expectedFlags], dx
@@ -1409,6 +1485,29 @@ aamError:
 aamErrNoZ:
 	mov byte [es:expectedException], 1
 	jmp aamDone
+
+;-----------------------------------------------------------------------------
+; Test pushing SP to stack.
+;-----------------------------------------------------------------------------
+testSPStack:
+	mov si, testingSPStackStr
+	call writeString
+
+	push sp				; save SP on stack to look at
+	pop bx				; get SP saved on stack
+	cmp bx,sp
+	jz spStackFailed
+
+spStackOk:
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+spStackFailed:
+	mov si, failedStr
+	call writeString
+	mov ax, 1
+	ret
 
 ;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
@@ -1478,9 +1577,10 @@ printFailedResult:
 clearLine:
 	xor bh, bh
 	mov bl, [es:cursorYPos]
-	and bl, 0x1F
+	and bl, 0x1f
 	shl bx, 6		; ax * MAP_TWIDTH
 	mov di, backgroundMap
+	add di, bx
 	mov cx, MAP_TWIDTH
 	mov ax, BG_CHR( ' ', 0, 0, 0, 0 ) ; BG_CHR(tile,pal,bank,hflip,vflip)
 	rep stosw
@@ -1596,7 +1696,7 @@ acknowledgeVBlankInterrupt:
 ; It is called if a division error occurs.
 ;-----------------------------------------------------------------------------
 divisionErrorHandler:
-;	mov word [es:WSC_PALETTES], 0xF0F
+;	mov word [es:WSC_PALETTES], 0xf0f
 	mov byte [es:testedException], 1
 	iret
 
@@ -1609,7 +1709,7 @@ illegalInstructionHandler:
 	push bx
 	push di
 
-	mov word [es:WSC_PALETTES], 0x0F0
+	mov word [es:WSC_PALETTES], 0x0f0
 
 	pop di
 	pop bx
@@ -1626,7 +1726,7 @@ outputCharHandler:
 
 	xor bh, bh
 	mov bl, [es:cursorYPos]
-	and bl, 0x1F
+	and bl, 0x1f
 	shl bx, 5		; ax * MAP_TWIDTH
 	mov cl, [es:cursorXPos]
 	add bl, cl
@@ -1732,7 +1832,7 @@ PZSTable:
 	db PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S
 
 FontTilePalette:
-	dw 0xFFF, 0x000
+	dw 0xfff, 0x000
 
 MonoFont:
 	db 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x18,0x08,0x10,0x00,0x18,0x00
@@ -1793,10 +1893,11 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220516", 0
+headLineStr: db "WonderSwan CPU Test 20220517",10 , 0
 testingSPStackStr: db "Pushing SP to stack", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
+testingTest8Str: db "Logical 8 bit TEST", 10, 0
 testingXor8Str: db "Logical 8 bit XOR", 10, 0
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
