@@ -48,6 +48,10 @@ Sign is set when AuxCarry (, Carry & Zero) is not set.
 AL is allways masked to lower nybble.
 
 ### AAS / ADJBS
+Parity is always set.
+AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
+Sign is set when AuxCarry (, Carry & Zero) is not set.
+AL is allways masked to lower nybble.
 
 ### Push SP to stack
 8086/80186

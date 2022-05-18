@@ -183,7 +183,7 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-	call testAaa
+	call testAas
 	cmp al, 0
 	jnz skipTests
 
@@ -239,7 +239,11 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
-;	call testAaa
+	call testAaa
+	cmp al, 0
+	jnz skipTests
+
+;	call testAas
 ;	cmp al, 0
 ;	jnz skipTests
 
@@ -1973,7 +1977,7 @@ dasSkipOV:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test Decimal Adjust after Subtraction of all byte values & AC + CY.
+; Test ASCII Adjust After Addition of all word values & AC.
 ;-----------------------------------------------------------------------------
 testAaa:
 	mov si, testingAaaStr
@@ -2106,6 +2110,146 @@ aaaNoCY:
 aaaSkipCY:
 	or dl, 0x80
 aaaSetRes:
+	mov [es:expectedResult1], ax
+	mov [es:expectedFlags], dx
+	pop dx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test ASCII Adjust After Subtraction of all word values & AC.
+;-----------------------------------------------------------------------------
+testAas:
+	mov si, testingAasStr
+	call writeString
+	mov si, test16x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+	mov bl, 0
+
+testAasLoop:
+	mov [es:inputVal1], bl
+	xor cx, cx
+testAasLoop2:
+	mov [es:inputVal2], cx
+	call calcAasResult
+	call testAasSingle
+	cmp al, 0
+	jnz stopAasTest
+continueAas:
+	inc cx
+	jnz testAasLoop2
+	mov bl, [es:inputVal1]
+	inc bl
+	cmp bl, 2
+	jnz testAasLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopAasTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueAas
+	ret
+
+;-----------------------------------------------------------------------------
+testAasSingle:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov bl, [es:inputVal1]
+	test bl, 1
+	jz aasTestNoAC
+	or al, 0x10
+aasTestNoAC:
+	push ax
+
+	mov ax, [es:inputVal2]
+	popf
+	aas
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aasFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz aasFailed
+
+	pushf
+	pop ax
+	xor al, al
+	or ax, 0x78ef
+	mov bl, [es:inputVal1]
+	test bl, 1
+	jz aasTest2NoAC
+	or al, 0x10
+aasTest2NoAC:
+	push ax
+
+	mov ax, [es:inputVal2]
+	popf
+	aas
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aasFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz aasFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+aasFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcAasResult:
+	push bx
+	push dx
+
+	mov bl, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, 0xf206				; Expected flags
+
+	and al, 0x0F
+	cmp al, 0x0A
+	jc aasNoCY
+	or bl, 1
+aasNoCY:
+	test bl, 1
+	jz aasSkipCY
+	sub al, 0x06
+	dec ah
+	and al, 0x0F
+	or dl, 0x51
+	jmp aasSetRes
+aasSkipCY:
+	or dl, 0x80
+aasSetRes:
 	mov [es:expectedResult1], ax
 	mov [es:expectedFlags], dx
 	pop dx
