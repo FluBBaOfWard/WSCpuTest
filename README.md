@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220517)
+# WonderSwan CPU Test V0.0.1 (20220518)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -40,6 +40,14 @@ and AH is allways zero. Flags are calculated only from the add after the multipl
 ### DAA / ADJ4A
 
 ### DAS / ADJ4S
+
+### AAA / ADJBA
+Parity is always set.
+AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
+Sign is set when AuxCarry (, Carry & Zero) is not set.
+AL is allways masked to lower nybble.
+
+### AAS / ADJBS
 
 ### Push SP to stack
 8086/80186

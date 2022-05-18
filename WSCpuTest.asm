@@ -183,7 +183,7 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-	call testDas
+	call testAaa
 	cmp al, 0
 	jnz skipTests
 
@@ -235,7 +235,11 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
-;	call testDas
+	call testDas
+	cmp al, 0
+	jnz skipTests
+
+;	call testAaa
 ;	cmp al, 0
 ;	jnz skipTests
 
@@ -1707,6 +1711,7 @@ daaTestNoAC:
 
 	pushf
 	pop ax
+	xor al, al
 	or ax, 0x78ee
 	mov bl, [es:inputVal2]
 	test bl, 1
@@ -1752,30 +1757,28 @@ calcDaaResult:
 	push bx
 	push dx
 
-	xor dh, dh
 	mov al, [es:inputVal1]
 	mov bl, [es:inputVal2]
-	mov dl, al
 	mov ah, al
 	mov bh, al
 	shl bh, 4
+
+	cmp al, 0x9A
+	jc daaNoCY
+	or bl, 1
+daaNoCY:
+	test bl, 1
+	jz daaNoHighAdd
+	add al, 0x60
+daaNoHighAdd:
 	cmp bh, 0xA0
 	jc daaNoAC
 	or bl, 2
 daaNoAC:
 	test bl, 2
 	jz daaNoLowAdd
-	add dx, 0x06
+	add al, 0x06
 daaNoLowAdd:
-	cmp dx, 0xA0
-	jc daaNoCY
-	or bl, 1
-daaNoCY:
-	test bl, 1
-	jz daaNoHighAdd
-	add dl, 0x60
-daaNoHighAdd:
-	mov al, dl
 daaSetRes:
 	mov dx, 0xf202				; Expected flags
 	test bl, 1
@@ -1786,8 +1789,7 @@ daaSkipCY:
 	jz daaSkipAC
 	or dl, 0x10
 daaSkipAC:
-	mov bl, ah
-	cmp al, bl
+	cmp al, ah
 	jno daaSkipOV
 	or dx, 0x800
 daaSkipOV:
@@ -1878,6 +1880,7 @@ dasTestNoAC:
 
 	pushf
 	pop ax
+	xor al, al
 	or ax, 0x78ee
 	mov bl, [es:inputVal2]
 	test bl, 1
@@ -1923,21 +1926,19 @@ calcDasResult:
 	push bx
 	push dx
 
-	xor dh, dh
 	mov al, [es:inputVal1]
 	mov bl, [es:inputVal2]
-	mov dl, al
 	mov ah, al
 	mov bh, al
 	shl bh, 4
 
-	cmp dl, 0x9A
+	cmp al, 0x9A
 	jc dasNoCY
 	or bl, 1
 dasNoCY:
 	test bl, 1
 	jz dasNoHighSub
-	sub dl, 0x60
+	sub al, 0x60
 dasNoHighSub:
 	cmp bh, 0xA0
 	jc dasNoAC
@@ -1945,9 +1946,8 @@ dasNoHighSub:
 dasNoAC:
 	test bl, 2
 	jz dasNoLowSub
-	sub dl, 0x06
+	sub al, 0x06
 dasNoLowSub:
-	mov al, dl
 dasSetRes:
 	mov dx, 0xf202				; Expected flags
 	test bl, 1
@@ -1958,8 +1958,7 @@ dasSkipCY:
 	jz dasSkipAC
 	or dl, 0x10
 dasSkipAC:
-	mov bl, ah
-	cmp al, bl
+	cmp al, ah
 	jno dasSkipOV
 	or dx, 0x800
 dasSkipOV:
@@ -1968,6 +1967,146 @@ dasSkipOV:
 	lea bx, PZSTable
 	xlat				; Fetch Sign, Zero & Parity
 	or dl, al
+	mov [es:expectedFlags], dx
+	pop dx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test Decimal Adjust after Subtraction of all byte values & AC + CY.
+;-----------------------------------------------------------------------------
+testAaa:
+	mov si, testingAaaStr
+	call writeString
+	mov si, test16x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+	mov bl, 0
+
+testAaaLoop:
+	mov [es:inputVal1], bl
+	xor cx, cx
+testAaaLoop2:
+	mov [es:inputVal2], cx
+	call calcAaaResult
+	call testAaaSingle
+	cmp al, 0
+	jnz stopAaaTest
+continueAaa:
+	inc cx
+	jnz testAaaLoop2
+	mov bl, [es:inputVal1]
+	inc bl
+	cmp bl, 2
+	jnz testAaaLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopAaaTest:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueAaa
+	ret
+
+;-----------------------------------------------------------------------------
+testAaaSingle:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov bl, [es:inputVal1]
+	test bl, 1
+	jz aaaTestNoAC
+	or al, 0x10
+aaaTestNoAC:
+	push ax
+
+	mov ax, [es:inputVal2]
+	popf
+	aaa
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aaaFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz aaaFailed
+
+	pushf
+	pop ax
+	xor al, al
+	or ax, 0x78ef
+	mov bl, [es:inputVal1]
+	test bl, 1
+	jz aaaTest2NoAC
+	or al, 0x10
+aaaTest2NoAC:
+	push ax
+
+	mov ax, [es:inputVal2]
+	popf
+	aaa
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	cmp ax, bx
+	jnz aaaFailed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz aaaFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+aaaFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcAaaResult:
+	push bx
+	push dx
+
+	mov bl, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, 0xf206				; Expected flags
+
+	and al, 0x0F
+	cmp al, 0x0A
+	jc aaaNoCY
+	or bl, 1
+aaaNoCY:
+	test bl, 1
+	jz aaaSkipCY
+	add al, 0x06
+	inc ah
+	and al, 0x0F
+	or dl, 0x51
+	jmp aaaSetRes
+aaaSkipCY:
+	or dl, 0x80
+aaaSetRes:
+	mov [es:expectedResult1], ax
 	mov [es:expectedFlags], dx
 	pop dx
 	pop bx
@@ -2435,7 +2574,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220517",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220518",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
