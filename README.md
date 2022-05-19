@@ -15,23 +15,30 @@ B to go back.
 ## Building:
 	I use nasm https://nasm.us/ by running "nasm -f bin -o WSCpuTest.wsc WSCpuTest.asm".
 
-## How do the undefine flags / undocumented op-codes work?
+## How do the undefined flags / undocumented op-codes work?
 
-### AND, OR & XOR
+### AND, OR, XOR & TEST
 AuxCarry, Carry & Overflow are always cleared.
-Sign, Zero & Parity are set according to result.
+Parity, Sign & Zero are set according to result.
 
 ### Mul
 Mulu/Muls/IMul change all the undefined flags.
 AuxCarry, Parity & Sign are always cleared.
 Zero is always set.
-Carry & Overflow is set if the result doesn't fit in 8 bits for 8bit multiplies.
+Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
 
 ### Div
 
 ### AAM / CVTBD
 The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10.
 So it's basically a byte by byte divide.
+Normaly:
+	AuxCarry, Carry & Overflow are cleared.
+	Parity, Sign & Zero are set according to result.
+If a division by zero:
+	AuxCarry & Parity are cleared.
+	Carry & Overflow are set.
+	Zero is set if AL > 0x40.
 
 ### AAD / CVTDB
 The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL
@@ -42,12 +49,14 @@ and AH is allways zero. Flags are calculated only from the add after the multipl
 ### DAS / ADJ4S
 
 ### AAA / ADJBA
+Overflow is always cleared.
 Parity is always set.
 AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
 Sign is set when AuxCarry (, Carry & Zero) is not set.
 AL is allways masked to lower nybble.
 
 ### AAS / ADJBS
+Overflow is always cleared.
 Parity is always set.
 AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
 Sign is set when AuxCarry (, Carry & Zero) is not set.
