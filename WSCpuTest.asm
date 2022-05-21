@@ -1365,7 +1365,7 @@ testDivs8Single:
 	jnz divsFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xf73a				; Clear some flags
+	and cx, 0xffbf				; Clear some flags
 	jnz divsFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
@@ -1392,7 +1392,7 @@ testDivs8Single:
 	jnz divsFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xf73a				; Clear some flags
+	and cx, 0xffbf				; Clear some flags
 	jnz divsFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
@@ -1461,12 +1461,12 @@ restPos:
 	mov ah, al
 	mov al, cl
 	mov [es:expectedResult1], ax
-divsSetP:			; This is wrong!
-;	cmp ah, 0
-;	jnz divsDone
-;	or dl, 0x04
 divsDone:
-	mov dx, 0xf282				; Expected flags
+	mov dx, 0xf202				; Expected flags
+	lea bx, PZSTable
+	xlat				; Fetch Sign, Zero & Parity
+	or dl, al
+divsEnd:
 	mov [es:expectedFlags], dx
 	pop dx
 	pop cx
@@ -1480,10 +1480,11 @@ divsError:
 	jnz divsErrCnt
 	mov ax, 0x0081
 	mov [es:expectedResult1], ax
-	jmp divsSetP
+	jmp divsDone
 divsErrCnt:
 	mov byte [es:expectedException], 1
-	jmp divsSetP
+	mov dx, 0xf202				; Expected flags
+	jmp divsEnd
 ;-----------------------------------------------------------------------------
 ; Test unsigned division of all byte/byte values.
 ;-----------------------------------------------------------------------------
