@@ -21,13 +21,19 @@ B to go back.
 AuxCarry, Carry & Overflow are always cleared.
 Parity, Sign & Zero are set according to result.
 
-### Mul
-Mulu/Muls/IMul change all the undefined flags.
+### MUL
 AuxCarry, Parity & Sign are always cleared.
 Zero is always set.
 Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
 
-### Div
+### DIV / DIVU (unsigned division)
+Carry & Overflow are always set.
+AuxCarry, Parity & Sign are always cleared.
+Zero is sometimes set during division by Zero (not tested).
+
+### IDIV / DIV (signed division)
+Flags are not really tested.
+If dividing 0x8000 by 0x00 you will not get an exception and a result of 0x0081.
 
 ### AAM / CVTBD
 The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10.
@@ -36,31 +42,34 @@ Normaly:
 	AuxCarry, Carry & Overflow are cleared.
 	Parity, Sign & Zero are set according to result.
 If a division by zero:
-	AuxCarry & Parity are cleared.
+	AuxCarry, Parity & Sign are cleared.
 	Carry & Overflow are set.
 	Zero is set if AL > 0x40.
 
 ### AAD / CVTDB
 The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL
-and AH is allways zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
+and AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
 
 ### DAA / ADJ4A
+All flags are the same as a normal addition except that AuxCarry & Carry are never cleared.
 
 ### DAS / ADJ4S
+Compare is done for AL > 0x99 first and then lower nybble ((AL & 0xF) > 0x9).
+Same calculation as DAA except it does a subtraction instead of an addition.
 
 ### AAA / ADJBA
 Overflow is always cleared.
 Parity is always set.
 AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
 Sign is set when AuxCarry (, Carry & Zero) is not set.
-AL is allways masked to lower nybble.
+AL is always masked to lower nybble.
 
 ### AAS / ADJBS
 Overflow is always cleared.
 Parity is always set.
 AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
 Sign is set when AuxCarry (, Carry & Zero) is not set.
-AL is allways masked to lower nybble.
+AL is always masked to lower nybble.
 
 ### Push SP to stack
 8086/80186
@@ -70,7 +79,7 @@ AL is allways masked to lower nybble.
 }
 
 ## Controls:
-Use WS X1-X4 to navigate the menus. A to select, B to go back.
+Use WS X1-X4 to navigate the menus. A to select/continue, B to go back/cancel.
 
 
 ## Credits:

@@ -1630,7 +1630,6 @@ aamDone:
 	ret
 
 aamError:
-	or dx, 0x0801		; Overflow & Carry flag
 	test al, 0xc0
 	jnz aamErrNoZ
 	or dl, 0x40			; Zero flag
