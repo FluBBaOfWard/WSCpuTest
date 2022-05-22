@@ -16,6 +16,9 @@ B to go back.
 	I use nasm https://nasm.us/ by running "nasm -f bin -o WSCpuTest.wsc WSCpuTest.asm".
 
 ## How do the undefined flags / undocumented op-codes work?
+If there is a division by zero the input (AL, AX/AW) is not modified.
+The flags marked as Undefined in the manual are always modified by the instructions,
+the flags are never kept as they were before the instruction.
 
 ### AND, OR, XOR & TEST
 AuxCarry, Carry & Overflow are always cleared.
@@ -27,13 +30,21 @@ Zero is always set.
 Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
 
 ### DIV / DIVU (unsigned division)
-Carry & Overflow are always set.
-AuxCarry, Parity & Sign are always cleared.
-Zero is sometimes set during division by Zero (not tested).
+Normaly:
+	AuxCarry, Carry, Overflow, Parity & Sign are always cleared.
+	Zero is set when rest is zero and bit 0 of result is set.
+If division by zero:
+	AuxCarry, Carry, Overflow, Parity & Sign are cleared.
+	Zero is set in some weird way (not tested).
 
 ### IDIV / DIV (signed division)
-Flags are not really tested.
-If dividing 0x8000 by 0x00 you will not get an exception and a result of 0x0081.
+If dividing 0x8000 by 0x00 you will not get a division by zero and a result of 0x0081.
+Normaly:
+	AuxCarry, Carry & Overflow are cleared.
+	Parity, Sign & Zero are set according to result.
+If division by zero:
+	AuxCarry, Carry, Overflow, Parity & Sign are cleared.
+	Zero is set in some weird way (not tested).
 
 ### AAM / CVTBD
 The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10.
@@ -41,10 +52,9 @@ So it's basically a byte by byte divide.
 Normaly:
 	AuxCarry, Carry & Overflow are cleared.
 	Parity, Sign & Zero are set according to result.
-If a division by zero:
-	AuxCarry, Parity & Sign are cleared.
-	Carry & Overflow are set.
-	Zero is set if AL > 0x40.
+If division by zero:
+	AuxCarry, Carry, Overflow, Parity & Sign are cleared.
+	Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
 
 ### AAD / CVTDB
 The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL

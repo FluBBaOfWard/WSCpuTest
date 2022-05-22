@@ -29,8 +29,8 @@ SECTION .data
 
 	COLLISION_RADIUS equ 6
 	PSR_S equ 0x80
-	PSR_P equ 0x04
 	PSR_Z equ 0x40
+	PSR_P equ 0x04
 
 SECTION .text
 	;PADDING 15
@@ -183,9 +183,9 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-	call testAas
-	cmp al, 0
-	jnz skipTests
+;	call testAas
+;	cmp al, 0
+;	jnz skipTests
 
 	call testEqu
 	cmp al, 0
@@ -207,30 +207,6 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
-;	call testMulu8
-;	cmp al, 0
-;	jnz skipTests
-
-;	call testMuls8
-;	cmp al, 0
-;	jnz skipTests
-
-;	call testAad
-;	cmp al, 0
-;	jnz skipTests
-
-;	call testDivu8
-;	cmp al, 0
-;	jnz skipTests
-
-;	call testDivs8
-;	cmp al, 0
-;	jnz skipTests
-
-	call testAam
-	cmp al, 0
-	jnz skipTests
-
 	call testDaa
 	cmp al, 0
 	jnz skipTests
@@ -243,11 +219,35 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
-;	call testAas
+	call testAas
+	cmp al, 0
+	jnz skipTests
+
+	call testSPStack
 ;	cmp al, 0
 ;	jnz skipTests
 
-	call testSPStack
+;	call testAad
+;	cmp al, 0
+;	jnz skipTests
+
+	call testMulu8
+	cmp al, 0
+	jnz skipTests
+
+	call testMuls8
+	cmp al, 0
+	jnz skipTests
+
+	call testAam
+	cmp al, 0
+	jnz skipTests
+
+;	call testDivu8
+;	cmp al, 0
+;	jnz skipTests
+
+	call testDivs8
 	cmp al, 0
 	jnz skipTests
 
@@ -1187,6 +1187,7 @@ stopDivuTest:
 testDivu8Single:
 	push bx
 	push cx
+	push dx
 
 	mov byte [es:testedException], 0
 	pushf
@@ -1206,11 +1207,15 @@ testDivu8Single:
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
 	jnz divuFailed
+	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xffbf				; Clear Zero flag
+	cmp al, 0
+	jz divuDoZTst
+	and cx, 0xffbf				; Mask out Zero flag
+divuDoZTst:
+	cmp cx, 0
 	jnz divuFailed
-	mov al, [es:testedException]
 	mov bl, [es:expectedException]
 	cmp al, bl
 	jnz divuFailed
@@ -1233,30 +1238,35 @@ testDivu8Single:
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
 	jnz divuFailed
+	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xffbf				; Clear Zero flag
+	cmp al, 0
+	jz divuDoZTst2
+	and cx, 0xffbf				; Mask out Zero flag
+divuDoZTst2:
+	cmp cx, 0
 	jnz divuFailed
-	mov al, [es:testedException]
 	mov bl, [es:expectedException]
 	cmp al, bl
 	jnz divuFailed
 
-	xor ax, ax
+	pop dx
 	pop cx
 	pop bx
+	xor ax, ax
 	ret
 
 divuFailed:
 	call printFailedResult
-	mov ax, 1
+	pop dx
 	pop cx
 	pop bx
+	mov ax, 1
 	ret
 
 ;-----------------------------------------------------------------------------
 calcDivuResult:
-	push ax
 	push bx
 	push cx
 	push dx
@@ -1264,7 +1274,7 @@ calcDivuResult:
 	mov byte [es:expectedException], 0
 	xor bx, bx
 	xor cx, cx
-	mov dx, 0xfa03				; Expected flags
+	mov dx, 0xf202				; Expected flags
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
 	mov [es:expectedResult1], ax
@@ -1285,20 +1295,21 @@ divuSetRes:
 	mov ah, al
 	mov al, cl
 	mov [es:expectedResult1], ax
-divuSetZ:			; This is wrong!
-;	cmp ah, 0
-;	jnz divuDone
-;	or dl, 0x40
+divuSetZ:
+	cmp ah, 0
+	jnz divuDone
+	test al, 1
+	jz divuDone
+	or dl, 0x40
 divuDone:
 	mov [es:expectedFlags], dx
 	pop dx
 	pop cx
 	pop bx
-	pop ax
 	ret
 divuError:
 	mov byte [es:expectedException], 1
-	jmp divuSetZ
+	jmp divuDone
 ;-----------------------------------------------------------------------------
 ; Test signed division of all word/byte values.
 ;-----------------------------------------------------------------------------
@@ -1363,11 +1374,15 @@ testDivs8Single:
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
 	jnz divsFailed
+	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xffbf				; Clear some flags
+	cmp al, 0
+	jz divsDoZTst
+	and cx, 0xffbf				; Mask out Zero flag
+divsDoZTst:
+	cmp cx, 0
 	jnz divsFailed
-	mov al, [es:testedException]
 	mov bl, [es:expectedException]
 	cmp al, bl
 	jnz divsFailed
@@ -1390,11 +1405,15 @@ testDivs8Single:
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
 	jnz divsFailed
+	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	and cx, 0xffbf				; Clear some flags
+	cmp al, 0
+	jz divsDoZTst2
+	and cx, 0xffbf				; Mask out Zero flag
+divsDoZTst2:
+	cmp cx, 0
 	jnz divsFailed
-	mov al, [es:testedException]
 	mov bl, [es:expectedException]
 	cmp al, bl
 	jnz divsFailed
@@ -1413,7 +1432,6 @@ divsFailed:
 
 ;-----------------------------------------------------------------------------
 calcDivsResult:
-	push ax
 	push bx
 	push cx
 	push dx
@@ -1471,7 +1489,6 @@ divsEnd:
 	pop dx
 	pop cx
 	pop bx
-	pop ax
 	ret
 divsError:
 	cmp ax, 0x8000
@@ -2640,11 +2657,11 @@ dontPrint:
 
 PZSTable:
 	db PSR_Z|PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
-	db 0      , PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
+	db 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
 	db 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0 ,PSR_P, 0, PSR_P, PSR_P, 0
 	db PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
-	db 0      , PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
-	db PSR_P,       0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
+	db 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
+	db PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
 	db PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0, 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P
 	db 0, PSR_P, PSR_P, 0, PSR_P, 0, 0, PSR_P, PSR_P, 0, 0, PSR_P, 0, PSR_P, PSR_P, 0
 	db PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S
@@ -2718,7 +2735,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220518",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220522",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
