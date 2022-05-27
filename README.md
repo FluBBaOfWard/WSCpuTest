@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220518)
+# WonderSwan CPU Test V0.0.1 (20220527)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -8,7 +8,7 @@ Load the ROM in an emulator or flash it to a flashcart and put it in your Wonder
 The program will go through all the tests and then write "Ok".
 If run in an emulator and it doesn't emulate the WonderSwan CPU correctly,
 the program will stop at the first failure and print out expected value/flags
-and the 
+(and exception for division).
 Now you can use the X1-X4 to navigate the menus, A to select an option,
 B to go back.
 
@@ -31,10 +31,12 @@ Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies
 
 ### DIV / DIVU (unsigned division)
 Normaly:
-	AuxCarry, Carry, Overflow, Parity & Sign are always cleared.
-	Zero is set when rest is zero and bit 0 of result is set.
+	AuxCarry, Parity & Sign are always cleared.
+	Carry & Overflow are from the last multiplication.
+	Zero is set when remainder is zero and bit 0 of result is set.
 If division by zero:
-	AuxCarry, Carry, Overflow, Parity & Sign are cleared.
+	AuxCarry, Parity & Sign are always cleared.
+	Carry & Overflow are from the last multiplication.
 	Zero is set in some weird way (not tested).
 
 ### IDIV / DIV (signed division)
@@ -43,17 +45,19 @@ Normaly:
 	AuxCarry, Carry & Overflow are cleared.
 	Parity, Sign & Zero are set according to result.
 If division by zero:
-	AuxCarry, Carry, Overflow, Parity & Sign are cleared.
+	AuxCarry, Parity & Sign are always cleared.
+	Carry & Overflow are from the last multiplication.
 	Zero is set in some weird way (not tested).
 
 ### AAM / CVTBD
 The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10.
-So it's basically a byte by byte divide.
+So it's basically a byte by byte divide though the result is in AH and remainder in AL.
 Normaly:
-	AuxCarry, Carry & Overflow are cleared.
-	Parity, Sign & Zero are set according to result.
+	AuxCarry Carry & Overflow are cleared.
+	Parity, Sign & Zero are set according to result (of AL, remainder).
 If division by zero:
-	AuxCarry, Carry, Overflow, Parity & Sign are cleared.
+	AuxCarry, Parity & Sign are always cleared.
+	Carry & Overflow are from the last multiplication.
 	Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
 
 ### AAD / CVTDB

@@ -1156,18 +1156,18 @@ testDivu8:
 
 	xor cx, cx
 	xor dx, dx
-testDivuLoop:
+testDivu8Loop:
 	mov [es:inputVal1], dl
 	mov [es:inputVal2], cx
-	call calcDivuResult
+	call calcDivu8Result
 	call testDivu8Single
 	cmp al, 0
-	jnz stopDivuTest
-continueDivu:
+	jnz stopDivu8Test
+continueDivu8:
 	inc cx
-	jnz testDivuLoop
+	jnz testDivu8Loop
 	inc dl
-	jnz testDivuLoop
+	jnz testDivu8Loop
 
 	hlt						; Wait for VBlank
 	mov byte [es:isTesting], 0
@@ -1177,10 +1177,10 @@ continueDivu:
 	call writeString
 	xor ax, ax
 	ret
-stopDivuTest:
+stopDivu8Test:
 	call checkKeyInput
 	cmp al, 0
-	jnz continueDivu
+	jnz continueDivu8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -1206,19 +1206,19 @@ testDivu8Single:
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
-	jnz divuFailed
+	jnz divu8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
 	cmp al, 0
-	jz divuDoZTst
+	jz divu8DoZTst
 	and cx, 0xffbf				; Mask out Zero flag
-divuDoZTst:
+divu8DoZTst:
 	cmp cx, 0
-	jnz divuFailed
+	jnz divu8Failed
 	mov bl, [es:expectedException]
 	cmp al, bl
-	jnz divuFailed
+	jnz divu8Failed
 
 	mov byte [es:testedException], 0
 	pushf
@@ -1237,19 +1237,19 @@ divuDoZTst:
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
-	jnz divuFailed
+	jnz divu8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
 	cmp al, 0
-	jz divuDoZTst2
+	jz divu8DoZTst2
 	and cx, 0xffbf				; Mask out Zero flag
-divuDoZTst2:
+divu8DoZTst2:
 	cmp cx, 0
-	jnz divuFailed
+	jnz divu8Failed
 	mov bl, [es:expectedException]
 	cmp al, bl
-	jnz divuFailed
+	jnz divu8Failed
 
 	pop dx
 	pop cx
@@ -1257,7 +1257,7 @@ divuDoZTst2:
 	xor ax, ax
 	ret
 
-divuFailed:
+divu8Failed:
 	call printFailedResult
 	pop dx
 	pop cx
@@ -1266,7 +1266,7 @@ divuFailed:
 	ret
 
 ;-----------------------------------------------------------------------------
-calcDivuResult:
+calcDivu8Result:
 	push bx
 	push cx
 	push dx
@@ -1275,41 +1275,48 @@ calcDivuResult:
 	xor bx, bx
 	xor cx, cx
 	mov dx, 0xf202				; Expected flags
+	call getLFSR1Value
+	and al, 0x10
+	imul al
+	jnc divu8NoCV
+	or dx, 0x0801				; Carry & Overflow
+divu8NoCV:
+
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
 	mov [es:expectedResult1], ax
 	cmp bl, 0
-	jz divuError
+	jz divu8Error
 	cmp ah, bl
-	jnc divuError
+	jnc divu8Error
 	cmp ax, 0
-	jz divuDone
-divuLoop:
+	jz divu8Done
+divu8Loop:
 	sub ax, bx
-	jc divuSetRes
+	jc divu8SetRes
 	inc cl
-	jmp divuLoop
+	jmp divu8Loop
 
-divuSetRes:
+divu8SetRes:
 	add ax, bx
 	mov ah, al
 	mov al, cl
 	mov [es:expectedResult1], ax
-divuSetZ:
+divu8SetZ:
 	cmp ah, 0
-	jnz divuDone
+	jnz divu8Done
 	test al, 1
-	jz divuDone
+	jz divu8Done
 	or dl, 0x40
-divuDone:
+divu8Done:
 	mov [es:expectedFlags], dx
 	pop dx
 	pop cx
 	pop bx
 	ret
-divuError:
+divu8Error:
 	mov byte [es:expectedException], 1
-	jmp divuDone
+	jmp divu8Done
 ;-----------------------------------------------------------------------------
 ; Test signed division of all word/byte values.
 ;-----------------------------------------------------------------------------
@@ -1323,19 +1330,19 @@ testDivs8:
 
 	xor cx, cx
 	xor dx, dx
-testDivsLoop:
+testDivs8Loop:
 	mov [es:inputVal1], dl
 	mov [es:inputVal2], cx
-	call calcDivsResult
+	call calcDivs8Result
 	call testDivs8Single
 	cmp al, 0
-	jnz stopDivsTest
-continueDivs:
+	jnz stopDivs8Test
+continue8Divs:
 	mov byte [es:isTesting], 2
 	inc cx
-	jnz testDivsLoop
+	jnz testDivs8Loop
 	inc dl
-	jnz testDivsLoop
+	jnz testDivs8Loop
 
 	hlt						; Wait for VBlank
 	mov byte [es:isTesting], 0
@@ -1345,10 +1352,10 @@ continueDivs:
 	call writeString
 	xor ax, ax
 	ret
-stopDivsTest:
+stopDivs8Test:
 	call checkKeyInput
 	cmp al, 0
-	jnz continueDivs
+	jnz continue8Divs
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -1373,19 +1380,19 @@ testDivs8Single:
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
-	jnz divsFailed
+	jnz divs8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
 	cmp al, 0
-	jz divsDoZTst
+	jz divs8DoZTst
 	and cx, 0xffbf				; Mask out Zero flag
-divsDoZTst:
+divs8DoZTst:
 	cmp cx, 0
-	jnz divsFailed
+	jnz divs8Failed
 	mov bl, [es:expectedException]
 	cmp al, bl
-	jnz divsFailed
+	jnz divs8Failed
 
 	mov byte [es:testedException], 0
 	pushf
@@ -1404,26 +1411,26 @@ divsDoZTst:
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
 	cmp ax, bx
-	jnz divsFailed
+	jnz divs8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
 	cmp al, 0
-	jz divsDoZTst2
+	jz divs8DoZTst2
 	and cx, 0xffbf				; Mask out Zero flag
-divsDoZTst2:
+divs8DoZTst2:
 	cmp cx, 0
-	jnz divsFailed
+	jnz divs8Failed
 	mov bl, [es:expectedException]
 	cmp al, bl
-	jnz divsFailed
+	jnz divs8Failed
 
 	xor ax, ax
 	pop cx
 	pop bx
 	ret
 
-divsFailed:
+divs8Failed:
 	call printFailedResult
 	mov ax, 1
 	pop cx
@@ -1431,7 +1438,7 @@ divsFailed:
 	ret
 
 ;-----------------------------------------------------------------------------
-calcDivsResult:
+calcDivs8Result:
 	push bx
 	push cx
 	push dx
@@ -1446,62 +1453,69 @@ calcDivsResult:
 	mov dh, ah
 	xor dh, bh
 	cmp bx, 0
-	jz divsError
-	jns denPos
+	jz divs8Error
+	jns den8Pos
 	neg bx
-denPos:
+den8Pos:
 	cmp ax, 0
-	jz divsDone
-	jns enumPos
+	jz divs8Done
+	jns enum8Pos
 	neg ax
-enumPos:
+enum8Pos:
 	mov cx, ax
 	shr cx, 7
 	cmp cx, bx
-	jnc divsError
+	jnc divs8Error
 	xor cx, cx
-divsLoop:
+divs8Loop:
 	sub ax, bx
-	jc divsSetRes
+	jc divs8SetRes
 	inc cl
-	jmp divsLoop
+	jmp divs8Loop
 
-divsSetRes:
+divs8SetRes:
 	add ax, bx
 	cmp dh, 0
-	jns resultPos
+	jns result8Pos
 	neg cl
-resultPos:
+result8Pos:
 	cmp dl, 0
-	jns restPos
+	jns rest8Pos
 	neg al
-restPos:
+rest8Pos:
 	mov ah, al
 	mov al, cl
 	mov [es:expectedResult1], ax
-divsDone:
+divs8Done:
 	mov dx, 0xf202				; Expected flags
 	lea bx, PZSTable
 	xlat				; Fetch Sign, Zero & Parity
 	or dl, al
-divsEnd:
+divs8End:
 	mov [es:expectedFlags], dx
 	pop dx
 	pop cx
 	pop bx
 	ret
-divsError:
+divs8Error:
 	cmp ax, 0x8000
-	jnz divsErrCnt
+	jnz divs8ErrCnt
 	cmp bl, 0x00
-	jnz divsErrCnt
+	jnz divs8ErrCnt
 	mov ax, 0x0081
 	mov [es:expectedResult1], ax
-	jmp divsDone
-divsErrCnt:
+	jmp divs8Done
+divs8ErrCnt:
 	mov byte [es:expectedException], 1
 	mov dx, 0xf202				; Expected flags
-	jmp divsEnd
+	call getLFSR1Value
+	and al, 0x10
+	mov al, 0x10
+	imul al
+	jnc divs8NoCV
+	or dx, 0x0801				; Carry & Overflow
+divs8NoCV:
+	jmp divs8End
 ;-----------------------------------------------------------------------------
 ; Test unsigned division of all byte/byte values.
 ;-----------------------------------------------------------------------------
@@ -1620,7 +1634,6 @@ calcAamResult:
 	push dx
 
 	mov byte [es:expectedException], 0
-	mov dx, 0xf202				; Expected flags
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
 	mov ah, al
@@ -1638,6 +1651,7 @@ aamLoop:
 aamSetRes:
 	add al, bl
 	mov [es:expectedResult1], ax
+	mov dx, 0xf202				; Expected flags
 	lea bx, PZSTable
 	xlat				; Fetch Sign, Zero & Parity
 	or dl, al
@@ -1648,10 +1662,18 @@ aamDone:
 	ret
 
 aamError:
+	mov dx, 0xf202				; Expected flags
 	test al, 0xc0
 	jnz aamErrNoZ
 	or dl, 0x40			; Zero flag
 aamErrNoZ:
+	call getLFSR1Value
+	and al, 0x10
+	mov bl, al
+	mul bl
+	jnc aamNoCV
+	or dx, 0x0801				; Carry & Overflow
+aamNoCV:
 	mov byte [es:expectedException], 1
 	jmp aamDone
 
@@ -2735,7 +2757,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220522",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220527",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
