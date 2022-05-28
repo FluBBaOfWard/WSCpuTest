@@ -1285,8 +1285,6 @@ divu8NoCV:
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
 	mov [es:expectedResult1], ax
-	cmp bl, 0
-	jz divu8Error
 	cmp ah, bl
 	jnc divu8Error
 	cmp ax, 0
