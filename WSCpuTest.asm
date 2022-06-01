@@ -792,6 +792,154 @@ xor8Failed:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test ROL for all byte & 5bit values.
+;-----------------------------------------------------------------------------
+testRol8:
+	mov si, testingRol8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testRol8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcRol8Result
+	call testRol8Single
+	cmp al, 0
+	jnz stopRol8Test
+continueRol8:
+	inc cx
+	jnz testRol8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopRol8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueRol8
+	ret
+
+;-----------------------------------------------------------------------------
+testRol8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	mov al, cl
+	and al, 0x1F
+	jnz rol8Normal
+	test bl, 0x80
+	jz rol8Normal
+	or word [es:expectedFlags], 0x0800
+rol8Normal:
+
+	popf
+	rol bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	cmp al, bl
+	jnz rol8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rol8Failed
+
+	pushf
+	pop ax
+	or ax, 0x78ff
+	push ax
+
+	xor ah, ah
+	mov cl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	or byte [es:expectedFlags], 0xD4
+	mov bl, cl
+	and bl, 0x1F
+	jnz rol8Normal2
+	or word [es:expectedFlags], 0x0801
+	test al, 0x80
+	jz rol8Normal2
+	and word [es:expectedFlags], 0xF7FF
+rol8Normal2:
+	popf
+	rol al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	cmp al, bl
+	jnz rol8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rol8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+rol8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcRol8Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	and bl, 0x1F
+	jz rol8NoOv
+rol8Loop:
+	add al, al
+	jnc rol8NoC
+	or al, 0x01
+rol8NoC:
+	dec bl
+	jnz rol8Loop
+
+rol8SetRes:
+	mov ah, al
+	test ah, 0x01
+	jz rol8NoCy
+	or cl, 0x01
+	xor ah, 0x80
+rol8NoCy:
+	test ah, 0x80
+	jz rol8NoOv
+	or ch, 0x08
+rol8NoOv:
+	mov [es:expectedResult1], al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test unsigned multiplication of all byte values.
 ;-----------------------------------------------------------------------------
 testMulu8:
@@ -2755,12 +2903,13 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220527",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220601",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
 testingTest8Str: db "Logical 8 bit TEST", 10, 0
 testingXor8Str: db "Logical 8 bit XOR", 10, 0
+testingRol8Str: db "ROL 8 bit by 5 bit", 10, 0
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
 testingMulu16Str: db "Unsigned Multiplication 16*16", 0

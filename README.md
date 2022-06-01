@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220527)
+# WonderSwan CPU Test V0.0.1 (20220601)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -16,13 +16,18 @@ B to go back.
 	I use nasm https://nasm.us/ by running "nasm -f bin -o WSCpuTest.wsc WSCpuTest.asm".
 
 ## How do the undefined flags / undocumented op-codes work?
-If there is a division by zero the input (AL, AX/AW) is not modified.
+If there is a division exception the input (AL, AX/AW) is not modified.
 The flags marked as Undefined in the manual are always modified by the instructions,
 the flags are never kept as they were before the instruction.
 
 ### AND, OR, XOR & TEST
 AuxCarry, Carry & Overflow are always cleared.
 Parity, Sign & Zero are set according to result.
+
+### ROL
+Carry is set if the last shifted bit was 1, otherwise cleared.
+ & Overflow are always cleared.
+If the argument is & 0x1F = zero, ie. no shift is taking place, Carry is not changed.
 
 ### MUL
 AuxCarry, Parity & Sign are always cleared.
@@ -34,17 +39,17 @@ Normaly:
 	AuxCarry, Parity & Sign are always cleared.
 	Carry & Overflow are from the last multiplication.
 	Zero is set when remainder is zero and bit 0 of result is set.
-If division by zero:
+If division exception:
 	AuxCarry, Parity & Sign are always cleared.
 	Carry & Overflow are from the last multiplication.
 	Zero is set in some weird way (not tested).
 
 ### IDIV / DIV (signed division)
-If dividing 0x8000 by 0x00 you will not get a division by zero and a result of 0x0081.
+If dividing 0x8000 by 0x00 you will not get a division exception and a result of 0x0081.
 Normaly:
 	AuxCarry, Carry & Overflow are cleared.
 	Parity, Sign & Zero are set according to result.
-If division by zero:
+If division exception:
 	AuxCarry, Parity & Sign are always cleared.
 	Carry & Overflow are from the last multiplication.
 	Zero is set in some weird way (not tested).
@@ -53,9 +58,9 @@ If division by zero:
 The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10.
 So it's basically a byte by byte divide though the result is in AH and remainder in AL.
 Normaly:
-	AuxCarry Carry & Overflow are cleared.
+	AuxCarry, Carry & Overflow are cleared.
 	Parity, Sign & Zero are set according to result (of AL, remainder).
-If division by zero:
+If division exception:
 	AuxCarry, Parity & Sign are always cleared.
 	Carry & Overflow are from the last multiplication.
 	Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
