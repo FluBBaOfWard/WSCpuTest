@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220601)
+# WonderSwan CPU Test V0.0.1 (20220602)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -25,9 +25,20 @@ AuxCarry, Carry & Overflow are always cleared.
 Parity, Sign & Zero are set according to result.
 
 ### ROL
-Carry is set if the last shifted bit was 1, otherwise cleared.
- & Overflow are always cleared.
-If the argument is & 0x1F = zero, ie. no shift is taking place, Carry is not changed.
+Normaly:
+	Carry is set if the last shifted bit was 1, otherwise cleared.
+	Overflow is set if bit 7 is changed between the last and next to last shift, ie Carry and Sign differs.
+If the argument is & 0x1F = zero, ie. no shift is taking place:
+	Carry is not changed.
+	Overflow is inverted if destination is negative.
+
+### SHL
+Normaly:
+	Carry is set if the last shifted bit was 1, otherwise cleared.
+	Overflow is set if bit 7 is changed between the last and next to last shift, ie Carry and Sign differs.
+If the argument is & 0x1F = zero, ie. no shift is taking place:
+	Carry is not changed.
+	Overflow is inverted if destination is negative.
 
 ### MUL
 AuxCarry, Parity & Sign are always cleared.
