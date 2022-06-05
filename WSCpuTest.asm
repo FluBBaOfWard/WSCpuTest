@@ -431,6 +431,7 @@ testAnd8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -453,6 +454,7 @@ testAnd8Single:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -537,6 +539,7 @@ testOr8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -559,6 +562,7 @@ testOr8Single:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -641,6 +645,7 @@ testTest8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -659,6 +664,7 @@ testTest8Single:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -739,6 +745,7 @@ testXor8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -761,6 +768,7 @@ testXor8Single:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov al, [es:inputVal1]
@@ -837,6 +845,7 @@ testRol8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov cl, [es:inputVal1]
 	mov bl, [es:inputVal2]
@@ -866,6 +875,7 @@ rol8Normal:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	xor ah, ah
 	mov cl, [es:inputVal1]
@@ -985,6 +995,7 @@ testShl8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov cl, [es:inputVal1]
 	mov bl, [es:inputVal2]
@@ -1010,21 +1021,33 @@ shl8Normal:
 	xor cx, bx
 	jnz shl8Failed
 
-	pushf
-	pop ax
-	or ax, 0x78ff
-	push ax
-
-	xor ah, ah
 	mov cl, [es:inputVal1]
+	mov al, cl
+	and al, 0xE0
+	pushf
+	pop bx
+	or bx, 0x78FF
+	cmp al, 0x20
+	jnz shl8NormalC2
+	and bx, 0xF7FE
+shl8NormalC2:
+	cmp al, 0x30
+	jnz shl8NormalV2
+	and bx, 0xF7FF
+shl8NormalV2:
+	push bx
+	mov [es:inputFlags], bx
+
 	mov al, [es:inputVal2]
-	mov bl, cl
-	and bl, 0x1F
+	mov ah, cl
+	and ah, 0x1F
 	jnz shl8Normal2
-	or word [es:expectedFlags], 0x0801
+	and word [es:expectedFlags], 0xF7FF
+	and bx, 0x0801
+	or [es:expectedFlags], bx
 	test al, 0x80
 	jz shl8Normal2
-	and word [es:expectedFlags], 0xF7FF
+	xor word [es:expectedFlags], 0x0800
 shl8Normal2:
 	popf
 	shl al, cl
@@ -1151,6 +1174,7 @@ testMulu8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov bl, [es:inputVal2]
@@ -1172,6 +1196,7 @@ testMulu8Single:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov cl, [es:inputVal2]
@@ -1267,6 +1292,7 @@ testMuls8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov bl, [es:inputVal2]
@@ -1288,6 +1314,7 @@ testMuls8Single:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov cl, [es:inputVal2]
@@ -1368,6 +1395,7 @@ testAadSingle:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov bl, [es:inputVal1]
 	mov [es:selfModifyingCode+1], bl	; dividend
@@ -1391,6 +1419,7 @@ testAadSingle:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	mov ax, [es:inputVal2]
 	popf
@@ -1494,6 +1523,7 @@ testDivu8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
@@ -1525,6 +1555,7 @@ divu8DoZTst:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	mov cl, [es:inputVal1]
 	mov ax, [es:inputVal2]
@@ -1666,6 +1697,7 @@ testDivs8Single:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
@@ -1697,6 +1729,7 @@ divs8DoZTst:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	mov cl, [es:inputVal1]
 	mov ax, [es:inputVal2]
@@ -1862,6 +1895,7 @@ testAamSingle:
 	pop ax
 	and ax, 0x8700
 	push ax
+	mov [es:inputFlags], ax
 
 	mov byte [es:testedException], 0
 	mov bl, [es:inputVal1]
@@ -1892,6 +1926,7 @@ testAamSingle:
 	pop ax
 	or ax, 0x78ff
 	push ax
+	mov [es:inputFlags], ax
 
 	mov byte [es:testedException], 0
 	mov al, [es:inputVal2]
@@ -2031,6 +2066,7 @@ daaTestNoCY:
 	or al, 0x10
 daaTestNoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov ah, al
@@ -2064,6 +2100,7 @@ daaTest2NoCY:
 	or al, 0x10
 daaTest2NoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov ah, al
@@ -2200,6 +2237,7 @@ dasTestNoCY:
 	or al, 0x10
 dasTestNoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov ah, al
@@ -2233,6 +2271,7 @@ dasTest2NoCY:
 	or al, 0x10
 dasTest2NoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov al, [es:inputVal1]
 	mov ah, al
@@ -2370,6 +2409,7 @@ testAaaSingle:
 	or al, 0x10
 aaaTestNoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov ax, [es:inputVal2]
 	popf
@@ -2396,6 +2436,7 @@ aaaTestNoAC:
 	or al, 0x10
 aaaTest2NoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov ax, [es:inputVal2]
 	popf
@@ -2510,6 +2551,7 @@ testAasSingle:
 	or al, 0x10
 aasTestNoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov ax, [es:inputVal2]
 	popf
@@ -2536,6 +2578,7 @@ aasTestNoAC:
 	or al, 0x10
 aasTest2NoAC:
 	push ax
+	mov [es:inputFlags], ax
 
 	mov ax, [es:inputVal2]
 	popf
@@ -2676,6 +2719,10 @@ printFailedResult:
 	mov si, hexPrefixStr
 	call writeString
 	mov ax, [es:inputVal1]
+	call printHexW
+	mov si, fHexPrefixStr
+	call writeString
+	mov ax, [es:inputFlags]
 	call printHexW
 	mov al, 10
 	int 0x10
@@ -3055,7 +3102,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220602",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220605",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
@@ -3091,6 +3138,7 @@ failedStr: db "Failed! ", 10, 0
 preFlagStr: db "PreF: ", 0
 postFlagStr: db "PostF: ", 0
 hexPrefixStr: db " 0x",0
+fHexPrefixStr: db " F:0x",0
 author: db "Written by Fredrik Ahlström, 2022"
 
 	ROM_HEADER initialize, MYSEGMENT, RH_WS_COLOR, RH_ROM_4MBITS, RH_NO_SRAM, RH_HORIZONTAL
@@ -3113,6 +3161,7 @@ lfsr2: resw 1
 
 inputVal1: resw 1
 inputVal2: resw 1
+inputFlags: resw 1
 
 testedResult1: resw 1
 testedResult2: resw 1

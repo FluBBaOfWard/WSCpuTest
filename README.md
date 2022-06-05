@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220602)
+# WonderSwan CPU Test V0.0.1 (20220605)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -38,7 +38,7 @@ Normaly:
 	Overflow is set if bit 7 is changed between the last and next to last shift, ie Carry and Sign differs.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
 	Carry is not changed.
-	Overflow is inverted if destination is negative.
+	Overflow is set to Carry value and then inverted if destination is negative.
 
 ### MUL
 AuxCarry, Parity & Sign are always cleared.
