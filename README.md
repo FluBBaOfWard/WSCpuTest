@@ -41,6 +41,15 @@ Normaly:
 If the argument is & 0x1F = zero, ie. no shift is taking place:
 	Carry is not changed.
 
+### SHR
+AuxCarry is always cleared.
+Parity, Sign & Zero are set according to result.
+Overflow is set to bit 6 of destination and then inverted if destination is negative.
+Normaly:
+	Carry is set if the last shifted bit was 1, otherwise cleared.
+If the argument is & 0x1F = zero, ie. no shift is taking place:
+	Carry is not changed.
+
 ### MUL
 AuxCarry, Parity & Sign are always cleared.
 Zero is always set.

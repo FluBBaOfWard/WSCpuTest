@@ -207,6 +207,18 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
+	call testRol8
+	cmp al, 0
+	jnz skipTests
+
+	call testShl8
+	cmp al, 0
+	jnz skipTests
+
+	call testShr8
+	cmp al, 0
+	jnz skipTests
+
 	call testDaa
 	cmp al, 0
 	jnz skipTests
@@ -243,9 +255,9 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
-;	call testDivu8
-;	cmp al, 0
-;	jnz skipTests
+	call testDivu8
+	cmp al, 0
+	jnz skipTests
 
 	call testDivs8
 	cmp al, 0
@@ -452,7 +464,7 @@ testAnd8Single:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -560,7 +572,7 @@ testOr8Single:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -662,7 +674,7 @@ testTest8Single:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -766,7 +778,7 @@ testXor8Single:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -1102,7 +1114,7 @@ calcShl8Result:
 	and bl, 0x1F
 	jz shl8NoOv
 shl8Loop:
-	mov ah, 0
+	xor ah, ah
 	add al, al
 	jnc shl8NoC
 	mov ah, 0x01
@@ -1121,6 +1133,168 @@ shl8NoCy:
 	jz shl8NoOv
 	or ch, 0x08
 shl8NoOv:
+	mov [es:expectedResult1], al
+	lea bx, PZSTable
+	xlat
+	mov ah, 0xf2
+	or ax, cx
+	mov [es:expectedFlags], ax
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test SHR for all byte & 5bit values.
+;-----------------------------------------------------------------------------
+testShr8:
+	mov si, testingShr8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testShr8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcShr8Result
+	call testShr8Single
+	cmp al, 0
+	jnz stopShr8Test
+continueShr8:
+	inc cx
+	jnz testShr8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopShr8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueShr8
+	ret
+
+;-----------------------------------------------------------------------------
+testShr8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+
+	popf
+	shr bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	cmp al, bl
+	jnz shr8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz shr8Failed
+
+	mov cl, [es:inputVal1]
+	mov al, cl
+	and al, 0xE0
+	pushf
+	pop bx
+	or bx, 0x78FF
+	cmp al, 0x20
+	jnz shr8NormalC2
+	and bx, 0xFFFE
+shr8NormalC2:
+	cmp al, 0x30
+	jnz shr8NormalV2
+	and bx, 0xF7FF
+shr8NormalV2:
+	push bx
+	mov [es:inputFlags], bx
+
+	mov al, [es:inputVal2]
+	mov ah, cl
+	and ah, 0x1F
+	jnz shr8Normal2
+	and bx, 0x0001
+	or [es:expectedFlags], bx
+shr8Normal2:
+	popf
+	shr al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	cmp al, bl
+	jnz shr8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz shr8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+shr8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcShr8Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov ah, al
+	and bl, 0x1F
+	jz shr8NoCy
+	xor ah, ah
+	cmp bl, 8
+	jz shr8SetRes
+	jnc shr8NoOv2
+	neg bl
+	and bl, 0x07
+shr8Loop:
+	add ax, ax
+	jnc shr8NoC
+shr8NoC:
+	dec bl
+	jnz shr8Loop
+
+shr8SetRes:
+	test al, 0x80
+	jz shr8NoCy
+	or cl, 0x01
+shr8NoCy:
+	test ah, 0x40
+	jz shr8NoOv
+	or ch, 0x08
+shr8NoOv:
+	test ah, 0x80
+	jz shr8NoOv2
+	xor ch, 0x08
+shr8NoOv2:
+	mov al, ah
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
 	xlat
@@ -1155,7 +1329,7 @@ testMuluLoop:
 	mov [es:inputVal2], ch
 skipMuluVal2:
 	mov [es:expectedResult1], bx
-	mov ax, 0xf242
+	mov ax, 0xF242
 	cmp bh, 0
 	jz noMuluOverflow
 	or ax, 0x0801
@@ -1211,7 +1385,7 @@ testMulu8Single:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -1271,7 +1445,7 @@ noNeg:
 	mov [es:inputVal2], ch
 skipMulsVal2:
 	mov [es:expectedResult1], bx
-	mov ax, 0xf242
+	mov ax, 0xF242
 	sar bx, 7
 	jz noMulsOverflow
 	not bx
@@ -1329,7 +1503,7 @@ testMuls8Single:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -1371,8 +1545,8 @@ testAad:
 	call writeString
 
 	mov byte [es:isTesting], 2
-	mov byte [es:selfModifyingCode], 0xd5	; AAD
-	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
+	mov byte [es:selfModifyingCode], 0xD5	; AAD
+	mov byte [es:selfModifyingCode+2], 0xCB	; RETF
 
 	xor cx, cx
 	xor dx, dx
@@ -1434,7 +1608,7 @@ testAadSingle:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -1559,7 +1733,7 @@ testDivu8Single:
 	xor cx, bx
 	cmp al, 0
 	jz divu8DoZTst
-	and cx, 0xffbf				; Mask out Zero flag
+	and cx, 0xFFBF				; Mask out Zero flag
 divu8DoZTst:
 	cmp cx, 0
 	jnz divu8Failed
@@ -1570,7 +1744,7 @@ divu8DoZTst:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -1591,7 +1765,7 @@ divu8DoZTst:
 	xor cx, bx
 	cmp al, 0
 	jz divu8DoZTst2
-	and cx, 0xffbf				; Mask out Zero flag
+	and cx, 0xFFBF				; Mask out Zero flag
 divu8DoZTst2:
 	cmp cx, 0
 	jnz divu8Failed
@@ -1622,7 +1796,7 @@ calcDivu8Result:
 	mov byte [es:expectedException], 0
 	xor bx, bx
 	xor cx, cx
-	mov dx, 0xf202				; Expected flags
+	mov dx, 0xF202				; Expected flags
 	call getLFSR1Value
 	and al, 0x10
 	imul al
@@ -1733,7 +1907,7 @@ testDivs8Single:
 	xor cx, bx
 	cmp al, 0
 	jz divs8DoZTst
-	and cx, 0xffbf				; Mask out Zero flag
+	and cx, 0xFFBF				; Mask out Zero flag
 divs8DoZTst:
 	cmp cx, 0
 	jnz divs8Failed
@@ -1744,7 +1918,7 @@ divs8DoZTst:
 	mov byte [es:testedException], 0
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -1765,7 +1939,7 @@ divs8DoZTst:
 	xor cx, bx
 	cmp al, 0
 	jz divs8DoZTst2
-	and cx, 0xffbf				; Mask out Zero flag
+	and cx, 0xFFBF				; Mask out Zero flag
 divs8DoZTst2:
 	cmp cx, 0
 	jnz divs8Failed
@@ -1835,7 +2009,7 @@ rest8Pos:
 	mov al, cl
 	mov [es:expectedResult1], ax
 divs8Done:
-	mov dx, 0xf202				; Expected flags
+	mov dx, 0xF202				; Expected flags
 	lea bx, PZSTable
 	xlat				; Fetch Sign, Zero & Parity
 	or dl, al
@@ -1855,7 +2029,7 @@ divs8Error:
 	jmp divs8Done
 divs8ErrCnt:
 	mov byte [es:expectedException], 1
-	mov dx, 0xf202				; Expected flags
+	mov dx, 0xF202				; Expected flags
 	call getLFSR1Value
 	and al, 0x10
 	mov al, 0x10
@@ -1874,8 +2048,8 @@ testAam:
 	call writeString
 
 	mov byte [es:isTesting], 1
-	mov byte [es:selfModifyingCode], 0xd4	; AAM
-	mov byte [es:selfModifyingCode+2], 0xcb	; RETF
+	mov byte [es:selfModifyingCode], 0xD4	; AAM
+	mov byte [es:selfModifyingCode+2], 0xCB	; RETF
 
 	xor cx, cx
 testAamLoop:
@@ -1941,7 +2115,7 @@ testAamSingle:
 
 	pushf
 	pop ax
-	or ax, 0x78ff
+	or ax, 0x78FF
 	push ax
 	mov [es:inputFlags], ax
 
@@ -2001,7 +2175,7 @@ aamLoop:
 aamSetRes:
 	add al, bl
 	mov [es:expectedResult1], ax
-	mov dx, 0xf202				; Expected flags
+	mov dx, 0xF202				; Expected flags
 	lea bx, PZSTable
 	xlat				; Fetch Sign, Zero & Parity
 	or dl, al
@@ -2012,7 +2186,7 @@ aamDone:
 	ret
 
 aamError:
-	mov dx, 0xf202				; Expected flags
+	mov dx, 0xF202				; Expected flags
 	test al, 0xc0
 	jnz aamErrNoZ
 	or dl, 0x40			; Zero flag
@@ -2106,7 +2280,7 @@ daaTestNoAC:
 	pushf
 	pop ax
 	xor al, al
-	or ax, 0x78ee
+	or ax, 0x78EE
 	mov bl, [es:inputVal2]
 	test bl, 1
 	jz daaTest2NoCY
@@ -2175,7 +2349,7 @@ daaNoAC:
 	add al, 0x06
 daaNoLowAdd:
 daaSetRes:
-	mov dx, 0xf202				; Expected flags
+	mov dx, 0xF202				; Expected flags
 	test bl, 1
 	jz daaSkipCY
 	or dl, 0x01
@@ -2188,7 +2362,7 @@ daaSkipAC:
 	jno daaSkipOV
 	or dx, 0x800
 daaSkipOV:
-	xor ah, 0xa5
+	xor ah, 0xA5
 	mov [es:expectedResult1], ax
 	lea bx, PZSTable
 	xlat				; Fetch Sign, Zero & Parity
@@ -2258,7 +2432,7 @@ dasTestNoAC:
 
 	mov al, [es:inputVal1]
 	mov ah, al
-	xor ah, 0xa5
+	xor ah, 0xA5
 
 	popf
 	das
@@ -2277,7 +2451,7 @@ dasTestNoAC:
 	pushf
 	pop ax
 	xor al, al
-	or ax, 0x78ee
+	or ax, 0x78EE
 	mov bl, [es:inputVal2]
 	test bl, 1
 	jz dasTest2NoCY
@@ -2292,7 +2466,7 @@ dasTest2NoAC:
 
 	mov al, [es:inputVal1]
 	mov ah, al
-	xor ah, 0xa5
+	xor ah, 0xA5
 	popf
 	das
 	pushf
@@ -2346,7 +2520,7 @@ dasNoAC:
 	sub al, 0x06
 dasNoLowSub:
 dasSetRes:
-	mov dx, 0xf202				; Expected flags
+	mov dx, 0xF202				; Expected flags
 	test bl, 1
 	jz dasSkipCY
 	or dl, 0x01
@@ -2359,7 +2533,7 @@ dasSkipAC:
 	jno dasSkipOV
 	or dx, 0x800
 dasSkipOV:
-	xor ah, 0xa5
+	xor ah, 0xA5
 	mov [es:expectedResult1], ax
 	lea bx, PZSTable
 	xlat				; Fetch Sign, Zero & Parity
@@ -2446,7 +2620,7 @@ aaaTestNoAC:
 	pushf
 	pop ax
 	xor al, al
-	or ax, 0x78ef
+	or ax, 0x78EF
 	mov bl, [es:inputVal1]
 	test bl, 1
 	jz aaaTest2NoAC
@@ -2488,7 +2662,7 @@ calcAaaResult:
 
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
-	mov dx, 0xf206				; Expected flags
+	mov dx, 0xF206				; Expected flags
 
 	and al, 0x0F
 	cmp al, 0x0A
@@ -2588,7 +2762,7 @@ aasTestNoAC:
 	pushf
 	pop ax
 	xor al, al
-	or ax, 0x78ef
+	or ax, 0x78EF
 	mov bl, [es:inputVal1]
 	test bl, 1
 	jz aasTest2NoAC
@@ -2921,7 +3095,7 @@ acknowledgeVBlankInterrupt:
 ; It is called if a division error occurs.
 ;-----------------------------------------------------------------------------
 divisionErrorHandler:
-;	mov word [es:WSC_PALETTES], 0xf0f
+;	mov word [es:WSC_PALETTES], 0xF0F
 	mov byte [es:testedException], 1
 	iret
 
@@ -2934,7 +3108,7 @@ illegalInstructionHandler:
 	push bx
 	push di
 
-	mov word [es:WSC_PALETTES], 0x0f0
+	mov word [es:WSC_PALETTES], 0x0F0
 
 	pop di
 	pop bx
@@ -2951,7 +3125,7 @@ outputCharHandler:
 
 	xor bh, bh
 	mov bl, [es:cursorYPos]
-	and bl, 0x1f
+	and bl, 0x1F
 	shl bx, 5		; ax * MAP_TWIDTH
 	mov cl, [es:cursorXPos]
 	add bl, cl
@@ -2973,7 +3147,7 @@ newLine:
 	mov al, bl
 	sub al, SCREEN_THEIGHT-1
 	jle notAtEnd
-	and bl, 0x1f
+	and bl, 0x1F
 	or bl, 0x40
 	shl al, 3
 	mov [es:bgYPos], al
@@ -3058,7 +3232,7 @@ PZSTable:
 	db PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S
 
 FontTilePalette:
-	dw 0xfff, 0x000
+	dw 0xFFF, 0x000
 
 MonoFont:
 	db 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x18,0x08,0x10,0x00,0x18,0x00
@@ -3127,6 +3301,7 @@ testingTest8Str: db "Logical 8 bit TEST", 10, 0
 testingXor8Str: db "Logical 8 bit XOR", 10, 0
 testingRol8Str: db "ROL byte by CL", 10, 0
 testingShl8Str: db "SHL byte by CL", 10, 0
+testingShr8Str: db "SHR byte by CL", 10, 0
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
 testingMulu16Str: db "Unsigned Multiplication 16*16", 0
