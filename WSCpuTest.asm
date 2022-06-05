@@ -871,23 +871,37 @@ rol8Normal:
 	xor cx, bx
 	jnz rol8Failed
 
-	pushf
-	pop ax
-	or ax, 0x78ff
-	push ax
-	mov [es:inputFlags], ax
-
-	xor ah, ah
 	mov cl, [es:inputVal1]
+	mov al, cl
+	and al, 0xE0
+	pushf
+	pop bx
+	or bx, 0x78FF
+	cmp al, 0x20
+	jnz rol8NormalC2
+	and bx, 0xFFFE
+rol8NormalC2:
+	cmp al, 0x30
+	jnz rol8NormalV2
+	and bx, 0xF7FF
+rol8NormalV2:
+	push bx
+	mov [es:inputFlags], bx
+
 	mov al, [es:inputVal2]
 	or byte [es:expectedFlags], 0xD4
-	mov bl, cl
-	and bl, 0x1F
+	mov ah, cl
+	and ah, 0x1F
 	jnz rol8Normal2
-	or word [es:expectedFlags], 0x0801
+	and word [es:expectedFlags], 0xF7FF
+	and bx, 0x0001
+	jz rol8NormalC3
+	or bx, 0x0800
+rol8NormalC3:
+	or [es:expectedFlags], bx
 	test al, 0x80
 	jz rol8Normal2
-	and word [es:expectedFlags], 0xF7FF
+	xor word [es:expectedFlags], 0x0800
 rol8Normal2:
 	popf
 	rol al, cl
@@ -1029,7 +1043,7 @@ shl8Normal:
 	or bx, 0x78FF
 	cmp al, 0x20
 	jnz shl8NormalC2
-	and bx, 0xF7FE
+	and bx, 0xFFFE
 shl8NormalC2:
 	cmp al, 0x30
 	jnz shl8NormalV2
@@ -1043,7 +1057,10 @@ shl8NormalV2:
 	and ah, 0x1F
 	jnz shl8Normal2
 	and word [es:expectedFlags], 0xF7FF
-	and bx, 0x0801
+	and bx, 0x0001
+	jz shl8NormalC3
+	or bx, 0x0800
+shl8NormalC3:
 	or [es:expectedFlags], bx
 	test al, 0x80
 	jz shl8Normal2

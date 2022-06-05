@@ -25,20 +25,21 @@ AuxCarry, Carry & Overflow are always cleared.
 Parity, Sign & Zero are set according to result.
 
 ### ROL
+AuxCarry, Parity, Sign & Zero are not changed.
+Overflow is set to Carry value and then inverted if destination is negative.
 Normaly:
 	Carry is set if the last shifted bit was 1, otherwise cleared.
-	Overflow is set if bit 7 is changed between the last and next to last shift, ie Carry and Sign differs.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
 	Carry is not changed.
-	Overflow is inverted if destination is negative.
 
 ### SHL
+AuxCarry is always cleared.
+Parity, Sign & Zero are set according to result.
+Overflow is set to Carry value and then inverted if destination is negative.
 Normaly:
 	Carry is set if the last shifted bit was 1, otherwise cleared.
-	Overflow is set if bit 7 is changed between the last and next to last shift, ie Carry and Sign differs.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
 	Carry is not changed.
-	Overflow is set to Carry value and then inverted if destination is negative.
 
 ### MUL
 AuxCarry, Parity & Sign are always cleared.
