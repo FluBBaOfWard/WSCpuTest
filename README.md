@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220605)
+# WonderSwan CPU Test V0.0.1 (20220606)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -17,8 +17,7 @@ B to go back.
 
 ## How do the undefined flags / undocumented op-codes work?
 If there is a division exception the input (AL, AX/AW) is not modified.
-The flags marked as Undefined in the manual are always modified by the instructions,
-the flags are never kept as they were before the instruction.
+The flags marked as Undefined in the manual are always modified by the instructions, the flags are never kept as they were before the instruction.
 
 ### AND, OR, XOR & TEST
 AuxCarry, Carry & Overflow are always cleared.
@@ -26,7 +25,7 @@ Parity, Sign & Zero are set according to result.
 
 ### ROL
 AuxCarry, Parity, Sign & Zero are not changed.
-Overflow is set to Carry value and then inverted if destination is negative.
+Overflow is set to xor of Carry value and bit 7/15 of destination.
 Normaly:
 	Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
@@ -35,7 +34,7 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 ### SHL
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
-Overflow is set to Carry value and then inverted if destination is negative.
+Overflow is set to xor of Carry value and bit 7/15 of destination.
 Normaly:
 	Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
@@ -44,7 +43,16 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 ### SHR
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
-Overflow is set to bit 6 of destination and then inverted if destination is negative.
+Overflow is set to xor of bit 6/14 & 7/15 of destination.
+Normaly:
+	Carry is set if the last shifted bit was 1, otherwise cleared.
+If the argument is & 0x1F = zero, ie. no shift is taking place:
+	Carry is not changed.
+
+### SAR / SHRA
+AuxCarry is always cleared.
+Parity, Sign & Zero are set according to result.
+Overflow is set to xor of bit 6/14 & 7/15 of destination.
 Normaly:
 	Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
@@ -76,8 +84,7 @@ If division exception:
 	Zero is set in some weird way (not tested).
 
 ### AAM / CVTBD
-The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10.
-So it's basically a byte by byte divide though the result is in AH and remainder in AL.
+The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So it's basically a byte by byte divide though the result is in AH and remainder in AL.
 Normaly:
 	AuxCarry, Carry & Overflow are cleared.
 	Parity, Sign & Zero are set according to result (of AL, remainder).

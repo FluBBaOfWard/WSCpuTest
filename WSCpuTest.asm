@@ -219,6 +219,10 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
+	call testSar8
+	cmp al, 0
+	jnz skipTests
+
 	call testDaa
 	cmp al, 0
 	jnz skipTests
@@ -1294,6 +1298,167 @@ shr8NoOv:
 	jz shr8NoOv2
 	xor ch, 0x08
 shr8NoOv2:
+	mov al, ah
+	mov [es:expectedResult1], al
+	lea bx, PZSTable
+	xlat
+	mov ah, 0xf2
+	or ax, cx
+	mov [es:expectedFlags], ax
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test SAR/SHRA for all byte & 5bit values.
+;-----------------------------------------------------------------------------
+testSar8:
+	mov si, testingSar8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testSar8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcSar8Result
+	call testSar8Single
+	cmp al, 0
+	jnz stopSar8Test
+continueSar8:
+	inc cx
+	jnz testSar8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopSar8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueSar8
+	ret
+
+;-----------------------------------------------------------------------------
+testSar8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+
+	popf
+	sar bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	cmp al, bl
+	jnz sar8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sar8Failed
+
+	mov cl, [es:inputVal1]
+	mov al, cl
+	and al, 0xE0
+	pushf
+	pop bx
+	or bx, 0x78FF
+	cmp al, 0x20
+	jnz sar8NormalC2
+	and bx, 0xFFFE
+sar8NormalC2:
+	cmp al, 0x30
+	jnz sar8NormalV2
+	and bx, 0xF7FF
+sar8NormalV2:
+	push bx
+	mov [es:inputFlags], bx
+
+	mov al, [es:inputVal2]
+	mov ah, cl
+	and ah, 0x1F
+	jnz sar8Normal2
+	and bx, 0x0001
+	or [es:expectedFlags], bx
+sar8Normal2:
+	popf
+	sar al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	cmp al, bl
+	jnz sar8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sar8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+sar8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcSar8Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov ah, al
+	and bl, 0x1F
+	jz sar8NoCy
+	cbw 
+	cmp bl, 8
+	jnc sar8SetRes
+	neg bl
+	and bl, 0x07
+sar8Loop:
+	add ax, ax
+	jnc sar8NoC
+sar8NoC:
+	dec bl
+	jnz sar8Loop
+
+sar8SetRes:
+	test al, 0x80
+	jz sar8NoCy
+	or cl, 0x01
+sar8NoCy:
+	test ah, 0x40
+	jz sar8NoOv
+	or ch, 0x08
+sar8NoOv:
+	test ah, 0x80
+	jz sar8NoOv2
+	xor ch, 0x08
+sar8NoOv2:
 	mov al, ah
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
@@ -3293,7 +3458,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220605",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220606",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
@@ -3302,6 +3467,7 @@ testingXor8Str: db "Logical 8 bit XOR", 10, 0
 testingRol8Str: db "ROL byte by CL", 10, 0
 testingShl8Str: db "SHL byte by CL", 10, 0
 testingShr8Str: db "SHR byte by CL", 10, 0
+testingSar8Str: db "SAR/SHRA byte by CL", 10, 0
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
 testingMulu16Str: db "Unsigned Multiplication 16*16", 0
