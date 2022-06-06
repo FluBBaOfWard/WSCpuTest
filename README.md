@@ -31,6 +31,14 @@ Normaly:
 If the argument is & 0x1F = zero, ie. no shift is taking place:
 	Carry is not changed.
 
+### ROR
+AuxCarry, Parity, Sign & Zero are not changed.
+Overflow is set to xor of bit 6/14 & 7/15 of destination.
+Normaly:
+	Carry is set if the last shifted bit was 1, otherwise cleared.
+If the argument is & 0x1F = zero, ie. no shift is taking place:
+	Carry is not changed.
+
 ### SHL
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.

@@ -211,6 +211,10 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
+	call testRor8
+	cmp al, 0
+	jnz skipTests
+
 	call testShl8
 	cmp al, 0
 	jnz skipTests
@@ -980,6 +984,171 @@ rol8NoOv:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test ROR for all byte & 5bit values.
+;-----------------------------------------------------------------------------
+testRor8:
+	mov si, testingRor8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testRor8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcRor8Result
+	call testRor8Single
+	cmp al, 0
+	jnz stopRor8Test
+continueRor8:
+	inc cx
+	jnz testRor8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopRor8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueRor8
+	ret
+
+;-----------------------------------------------------------------------------
+testRor8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+
+	popf
+	ror bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	cmp al, bl
+	jnz ror8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz ror8Failed
+
+	mov cl, [es:inputVal1]
+	mov al, cl
+	and al, 0xE0
+	pushf
+	pop bx
+	or bx, 0x78FF
+	cmp al, 0x20
+	jnz ror8NormalC2
+	and bx, 0xFFFE
+ror8NormalC2:
+	cmp al, 0x30
+	jnz ror8NormalV2
+	and bx, 0xF7FF
+ror8NormalV2:
+	push bx
+	mov [es:inputFlags], bx
+
+	mov al, [es:inputVal2]
+	or byte [es:expectedFlags], 0xD4
+	mov ah, cl
+	and ah, 0x1F
+	jnz ror8Normal2
+	and word [es:expectedFlags], 0xF7FF
+	and bx, 0x0001
+	or [es:expectedFlags], bx
+	test al, 0x40
+	jz ror8NormalV3
+	xor word [es:expectedFlags], 0x0800
+ror8NormalV3:
+	test al, 0x80
+	jz ror8Normal2
+	xor word [es:expectedFlags], 0x0800
+ror8Normal2:
+	popf
+	ror al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	cmp al, bl
+	jnz ror8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz ror8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+ror8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcRor8Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov ah, al
+	and bl, 0x1F
+	jz ror8NoCy
+	and bl, 0x07
+	jz ror8SetRes
+	neg bl
+	and bl, 0x07
+ror8Loop:
+	add ax, ax
+	jnc ror8NoC
+	or al, 0x01
+ror8NoC:
+	dec bl
+	jnz ror8Loop
+
+ror8SetRes:
+	test al, 0x80
+	jz ror8NoCy
+	or cl, 0x01
+ror8NoCy:
+	test ah, 0x40
+	jz ror8NoOv
+	or ch, 0x08
+ror8NoOv:
+	test ah, 0x80
+	jz ror8NoOv2
+	xor ch, 0x08
+ror8NoOv2:
+	mov [es:expectedResult1], ah
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test SHL for all byte & 5bit values.
 ;-----------------------------------------------------------------------------
 testShl8:
@@ -1280,8 +1449,6 @@ calcShr8Result:
 	and bl, 0x07
 shr8Loop:
 	add ax, ax
-	jnc shr8NoC
-shr8NoC:
 	dec bl
 	jnz shr8Loop
 
@@ -1441,8 +1608,6 @@ calcSar8Result:
 	and bl, 0x07
 sar8Loop:
 	add ax, ax
-	jnc sar8NoC
-sar8NoC:
 	dec bl
 	jnz sar8Loop
 
@@ -2176,7 +2341,7 @@ rest8Pos:
 divs8Done:
 	mov dx, 0xF202				; Expected flags
 	lea bx, PZSTable
-	xlat				; Fetch Sign, Zero & Parity
+	xlat						; Fetch Sign, Zero & Parity
 	or dl, al
 divs8End:
 	mov [es:expectedFlags], dx
@@ -3465,6 +3630,7 @@ testingOr8Str: db "Logical 8 bit OR", 10, 0
 testingTest8Str: db "Logical 8 bit TEST", 10, 0
 testingXor8Str: db "Logical 8 bit XOR", 10, 0
 testingRol8Str: db "ROL byte by CL", 10, 0
+testingRor8Str: db "ROR byte by CL", 10, 0
 testingShl8Str: db "SHL byte by CL", 10, 0
 testingShr8Str: db "SHR byte by CL", 10, 0
 testingSar8Str: db "SAR/SHRA byte by CL", 10, 0
@@ -3486,7 +3652,7 @@ testingSPStackStr: db "Pushing SP to stack", 10, 0
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
 test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
 test16x16InputStr: db "Testing Inp: 0x0000, 0x0000", 0
-inputStr: db "Input: 0x", 0
+inputStr: db "Input:0x", 0
 expectedStr: db "Expected Result:", 10, 0
 testedStr: db "Tested Result:", 10, 0
 valueStr: db "Value:0x",0
