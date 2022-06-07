@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220606)
+# WonderSwan CPU Test V0.0.1 (20220607)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -34,6 +34,14 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 ### ROR
 AuxCarry, Parity, Sign & Zero are not changed.
 Overflow is set to xor of bit 6/14 & 7/15 of destination.
+Normaly:
+	Carry is set if the last shifted bit was 1, otherwise cleared.
+If the argument is & 0x1F = zero, ie. no shift is taking place:
+	Carry is not changed.
+
+### RCL/ROLC
+AuxCarry, Parity, Sign & Zero are not changed.
+Overflow is set to xor of Carry value and bit 7/15 of destination.
 Normaly:
 	Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:

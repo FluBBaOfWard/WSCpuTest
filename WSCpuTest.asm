@@ -1149,6 +1149,154 @@ ror8NoOv2:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test RCL/ROLC for all byte & 5bit values.
+;-----------------------------------------------------------------------------
+testRcl8:
+	mov si, testingRcl8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testRcl8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcRcl8Result
+	call testRcl8Single
+	cmp al, 0
+	jnz stopRcl8Test
+continueRcl8:
+	inc cx
+	jnz testRcl8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopRcl8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueRcl8
+	ret
+
+;-----------------------------------------------------------------------------
+testRcl8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jz rcl8NormalC1
+	or al, 0x01
+rcl8NormalC1:
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bl, [es:inputVal2]
+
+	popf
+	rcl bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	cmp al, bl
+	jnz rcl8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcl8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jnz rcl8NormalC2
+	and bl, 0xFE
+rcl8NormalC2:
+	push bx
+	mov [es:inputFlags], bx
+
+	mov al, [es:inputVal2]
+	or byte [es:expectedFlags], 0xD4
+	popf
+	rcl al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	cmp al, bl
+	jnz rcl8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcl8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+rcl8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcRcl8Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov ah, [es:inputVal2]
+	xor al, al
+	test bl, 0x80
+	jz rcl8NoC1
+	or al, 0x80
+rcl8NoC1:
+	and bl, 0x1F
+	jz rcl8SetRes
+rcl8Loop:
+	add ax, ax
+	jnc rcl8NoC
+	or al, 0x80
+rcl8NoC:
+	dec bl
+	jnz rcl8Loop
+
+rcl8SetRes:
+	mov bl, ah
+	test al, 0x80
+	jz rcl8NoCy
+	or cl, 0x01
+	xor ah, 0x80
+rcl8NoCy:
+	test ah, 0x80
+	jz rcl8NoOv
+	or ch, 0x08
+rcl8NoOv:
+	mov al, bl
+	mov [es:expectedResult1], al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test SHL for all byte & 5bit values.
 ;-----------------------------------------------------------------------------
 testShl8:
@@ -3623,7 +3771,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220606",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220607",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
@@ -3631,6 +3779,8 @@ testingTest8Str: db "Logical 8 bit TEST", 10, 0
 testingXor8Str: db "Logical 8 bit XOR", 10, 0
 testingRol8Str: db "ROL byte by CL", 10, 0
 testingRor8Str: db "ROR byte by CL", 10, 0
+testingRcl8Str: db "RCL/ROLC byte by CL", 10, 0
+testingRcr8Str: db "RCR/RORC byte by CL", 10, 0
 testingShl8Str: db "SHL byte by CL", 10, 0
 testingShr8Str: db "SHR byte by CL", 10, 0
 testingSar8Str: db "SAR/SHRA byte by CL", 10, 0
