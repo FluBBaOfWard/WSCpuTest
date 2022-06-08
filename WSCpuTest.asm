@@ -413,8 +413,10 @@ testAnd8:
 testAnd8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
-	mov al, cl
-	and al, ch
+	mov ax, cx
+	not ax
+	or al, ah
+	not al
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
 	xlat
@@ -521,8 +523,10 @@ testOr8:
 testOr8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
-	mov al, cl
-	or al, ch
+	mov ax, cx
+	not ax
+	and al, ah
+	not al
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
 	xlat
@@ -727,8 +731,12 @@ testXor8:
 testXor8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
-	mov al, cl
-	xor al, ch
+	mov ax, cx
+	and al, ah
+	mov bl, cl
+	or bl, ch
+	not al
+	and al, bl
 	mov [es:expectedResult1], al
 	lea bx, PZSTable
 	xlat
@@ -3771,7 +3779,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220607",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220608",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical 8 bit AND", 10, 0
 testingOr8Str: db "Logical 8 bit OR", 10, 0
