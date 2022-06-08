@@ -215,6 +215,14 @@ monoFontLoop:
 	cmp al, 0
 	jnz skipTests
 
+	call testRcl8
+	cmp al, 0
+	jnz skipTests
+
+	call testRcr8
+	cmp al, 0
+	jnz skipTests
+
 	call testShl8
 	cmp al, 0
 	jnz skipTests
@@ -1287,18 +1295,167 @@ rcl8NoC:
 	jnz rcl8Loop
 
 rcl8SetRes:
-	mov bl, ah
 	test al, 0x80
 	jz rcl8NoCy
 	or cl, 0x01
-	xor ah, 0x80
+	or ch, 0x08
 rcl8NoCy:
 	test ah, 0x80
 	jz rcl8NoOv
-	or ch, 0x08
+	xor ch, 0x08
 rcl8NoOv:
-	mov al, bl
-	mov [es:expectedResult1], al
+	mov [es:expectedResult1], ah
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test RCR/RORC for all byte & 5bit values.
+;-----------------------------------------------------------------------------
+testRcr8:
+	mov si, testingRcr8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testRcr8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcRcr8Result
+	call testRcr8Single
+	cmp al, 0
+	jnz stopRcr8Test
+continueRcr8:
+	inc cx
+	jnz testRcr8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopRcr8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueRcr8
+	ret
+
+;-----------------------------------------------------------------------------
+testRcr8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jz rcr8NormalC1
+	or al, 0x01
+rcr8NormalC1:
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bl, [es:inputVal2]
+
+	popf
+	rcr bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	cmp al, bl
+	jnz rcr8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcr8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jnz rcr8NormalC2
+	and bl, 0xFE
+rcr8NormalC2:
+	push bx
+	mov [es:inputFlags], bx
+
+	mov al, [es:inputVal2]
+	or byte [es:expectedFlags], 0xD4
+	popf
+	rcr al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	cmp al, bl
+	jnz rcr8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcr8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+rcr8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcRcr8Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov ah, [es:inputVal2]
+	xor al, al
+	test bl, 0x80
+	jz rcr8NoC1
+	or al, 0x80
+rcr8NoC1:
+	and bl, 0x1F
+	jz rcr8SetRes
+	mov bh, 9*4
+	sub bh, bl
+rcr8Loop:
+	add ax, ax
+	jnc rcr8NoC
+	or al, 0x80
+rcr8NoC:
+	dec bh
+	jnz rcr8Loop
+
+rcr8SetRes:
+	test al, 0x80
+	jz rcr8NoCy
+	or cl, 0x01
+rcr8NoCy:
+	test ah, 0x40
+	jz rcr8NoOv
+	or ch, 0x08
+rcr8NoOv:
+	test ah, 0x80
+	jz rcr8NoOv2
+	xor ch, 0x08
+rcr8NoOv2:
+	mov [es:expectedResult1], ah
 	mov [es:expectedFlags], cx
 	pop cx
 	pop bx
