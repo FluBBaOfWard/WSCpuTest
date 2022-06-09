@@ -836,6 +836,141 @@ xor8Failed:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test ADD for all bytes & bytes values.
+;-----------------------------------------------------------------------------
+testAdd8:
+	mov si, testingAdd8Str
+	call writeString
+	mov si, testingInputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testAdd8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcAdd8Result
+	call testAdd8Single
+	cmp al, 0
+	jnz stopAdd8Test
+continueAdd8:
+	inc cx
+	jnz testAdd8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopAdd8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueAdd8
+	ret
+
+;-----------------------------------------------------------------------------
+testAdd8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	add bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz add8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz add8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	push bx
+	mov [es:inputFlags], bx
+
+	mov cl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	popf
+	add al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	xor al, bl
+	jnz add8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz add8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+add8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcAdd8Result:
+	push bx
+	push cx
+
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov cl, bl
+	xor cl, al
+	xor ah, ah
+	xor bh, bh
+
+	add ax, bx
+
+	mov [es:expectedResult1], al
+	xor cl, al
+	mov bl, cl
+	mov cx, 0xF202
+	test ah, 1
+	jz add8NoC
+	or cx, 0x801
+add8NoC:
+	test bl, 0x80
+	jz add8NoOv
+	xor ch, 0x08
+add8NoOv:
+	test bl, 0x10
+	jz add8NoAC
+	or cl, 0x10
+add8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test ROL for all byte & 5bit values.
 ;-----------------------------------------------------------------------------
 testRol8:
@@ -3936,12 +4071,19 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220608",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220609",10 , 0
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
-testingAnd8Str: db "Logical 8 bit AND", 10, 0
-testingOr8Str: db "Logical 8 bit OR", 10, 0
-testingTest8Str: db "Logical 8 bit TEST", 10, 0
-testingXor8Str: db "Logical 8 bit XOR", 10, 0
+testingAnd8Str: db "Logical AND bytes", 10, 0
+testingOr8Str: db "Logical OR bytes", 10, 0
+testingTest8Str: db "Logical TEST bytes", 10, 0
+testingXor8Str: db "Logical XOR bytes", 10, 0
+testingNot8Str: db "Logical NOT bytes", 10, 0
+testingAdd8Str: db "ADD bytes", 10, 0
+testingSub8Str: db "SUB bytes", 10, 0
+testingCmp8Str: db "CMP bytes", 10, 0
+testingAdc8Str: db "ADC/ADDC bytes", 10, 0
+testingSbb8Str: db "SBB/SUBC bytes", 10, 0
+testingNeg8Str: db "NEG bytes", 10, 0
 testingRol8Str: db "ROL byte by CL", 10, 0
 testingRor8Str: db "ROR byte by CL", 10, 0
 testingRcl8Str: db "RCL/ROLC byte by CL", 10, 0

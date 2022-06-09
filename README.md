@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220608)
+# WonderSwan CPU Test V0.0.1 (20220609)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -7,8 +7,7 @@ This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallen
 Load the ROM in an emulator or flash it to a flashcart and put it in your WonderSwan.
 The program will go through all the tests and then write "Ok".
 If run in an emulator and it doesn't emulate the WonderSwan CPU correctly,
-the program will stop at the first failure and print out expected value/flags
-(and exception for division).
+the program will stop at the first failure and print out intput value/flags and  expected value/flags (and exception for division). Press A to try the next value or B to try the next test.
 Now you can use the X1-X4 to navigate the menus, A to select an option,
 B to go back.
 
@@ -22,6 +21,27 @@ The flags marked as Undefined in the manual are always modified by the instructi
 ### AND, OR, XOR & TEST
 AuxCarry, Carry & Overflow are always cleared.
 Parity, Sign & Zero are set according to result.
+
+### NOT
+No flags are changed, all bits of result are inverted.
+
+### ADD
+AuxCarry, Carry, Overflow, Parity, Sign & Zero are all set according to result.
+
+### SUB
+AuxCarry, Carry, Overflow, Parity, Sign & Zero are all set according to result.
+
+### CMP
+AuxCarry, Carry, Overflow, Parity, Sign & Zero are all set according to result.
+Same as SUB except there is no result.
+
+### ADC/ADDC
+
+### SBB/SUBC
+
+### NEG
+AuxCarry, Carry, Overflow, Parity, Sign & Zero are all set according to result.
+It's the same as doing a SUB with the destination set to 0.
 
 ### ROL
 AuxCarry, Parity, Sign & Zero are not changed.
