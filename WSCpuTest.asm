@@ -183,101 +183,35 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-;	call testAas
-;	cmp al, 0
-;	jnz skipTests
+	call testAdd8
 
 	call testEqu
-	cmp al, 0
-	jnz skipTests
-
 	call testAnd8
-	cmp al, 0
-	jnz skipTests
-
 	call testOr8
-	cmp al, 0
-	jnz skipTests
-
 	call testTest8
-	cmp al, 0
-	jnz skipTests
-
 	call testXor8
-	cmp al, 0
-	jnz skipTests
 
 	call testRol8
-	cmp al, 0
-	jnz skipTests
-
 	call testRor8
-	cmp al, 0
-	jnz skipTests
-
 	call testRcl8
-	cmp al, 0
-	jnz skipTests
-
 	call testRcr8
-	cmp al, 0
-	jnz skipTests
-
 	call testShl8
-	cmp al, 0
-	jnz skipTests
-
 	call testShr8
-	cmp al, 0
-	jnz skipTests
-
 	call testSar8
-	cmp al, 0
-	jnz skipTests
 
 	call testDaa
-	cmp al, 0
-	jnz skipTests
-
 	call testDas
-	cmp al, 0
-	jnz skipTests
-
 	call testAaa
-	cmp al, 0
-	jnz skipTests
-
 	call testAas
-	cmp al, 0
-	jnz skipTests
-
 	call testSPStack
-;	cmp al, 0
-;	jnz skipTests
-
-;	call testAad
-;	cmp al, 0
-;	jnz skipTests
 
 	call testMulu8
-	cmp al, 0
-	jnz skipTests
-
 	call testMuls8
-	cmp al, 0
-	jnz skipTests
+	call testAad
 
 	call testAam
-	cmp al, 0
-	jnz skipTests
-
 	call testDivu8
-	cmp al, 0
-	jnz skipTests
-
 	call testDivs8
-	cmp al, 0
-	jnz skipTests
 
 skipTests:
 ;-----------------------------------------------------------------------------
@@ -474,7 +408,7 @@ testAnd8Single:
 	pop bx
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
-	cmp ax, cx
+	xor ax, cx
 	jnz and8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
@@ -497,7 +431,7 @@ testAnd8Single:
 	pop bx
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
-	cmp ax, cx
+	xor ax, cx
 	jnz and8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
@@ -584,7 +518,7 @@ testOr8Single:
 	pop bx
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
-	cmp ax, cx
+	xor ax, cx
 	jnz or8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
@@ -607,7 +541,7 @@ testOr8Single:
 	pop bx
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
-	cmp ax, cx
+	xor ax, cx
 	jnz or8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
@@ -1036,7 +970,7 @@ rol8Normal:
 	pop cx
 	mov [es:testedFlags], cx
 	mov al, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz rol8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1082,7 +1016,7 @@ rol8Normal2:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bl, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz rol8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1193,7 +1127,7 @@ testRor8Single:
 	pop cx
 	mov [es:testedFlags], cx
 	mov al, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz ror8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1240,7 +1174,7 @@ ror8Normal2:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bl, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz ror8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1362,7 +1296,7 @@ rcl8NormalC1:
 	pop cx
 	mov [es:testedFlags], cx
 	mov al, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz rcl8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1389,7 +1323,7 @@ rcl8NormalC2:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bl, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz rcl8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1508,7 +1442,7 @@ rcr8NormalC1:
 	pop cx
 	mov [es:testedFlags], cx
 	mov al, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz rcr8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1535,7 +1469,7 @@ rcr8NormalC2:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bl, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz rcr8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1662,7 +1596,7 @@ shl8Normal:
 	pop cx
 	mov [es:testedFlags], cx
 	mov al, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz shl8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1707,7 +1641,7 @@ shl8Normal2:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bl, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz shl8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1823,7 +1757,7 @@ testShr8Single:
 	pop cx
 	mov [es:testedFlags], cx
 	mov al, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz shr8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1861,7 +1795,7 @@ shr8Normal2:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bl, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz shr8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -1983,7 +1917,7 @@ testSar8Single:
 	pop cx
 	mov [es:testedFlags], cx
 	mov al, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz sar8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -2021,7 +1955,7 @@ sar8Normal2:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bl, [es:expectedResult1]
-	cmp al, bl
+	xor al, bl
 	jnz sar8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -2155,7 +2089,7 @@ testMulu8Single:
 	pop bx
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
-	cmp ax, cx
+	xor ax, cx
 	jnz muluFailed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
@@ -2177,7 +2111,7 @@ testMulu8Single:
 	pop bx
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
-	cmp ax, cx
+	xor ax, cx
 	jnz muluFailed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
@@ -2273,7 +2207,7 @@ testMuls8Single:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz mulsFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -2295,7 +2229,7 @@ testMuls8Single:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz mulsFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -2378,7 +2312,7 @@ testAadSingle:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aadFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -2399,7 +2333,7 @@ testAadSingle:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aadFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -2504,7 +2438,7 @@ testDivu8Single:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz divu8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
@@ -2516,7 +2450,7 @@ divu8DoZTst:
 	cmp cx, 0
 	jnz divu8Failed
 	mov bl, [es:expectedException]
-	cmp al, bl
+	xor al, bl
 	jnz divu8Failed
 
 	mov byte [es:testedException], 0
@@ -2536,7 +2470,7 @@ divu8DoZTst:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz divu8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
@@ -2548,7 +2482,7 @@ divu8DoZTst2:
 	cmp cx, 0
 	jnz divu8Failed
 	mov bl, [es:expectedException]
-	cmp al, bl
+	xor al, bl
 	jnz divu8Failed
 
 	pop dx
@@ -2678,7 +2612,7 @@ testDivs8Single:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz divs8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
@@ -2690,7 +2624,7 @@ divs8DoZTst:
 	cmp cx, 0
 	jnz divs8Failed
 	mov bl, [es:expectedException]
-	cmp al, bl
+	xor al, bl
 	jnz divs8Failed
 
 	mov byte [es:testedException], 0
@@ -2710,7 +2644,7 @@ divs8DoZTst:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz divs8Failed
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
@@ -2722,7 +2656,7 @@ divs8DoZTst2:
 	cmp cx, 0
 	jnz divs8Failed
 	mov bl, [es:expectedException]
-	cmp al, bl
+	xor al, bl
 	jnz divs8Failed
 
 	xor ax, ax
@@ -2765,7 +2699,7 @@ enum8Pos:
 	mov cx, ax
 	shr cx, 7
 	cmp cx, bx
-	jnc divs8Error
+	jnc divs8ErrCnt
 	xor cx, cx
 divs8Loop:
 	sub ax, bx
@@ -2799,8 +2733,6 @@ divs8End:
 	ret
 divs8Error:
 	cmp ax, 0x8000
-	jnz divs8ErrCnt
-	cmp bl, 0x00
 	jnz divs8ErrCnt
 	mov ax, 0x0081
 	mov [es:expectedResult1], ax
@@ -2881,14 +2813,14 @@ testAamSingle:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aamFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
 	jnz aamFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
-	cmp al, bl
+	xor al, bl
 	jnz aamFailed
 
 	pushf
@@ -2909,14 +2841,14 @@ testAamSingle:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aamFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
 	jnz aamFailed
 	mov al, [es:testedException]
 	mov bl, [es:expectedException]
-	cmp al, bl
+	xor al, bl
 	jnz aamFailed
 
 	xor ax, ax
@@ -3049,7 +2981,7 @@ daaTestNoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz daaFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3082,7 +3014,7 @@ daaTest2NoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz daaFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3220,7 +3152,7 @@ dasTestNoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz dasFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3253,7 +3185,7 @@ dasTest2NoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz dasFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3389,7 +3321,7 @@ aaaTestNoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aaaFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3416,7 +3348,7 @@ aaaTest2NoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aaaFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3531,7 +3463,7 @@ aasTestNoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aasFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3558,7 +3490,7 @@ aasTest2NoAC:
 	pop cx
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
-	cmp ax, bx
+	xor ax, bx
 	jnz aasFailed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
@@ -3614,7 +3546,7 @@ testSPStack:
 
 	push sp				; Save SP on stack to look at
 	pop bx				; Get SP saved on stack
-	cmp bx,sp
+	xor bx,sp
 	jz spStackFailed
 
 spStackOk:
@@ -4071,19 +4003,24 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220609",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220610",10 , 0
+
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
 testingOr8Str: db "Logical OR bytes", 10, 0
 testingTest8Str: db "Logical TEST bytes", 10, 0
 testingXor8Str: db "Logical XOR bytes", 10, 0
 testingNot8Str: db "Logical NOT bytes", 10, 0
+testingInc8Str: db "INC bytes", 10, 0
+testingDec8Str: db "DEC bytes", 10, 0
+
 testingAdd8Str: db "ADD bytes", 10, 0
 testingSub8Str: db "SUB bytes", 10, 0
 testingCmp8Str: db "CMP bytes", 10, 0
+testingNeg8Str: db "NEG bytes", 10, 0
 testingAdc8Str: db "ADC/ADDC bytes", 10, 0
 testingSbb8Str: db "SBB/SUBC bytes", 10, 0
-testingNeg8Str: db "NEG bytes", 10, 0
+
 testingRol8Str: db "ROL byte by CL", 10, 0
 testingRor8Str: db "ROR byte by CL", 10, 0
 testingRcl8Str: db "RCL/ROLC byte by CL", 10, 0
@@ -4091,21 +4028,26 @@ testingRcr8Str: db "RCR/RORC byte by CL", 10, 0
 testingShl8Str: db "SHL byte by CL", 10, 0
 testingShr8Str: db "SHR byte by CL", 10, 0
 testingSar8Str: db "SAR/SHRA byte by CL", 10, 0
+
+testingAaaStr: db "AAA/ADJBA", 10, 0
+testingAasStr: db "AAS/ADJBS", 10, 0
+testingDaaStr: db "DAA/ADJ4A", 10, 0
+testingDasStr: db "DAS/ADJ4S", 10, 0
+
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
 testingMulu16Str: db "Unsigned Multiplication 16*16", 0
 testingMuls16Str: db "Signed Multiplication 16*16", 10, 0
+
 testingDivuStr: db "Unsigned Division 16/8", 10, 0
 testingDivsStr: db "Signed Division 16/8", 10, 0
 testingDivu32Str: db "Unsigned Division 32/16", 10, 0
 testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
-testingDaaStr: db "DAA/ADJ4A", 10, 0
-testingDasStr: db "DAS/ADJ4S", 10, 0
-testingAaaStr: db "AAA/ADJBA", 10, 0
-testingAasStr: db "AAS/ADJBS", 10, 0
+
 testingSPStackStr: db "Pushing SP to stack", 10, 0
+
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
 test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
 test16x16InputStr: db "Testing Inp: 0x0000, 0x0000", 0
