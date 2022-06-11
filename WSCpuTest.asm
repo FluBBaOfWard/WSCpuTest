@@ -196,6 +196,7 @@ monoFontLoop:
 	call testAdd8
 	call testSub8
 	call testCmp8
+	call testNeg8
 
 	call testRol8
 	call testRor8
@@ -1538,6 +1539,138 @@ cmp8NoOv:
 	jz cmp8NoAC
 	or cl, 0x10
 cmp8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test NEG for all byte values.
+;-----------------------------------------------------------------------------
+testNeg8:
+	mov si, testingNeg8Str
+	call writeString
+	mov si, test8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 4
+
+	xor cx, cx
+testNeg8Loop:
+	mov [es:inputVal1], cl
+	call calcNeg8Result
+	call testNeg8Single
+	cmp al, 0
+	jnz stopNeg8Test
+continueNeg8:
+	inc cl
+	jnz testNeg8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopNeg8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueNeg8
+	ret
+
+;-----------------------------------------------------------------------------
+testNeg8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bl, [es:inputVal1]
+	popf
+	neg bl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz neg8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz neg8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	push bx
+	mov [es:inputFlags], bx
+
+	mov al, [es:inputVal1]
+	popf
+	neg al
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	xor al, bl
+	jnz neg8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz neg8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+neg8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcNeg8Result:
+	push bx
+	push cx
+
+	mov bl, [es:inputVal1]
+	mov al, 0
+	mov cl, bl
+	xor ah, ah
+	xor bh, bh
+
+	sub ax, bx
+
+neg8SetRes:
+	mov [es:expectedResult1], al
+	xor cl, al
+	mov bl, cl
+	mov cx, 0xF202
+	test ah, 1
+	jz neg8NoC
+	or cx, 0x801
+neg8NoC:
+	test bl, 0x80
+	jz neg8NoOv
+	xor ch, 0x08
+neg8NoOv:
+	test bl, 0x10
+	jz neg8NoAC
+	or cl, 0x10
+neg8NoAC:
 	lea bx, PZSTable
 	xlat
 	or cl, al
