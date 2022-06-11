@@ -195,6 +195,7 @@ monoFontLoop:
 
 	call testAdd8
 	call testSub8
+	call testCmp8
 
 	call testRol8
 	call testRor8
@@ -1398,6 +1399,145 @@ sub8NoOv:
 	jz sub8NoAC
 	or cl, 0x10
 sub8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test CMP for all bytes & bytes values.
+;-----------------------------------------------------------------------------
+testCmp8:
+	mov si, testingCmp8Str
+	call writeString
+	mov si, test8x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testCmp8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcCmp8Result
+	call testCmp8Single
+	cmp al, 0
+	jnz stopCmp8Test
+continueCmp8:
+	inc cx
+	jnz testCmp8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopCmp8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueCmp8
+	ret
+
+;-----------------------------------------------------------------------------
+testCmp8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	cmp bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz cmp8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz cmp8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	push bx
+	mov [es:inputFlags], bx
+
+	mov cl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	popf
+	cmp al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	xor al, bl
+	jnz cmp8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz cmp8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+cmp8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcCmp8Result:
+	push bx
+	push cx
+
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov [es:expectedResult1], al
+	mov cl, bl
+	xor cl, al
+	xor ah, ah
+	xor bl, 0
+	jz cmp8SetRes
+cmp8Loop:
+	dec ax
+	dec bl
+	jnz cmp8Loop
+
+cmp8SetRes:
+	xor cl, al
+	mov bl, cl
+	mov cx, 0xF202
+	test ah, 1
+	jz cmp8NoC
+	or cx, 0x801
+cmp8NoC:
+	test bl, 0x80
+	jz cmp8NoOv
+	xor ch, 0x08
+cmp8NoOv:
+	test bl, 0x10
+	jz cmp8NoAC
+	or cl, 0x10
+cmp8NoAC:
 	lea bx, PZSTable
 	xlat
 	or cl, al
