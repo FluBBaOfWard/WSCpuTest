@@ -1235,10 +1235,14 @@ calcAdd8Result:
 	mov cl, bl
 	xor cl, al
 	xor ah, ah
-	xor bh, bh
+	xor bl, 0
+	jz add8SetRes
+add8Loop:
+	inc ax
+	dec bl
+	jnz add8Loop
 
-	add ax, bx
-
+add8SetRes:
 	mov [es:expectedResult1], al
 	xor cl, al
 	mov bl, cl
