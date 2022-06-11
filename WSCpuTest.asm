@@ -187,6 +187,7 @@ monoFontLoop:
 
 	call testEqu
 	call testAnd8
+	call testNot8
 	call testOr8
 	call testTest8
 	call testXor8
@@ -230,7 +231,7 @@ skipTests:
 testEqu:
 	mov si, testingEquStr
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -349,13 +350,13 @@ neq16Failed:
 testAnd8:
 	mov si, testingAnd8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
 	mov word [es:expectedResult1], 0
 
-	mov cx, 0
+	xor cx, cx
 testAnd8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -454,12 +455,117 @@ and8Failed:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test logical NOT of all byte values.
+;-----------------------------------------------------------------------------
+testNot8:
+	mov si, testingNot8Str
+	call writeString
+	mov si, test8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 4
+	mov word [es:expectedResult1], 0
+	mov byte [es:inputVal2], 0
+
+	xor cx, cx
+testNot8Loop:
+	mov [es:inputVal1], cl
+	mov al, cl
+	xor al, 0xFF
+	mov [es:expectedResult1], al
+	call testNot8Single
+	cmp al, 0
+	jnz stopNot8Test
+continueNot8:
+	inc cl
+	jnz testNot8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopNot8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueNot8
+	ret
+
+;-----------------------------------------------------------------------------
+testNot8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+	mov ax, 0xF202
+	mov [es:expectedFlags], ax
+
+	xor ah, ah
+	mov al, [es:inputVal1]
+	popf
+	not al
+	pushf
+
+	mov [es:testedResult1], al
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz not8Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz not8Failed
+
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+	mov ax, 0xFAD7
+	mov [es:expectedFlags], ax
+
+	xor bh, bh
+	mov bl, [es:inputVal1]
+	popf
+	not bl
+	pushf
+
+	mov [es:testedResult1], bx
+	pop ax
+	mov [es:testedFlags], ax
+	mov cx, [es:expectedResult1]
+	xor bx, cx
+	jnz not8Failed
+	mov cx, [es:expectedFlags]
+	xor ax, cx
+	jnz not8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+not8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test logical OR of all byte values.
 ;-----------------------------------------------------------------------------
 testOr8:
 	mov si, testingOr8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -569,12 +675,12 @@ or8Failed:
 testTest8:
 	mov si, testingTest8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
 
-	mov cx, 0
+	xor cx, cx
 testTest8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -667,7 +773,7 @@ test8Failed:
 testXor8:
 	mov si, testingXor8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -782,7 +888,7 @@ testInc8:
 	mov si, test8InputStr
 	call writeString
 
-	mov byte [es:isTesting], 1
+	mov byte [es:isTesting], 4
 
 	xor cx, cx
 testInc8Loop:
@@ -906,7 +1012,7 @@ testDec8:
 	mov si, test8InputStr
 	call writeString
 
-	mov byte [es:isTesting], 1
+	mov byte [es:isTesting], 4
 
 	xor cx, cx
 testDec8Loop:
@@ -1028,7 +1134,7 @@ dec8NoAC:
 testAdd8:
 	mov si, testingAdd8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -1163,7 +1269,7 @@ add8NoAC:
 testRol8:
 	mov si, testingRol8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -1327,7 +1433,7 @@ rol8NoOv:
 testRor8:
 	mov si, testingRor8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -1492,7 +1598,7 @@ ror8NoOv2:
 testRcl8:
 	mov si, testingRcl8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -1638,7 +1744,7 @@ rcl8NoOv:
 testRcr8:
 	mov si, testingRcr8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -1789,7 +1895,7 @@ rcr8NoOv2:
 testShl8:
 	mov si, testingShl8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -1957,7 +2063,7 @@ shl8NoOv:
 testShr8:
 	mov si, testingShr8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -2117,7 +2223,7 @@ shr8NoOv2:
 testSar8:
 	mov si, testingSar8Str
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -2276,7 +2382,7 @@ sar8NoOv2:
 testMulu8:
 	mov si, testingMuluStr
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov word [es:inputVal2], 0
@@ -2388,7 +2494,7 @@ muluFailed:
 testMuls8:
 	mov si, testingMulsStr
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -3007,7 +3113,7 @@ divs8NoCV:
 testAam:
 	mov si, testingAamStr
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -3170,7 +3276,7 @@ aamNoCV:
 testDaa:
 	mov si, testingDaaStr
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -3341,7 +3447,7 @@ daaSkipOV:
 testDas:
 	mov si, testingDasStr
 	call writeString
-	mov si, testingInputStr
+	mov si, test8x8InputStr
 	call writeString
 
 	mov byte [es:isTesting], 1
@@ -4036,13 +4142,21 @@ skipValue8x8Print:
 	jmp skipValuePrint
 skipValue16x8Print:
 	cmp al, 3
-	jnz skipValuePrint
+	jnz skipValue8Print
 	mov byte [es:cursorXPos], 15
 	mov ax, [es:inputVal2]
 	call printHexW
 	mov byte [es:cursorXPos], 23
 	mov ax, [es:inputVal1]
 	call printHexW
+	jmp skipValuePrint
+skipValue8Print:
+	cmp al, 4
+	jnz skipValuePrint
+	mov byte [es:cursorXPos], 17
+	mov al, [es:inputVal1]
+	call printHexB
+	jmp skipValuePrint
 skipValuePrint:
 acknowledgeVBlankInterrupt:
 	mov al, INT_VBLANK_START
@@ -4321,8 +4435,8 @@ testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
 
 testingSPStackStr: db "Pushing SP to stack", 10, 0
 
-test8InputStr: db "Testing Input:       0x00", 0
-testingInputStr: db "Testing Input: 0x00, 0x00", 0
+test8InputStr: db "Testing Input: 0x00", 0
+test8x8InputStr: db "Testing Input: 0x00, 0x00", 0
 test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
 test16x16InputStr: db "Testing Inp: 0x0000, 0x0000", 0
 inputStr: db "Input:0x", 0
