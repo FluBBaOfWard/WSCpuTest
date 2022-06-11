@@ -183,13 +183,17 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-	call testAdd8
+;	call testNot8
 
 	call testEqu
 	call testAnd8
 	call testOr8
 	call testTest8
 	call testXor8
+	call testInc8
+	call testDec8
+
+	call testAdd8
 
 	call testRol8
 	call testRor8
@@ -765,6 +769,255 @@ testXor8Single:
 xor8Failed:
 	call printFailedResult
 	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test INC for all byte values.
+;-----------------------------------------------------------------------------
+testInc8:
+	mov si, testingInc8Str
+	call writeString
+	mov si, test8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testInc8Loop:
+	mov [es:inputVal1], cl
+	call calcInc8Result
+	call testInc8Single
+	cmp al, 0
+	jnz stopInc8Test
+continueInc8:
+	inc cl
+	jnz testInc8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopInc8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueInc8
+	ret
+
+;-----------------------------------------------------------------------------
+testInc8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bl, [es:inputVal1]
+	popf
+	inc bl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz inc8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz inc8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	push bx
+	mov [es:inputFlags], bx
+	xor byte [es:expectedFlags], 0x01
+
+	mov cl, [es:inputVal1]
+	popf
+	inc cl
+	pushf
+
+	mov [es:testedResult1], cl
+	pop ax
+	mov [es:testedFlags], ax
+	mov bl, [es:expectedResult1]
+	xor cl, bl
+	jnz inc8Failed
+	mov bx, [es:expectedFlags]
+	xor ax, bx
+	jnz inc8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+inc8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcInc8Result:
+	push bx
+	push cx
+
+	mov al, [es:inputVal1]
+	lea bx, IncTable
+	xlat
+	mov [es:expectedResult1], al
+	mov cx, 0xF202
+	mov bl, 0x80
+	xor bl, al
+	jnz inc8NoOv
+	xor ch, 0x08
+inc8NoOv:
+	mov bl, al
+	and bl, 0x0F
+	jnz inc8NoAC
+	or cl, 0x10
+inc8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test DEC for all byte values.
+;-----------------------------------------------------------------------------
+testDec8:
+	mov si, testingDec8Str
+	call writeString
+	mov si, test8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testDec8Loop:
+	mov [es:inputVal1], cl
+	call calcDec8Result
+	call testDec8Single
+	cmp al, 0
+	jnz stopDec8Test
+continueDec8:
+	inc cl
+	jnz testDec8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopDec8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueDec8
+	ret
+
+;-----------------------------------------------------------------------------
+testDec8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bl, [es:inputVal1]
+	popf
+	dec bl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz dec8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz dec8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	push bx
+	mov [es:inputFlags], bx
+	xor byte [es:expectedFlags], 0x01
+
+	mov cl, [es:inputVal1]
+	popf
+	dec cl
+	pushf
+
+	mov [es:testedResult1], cl
+	pop ax
+	mov [es:testedFlags], ax
+	mov bl, [es:expectedResult1]
+	xor cl, bl
+	jnz dec8Failed
+	mov bx, [es:expectedFlags]
+	xor ax, bx
+	jnz dec8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+dec8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcDec8Result:
+	push bx
+	push cx
+
+	mov al, [es:inputVal1]
+	lea bx, DecTable
+	xlat
+	mov [es:expectedResult1], al
+	mov cx, 0xF202
+	mov bl, 0x7F
+	xor bl, al
+	jnz dec8NoOv
+	xor ch, 0x08
+dec8NoOv:
+	mov bl, al
+	and bl, 0x0F
+	xor bl, 0x0F
+	jnz dec8NoAC
+	or cl, 0x10
+dec8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+
 	pop cx
 	pop bx
 	ret
@@ -3941,6 +4194,26 @@ PZSTable:
 	db PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S
 	db PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S, PSR_S+PSR_P, PSR_S, PSR_S+PSR_P, PSR_S, PSR_S, PSR_P+PSR_S
 
+DecTable:
+	db 0xFF, 0x00
+IncTable:
+	db 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10
+	db 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20
+	db 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30
+	db 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40
+	db 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50
+	db 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F, 0x60
+	db 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70
+	db 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0x80
+	db 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90
+	db 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0
+	db 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB0
+	db 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, 0xC0
+	db 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, 0xD0
+	db 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, 0xE0
+	db 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0
+	db 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF, 0x00
+
 FontTilePalette:
 	dw 0xFFF, 0x000
 
@@ -4003,7 +4276,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220610",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220611",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -4048,6 +4321,7 @@ testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
 
 testingSPStackStr: db "Pushing SP to stack", 10, 0
 
+test8InputStr: db "Testing Input:       0x00", 0
 testingInputStr: db "Testing Input: 0x00, 0x00", 0
 test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
 test16x16InputStr: db "Testing Inp: 0x0000, 0x0000", 0

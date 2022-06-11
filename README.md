@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220610)
+# WonderSwan CPU Test V0.0.1 (20220611)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -24,6 +24,10 @@ Parity, Sign & Zero are set according to result.
 
 ### NOT
 No flags are changed, all bits of result are inverted.
+
+### INC/DEC
+Carry is not changed.
+AuxCarry, Overflow, Parity, Sign & Zero are all set according to result (same as ADD/SUB 1).
 
 ### ADD
 AuxCarry, Carry, Overflow, Parity, Sign & Zero are all set according to result.
