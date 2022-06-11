@@ -183,7 +183,6 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-;	call testNot8
 
 	call testEqu
 	call testAnd8
@@ -195,6 +194,7 @@ monoFontLoop:
 	call testDec8
 
 	call testAdd8
+	call testSub8
 
 	call testRol8
 	call testRor8
@@ -1259,6 +1259,145 @@ add8NoOv:
 	jz add8NoAC
 	or cl, 0x10
 add8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test SUB for all bytes & bytes values.
+;-----------------------------------------------------------------------------
+testSub8:
+	mov si, testingSub8Str
+	call writeString
+	mov si, test8x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+testSub8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcSub8Result
+	call testSub8Single
+	cmp al, 0
+	jnz stopSub8Test
+continueSub8:
+	inc cx
+	jnz testSub8Loop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopSub8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueSub8
+	ret
+
+;-----------------------------------------------------------------------------
+testSub8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	sub bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz sub8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sub8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	push bx
+	mov [es:inputFlags], bx
+
+	mov cl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	popf
+	sub al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	xor al, bl
+	jnz sub8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sub8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+sub8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcSub8Result:
+	push bx
+	push cx
+
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov cl, bl
+	xor cl, al
+	xor ah, ah
+	xor bl, 0
+	jz sub8SetRes
+sub8Loop:
+	dec ax
+	dec bl
+	jnz sub8Loop
+
+sub8SetRes:
+	mov [es:expectedResult1], al
+	xor cl, al
+	mov bl, cl
+	mov cx, 0xF202
+	test ah, 1
+	jz sub8NoC
+	or cx, 0x801
+sub8NoC:
+	test bl, 0x80
+	jz sub8NoOv
+	xor ch, 0x08
+sub8NoOv:
+	test bl, 0x10
+	jz sub8NoAC
+	or cl, 0x10
+sub8NoAC:
 	lea bx, PZSTable
 	xlat
 	or cl, al
