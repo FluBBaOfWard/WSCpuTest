@@ -1244,7 +1244,6 @@ calcAdd8Result:
 	mov al, [es:inputVal2]
 	xor bl, al
 
-add8SetRes:
 	mov ax, [es:expectedResult1]
 	xor bl, al
 	mov cx, 0xF202
@@ -1280,8 +1279,10 @@ testAdc8:
 	mov byte [es:isTesting], 1
 	mov byte [es:inputCarry], 0
 
-testAdc8CLoop:
 	xor cx, cx
+testAdc8CLoop:
+	mov ax, [es:inputCarry]
+	mov [es:expectedResult1], ax
 testAdc8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1290,7 +1291,19 @@ testAdc8Loop:
 	cmp al, 0
 	jnz stopAdc8Test
 continueAdc8:
-	inc cx
+	inc word [es:expectedResult1]
+	inc cl
+	jnz testAdc8Loop
+	xor ah, ah
+	mov al, ch
+	inc al
+	mov bl, [es:inputCarry]
+	xor bl, 0
+	jz adcNoInpCarry
+	inc ax
+adcNoInpCarry:
+	mov [es:expectedResult1], ax
+	inc ch
 	jnz testAdc8Loop
 	cmp byte [es:inputCarry], 0
 	jnz testAdcEnd
@@ -1385,25 +1398,12 @@ calcAdc8Result:
 	push bx
 	push cx
 
-	xor ah, ah
-	xor bh, bh
-	xor ch, ch
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
-	mov cl, bl
-	xor cl, al
-	add bx, [es:inputCarry]
-	xor bx, 0
-	jz adc8SetRes
-adc8Loop:
-	inc ax
-	dec bx
-	jnz adc8Loop
+	xor bl, al
 
-adc8SetRes:
-	mov [es:expectedResult1], al
-	xor cl, al
-	mov bl, cl
+	mov ax, [es:expectedResult1]
+	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
 	jz adc8NoC
