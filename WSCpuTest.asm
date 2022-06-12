@@ -197,6 +197,7 @@ monoFontLoop:
 	call testSub8
 	call testCmp8
 	call testNeg8
+	call testAdc8
 
 	call testRol8
 	call testRor8
@@ -1261,6 +1262,163 @@ add8NoOv:
 	jz add8NoAC
 	or cl, 0x10
 add8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test ADC for all bytes & bytes values + carry.
+;-----------------------------------------------------------------------------
+testAdc8:
+	mov si, testingAdc8Str
+	call writeString
+	mov si, test8x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+	mov byte [es:inputCarry], 0
+
+testAdc8CLoop:
+	xor cx, cx
+testAdc8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcAdc8Result
+	call testAdc8Single
+	cmp al, 0
+	jnz stopAdc8Test
+continueAdc8:
+	inc cx
+	jnz testAdc8Loop
+	cmp byte [es:inputCarry], 0
+	jnz testAdcEnd
+	mov byte [es:inputCarry], 1
+	jmp testAdc8CLoop
+
+testAdcEnd:
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	mov byte [es:inputCarry], 0
+	xor ax, ax
+	ret
+stopAdc8Test:
+	call checkKeyInput
+	cmp al, 0
+	jnz continueAdc8
+	mov byte [es:inputCarry], 0
+	ret
+
+;-----------------------------------------------------------------------------
+testAdc8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov bl, [es:inputCarry]
+	and bl, 1
+	or al, bl
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	adc bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz adc8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz adc8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FE
+	mov al, [es:inputCarry]
+	and al, 1
+	or bl, al
+	push bx
+	mov [es:inputFlags], bx
+
+	mov cl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	popf
+	adc al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	xor al, bl
+	jnz adc8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz adc8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+adc8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcAdc8Result:
+	push bx
+	push cx
+
+	xor ah, ah
+	xor bh, bh
+	xor ch, ch
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov cl, bl
+	xor cl, al
+	add bx, [es:inputCarry]
+	xor bx, 0
+	jz adc8SetRes
+adc8Loop:
+	inc ax
+	dec bx
+	jnz adc8Loop
+
+adc8SetRes:
+	mov [es:expectedResult1], al
+	xor cl, al
+	mov bl, cl
+	mov cx, 0xF202
+	test ah, 1
+	jz adc8NoC
+	or cx, 0x801
+adc8NoC:
+	test bl, 0x80
+	jz adc8NoOv
+	xor ch, 0x08
+adc8NoOv:
+	test bl, 0x10
+	jz adc8NoAC
+	or cl, 0x10
+adc8NoAC:
 	lea bx, PZSTable
 	xlat
 	or cl, al
@@ -4545,6 +4703,11 @@ vblankInterruptHandler:
 	mov byte [es:cursorXPos], 23
 	mov al, [es:inputVal1]
 	call printHexB
+	cmp byte [es:inputCarry], 0
+	jz skipValuePrint
+	mov byte [es:cursorXPos], 26
+	mov al, 'C'
+	int 0x10
 	jmp skipValuePrint
 skipValue8x8Print:
 	cmp al, 2
@@ -4806,7 +4969,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220611",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220612",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -4889,6 +5052,7 @@ lfsr2: resw 1
 inputVal1: resw 1
 inputVal2: resw 1
 inputFlags: resw 1
+inputCarry: resw 1
 
 testedResult1: resw 1
 testedResult2: resw 1
