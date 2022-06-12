@@ -1437,6 +1437,7 @@ testSub8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
+	mov cx, [es:expectedResult1]
 testSub8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1445,7 +1446,12 @@ testSub8Loop:
 	cmp al, 0
 	jnz stopSub8Test
 continueSub8:
-	inc cx
+	dec word [es:expectedResult1]
+	inc cl
+	jnz testSub8Loop
+	mov word [es:expectedResult1], 0
+	inc ch
+	mov [es:expectedResult1], ch
 	jnz testSub8Loop
 
 	hlt						; Wait for VBlank
@@ -1529,20 +1535,10 @@ calcSub8Result:
 
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
-	mov cl, bl
-	xor cl, al
-	xor ah, ah
-	xor bl, 0
-	jz sub8SetRes
-sub8Loop:
-	dec ax
-	dec bl
-	jnz sub8Loop
+	xor bl, al
 
-sub8SetRes:
-	mov [es:expectedResult1], al
-	xor cl, al
-	mov bl, cl
+	mov ax, [es:expectedResult1]
+	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
 	jz sub8NoC
@@ -1733,6 +1729,7 @@ testCmp8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
+	mov cx, [es:expectedResult2]
 testCmp8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1741,7 +1738,12 @@ testCmp8Loop:
 	cmp al, 0
 	jnz stopCmp8Test
 continueCmp8:
-	inc cx
+	dec word [es:expectedResult2]
+	inc cl
+	jnz testCmp8Loop
+	mov word [es:expectedResult2], 0
+	inc ch
+	mov [es:expectedResult2], ch
 	jnz testCmp8Loop
 
 	hlt						; Wait for VBlank
@@ -1826,19 +1828,10 @@ calcCmp8Result:
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
 	mov [es:expectedResult1], al
-	mov cl, bl
-	xor cl, al
-	xor ah, ah
-	xor bl, 0
-	jz cmp8SetRes
-cmp8Loop:
-	dec ax
-	dec bl
-	jnz cmp8Loop
+	xor bl, al
 
-cmp8SetRes:
-	xor cl, al
-	mov bl, cl
+	mov ax, [es:expectedResult2]
+	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
 	jz cmp8NoC
