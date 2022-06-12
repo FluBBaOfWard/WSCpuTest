@@ -326,25 +326,25 @@ continueNeq16:
 equ8Failed:
 	call printFailedResult
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueEqu8
 	ret
 neq8Failed:
 	call printFailedResult
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueNeq8
 	ret
 equ16Failed:
 	call printFailedResult
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueEqu16
 	ret
 neq16Failed:
 	call printFailedResult
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueNeq16
 	ret
 
@@ -375,7 +375,7 @@ testAnd8Loop:
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testAnd8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopAnd8Test
 continueAnd8:
 	inc cx
@@ -391,7 +391,7 @@ continueAnd8:
 	ret
 stopAnd8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueAnd8
 	ret
 
@@ -469,18 +469,17 @@ testNot8:
 
 	mov byte [es:isTesting], 4
 	mov word [es:expectedResult1], 0
-	mov byte [es:inputVal2], 0
 
 	xor cx, cx
+	dec ch
 testNot8Loop:
 	mov [es:inputVal1], cl
-	mov al, cl
-	xor al, 0xFF
-	mov [es:expectedResult1], al
+	mov [es:expectedResult1], ch
 	call testNot8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopNot8Test
 continueNot8:
+	dec ch
 	inc cl
 	jnz testNot8Loop
 
@@ -494,7 +493,7 @@ continueNot8:
 	ret
 stopNot8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueNot8
 	ret
 
@@ -590,7 +589,7 @@ testOr8Loop:
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testOr8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopOr8Test
 continueOr8:
 	inc cx
@@ -606,7 +605,7 @@ continueOr8:
 	ret
 stopOr8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueOr8
 	ret
 
@@ -683,10 +682,12 @@ testTest8:
 	call writeString
 
 	mov byte [es:isTesting], 1
+	mov word [es:expectedResult1], 0
 
 	xor cx, cx
 testTest8Loop:
 	mov [es:inputVal1], cl
+	mov [es:expectedResult1], cl
 	mov [es:inputVal2], ch
 	mov al, cl
 	and al, ch
@@ -696,7 +697,7 @@ testTest8Loop:
 	or al, 0x02
 	mov [es:expectedFlags], ax
 	call testTest8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopTest8Test
 continueTest8:
 	inc cx
@@ -712,7 +713,7 @@ continueTest8:
 	ret
 stopTest8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueTest8
 	ret
 
@@ -734,8 +735,12 @@ testTest8Single:
 	test al, bl
 	pushf
 
+	mov [es:testedResult1], al
 	pop bx
 	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz test8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
 	jnz test8Failed
@@ -753,8 +758,12 @@ testTest8Single:
 	test al, cl
 	pushf
 
+	mov [es:testedResult1], al
 	pop bx
 	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz test8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
 	jnz test8Failed
@@ -812,7 +821,7 @@ continueXor8:
 	int 0x10
 	mov si, okStr
 	call writeString
-	xor ax, ax
+	mov ax, 0
 	ret
 stopXor8Test:
 	call checkKeyInput
@@ -831,7 +840,7 @@ testXor8Single:
 	push ax
 	mov [es:inputFlags], ax
 
-	xor ah, ah
+	mov ah, 0
 	mov al, [es:inputVal1]
 	mov bl, [es:inputVal2]
 	popf
@@ -845,7 +854,7 @@ testXor8Single:
 	cmp ax, cx
 	jnz xor8Failed
 	mov cx, [es:expectedFlags]
-	xor bx, cx
+	cmp bx, cx
 	jnz xor8Failed
 
 	pushf
@@ -854,7 +863,7 @@ testXor8Single:
 	push ax
 	mov [es:inputFlags], ax
 
-	xor ah, ah
+	mov ah, 0
 	mov al, [es:inputVal1]
 	mov cl, [es:inputVal2]
 	popf
@@ -868,10 +877,10 @@ testXor8Single:
 	cmp ax, cx
 	jnz xor8Failed
 	mov cx, [es:expectedFlags]
-	xor bx, cx
+	cmp bx, cx
 	jnz xor8Failed
 
-	xor ax, ax
+	mov ax, 0
 	pop cx
 	pop bx
 	ret
@@ -899,7 +908,7 @@ testInc8Loop:
 	mov [es:inputVal1], cl
 	call calcInc8Result
 	call testInc8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopInc8Test
 continueInc8:
 	inc cl
@@ -915,7 +924,7 @@ continueInc8:
 	ret
 stopInc8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueInc8
 	ret
 
@@ -1023,7 +1032,7 @@ testDec8Loop:
 	mov [es:inputVal1], cl
 	call calcDec8Result
 	call testDec8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopDec8Test
 continueDec8:
 	inc cl
@@ -1039,7 +1048,7 @@ continueDec8:
 	ret
 stopDec8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueDec8
 	ret
 
@@ -1150,7 +1159,7 @@ testAdd8Loop:
 	mov [es:inputVal2], ch
 	call calcAdd8Result
 	call testAdd8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopAdd8Test
 continueAdd8:
 	inc word [es:expectedResult1]
@@ -1171,7 +1180,7 @@ continueAdd8:
 	ret
 stopAdd8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueAdd8
 	ret
 
@@ -1288,7 +1297,7 @@ testAdc8Loop:
 	mov [es:inputVal2], ch
 	call calcAdc8Result
 	call testAdc8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopAdc8Test
 continueAdc8:
 	inc word [es:expectedResult1]
@@ -1322,7 +1331,7 @@ testAdcEnd:
 	ret
 stopAdc8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueAdc8
 	mov byte [es:inputCarry], 0
 	ret
@@ -1443,7 +1452,7 @@ testSub8Loop:
 	mov [es:inputVal2], ch
 	call calcSub8Result
 	call testSub8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopSub8Test
 continueSub8:
 	dec word [es:expectedResult1]
@@ -1464,7 +1473,7 @@ continueSub8:
 	ret
 stopSub8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueSub8
 	ret
 
@@ -1737,7 +1746,7 @@ testCmp8Loop:
 	mov [es:inputVal2], ch
 	call calcCmp8Result
 	call testCmp8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopCmp8Test
 continueCmp8:
 	dec word [es:expectedResult2]
@@ -1758,7 +1767,7 @@ continueCmp8:
 	ret
 stopCmp8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueCmp8
 	ret
 
@@ -1866,14 +1875,17 @@ testNeg8:
 
 	mov byte [es:isTesting], 4
 
+	xor bx, bx
 	xor cx, cx
 testNeg8Loop:
 	mov [es:inputVal1], cl
+	mov [es:expectedResult1], bx
 	call calcNeg8Result
 	call testNeg8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopNeg8Test
 continueNeg8:
+	dec bx
 	inc cl
 	jnz testNeg8Loop
 
@@ -1887,7 +1899,7 @@ continueNeg8:
 	ret
 stopNeg8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueNeg8
 	ret
 
@@ -1955,17 +1967,8 @@ calcNeg8Result:
 	push cx
 
 	mov bl, [es:inputVal1]
-	mov al, 0
-	mov cl, bl
-	xor ah, ah
-	xor bh, bh
-
-	sub ax, bx
-
-neg8SetRes:
-	mov [es:expectedResult1], al
-	xor cl, al
-	mov bl, cl
+	mov ax, [es:expectedResult1]
+	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
 	jz neg8NoC
@@ -2004,7 +2007,7 @@ testRol8Loop:
 	mov [es:inputVal2], ch
 	call calcRol8Result
 	call testRol8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopRol8Test
 continueRol8:
 	inc cx
@@ -2020,7 +2023,7 @@ continueRol8:
 	ret
 stopRol8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueRol8
 	ret
 
@@ -2168,7 +2171,7 @@ testRor8Loop:
 	mov [es:inputVal2], ch
 	call calcRor8Result
 	call testRor8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopRor8Test
 continueRor8:
 	inc cx
@@ -2184,7 +2187,7 @@ continueRor8:
 	ret
 stopRor8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueRor8
 	ret
 
@@ -2333,7 +2336,7 @@ testRcl8Loop:
 	mov [es:inputVal2], ch
 	call calcRcl8Result
 	call testRcl8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopRcl8Test
 continueRcl8:
 	inc cx
@@ -2349,7 +2352,7 @@ continueRcl8:
 	ret
 stopRcl8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueRcl8
 	ret
 
@@ -2479,7 +2482,7 @@ testRcr8Loop:
 	mov [es:inputVal2], ch
 	call calcRcr8Result
 	call testRcr8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopRcr8Test
 continueRcr8:
 	inc cx
@@ -2495,7 +2498,7 @@ continueRcr8:
 	ret
 stopRcr8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueRcr8
 	ret
 
@@ -2630,7 +2633,7 @@ testShl8Loop:
 	mov [es:inputVal2], ch
 	call calcShl8Result
 	call testShl8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopShl8Test
 continueShl8:
 	inc cx
@@ -2646,7 +2649,7 @@ continueShl8:
 	ret
 stopShl8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueShl8
 	ret
 
@@ -2798,7 +2801,7 @@ testShr8Loop:
 	mov [es:inputVal2], ch
 	call calcShr8Result
 	call testShr8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopShr8Test
 continueShr8:
 	inc cx
@@ -2814,7 +2817,7 @@ continueShr8:
 	ret
 stopShr8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueShr8
 	ret
 
@@ -2958,7 +2961,7 @@ testSar8Loop:
 	mov [es:inputVal2], ch
 	call calcSar8Result
 	call testSar8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopSar8Test
 continueSar8:
 	inc cx
@@ -2974,7 +2977,7 @@ continueSar8:
 	ret
 stopSar8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueSar8
 	ret
 
@@ -3118,20 +3121,20 @@ testMuluLoop:
 	mov ax, [es:inputVal2]
 	add bx, ax
 	mov [es:inputVal1], cl
-	cmp cl, 0
+	xor cl, 0
 	jnz skipMuluVal2
 	xor bx, bx
 	mov [es:inputVal2], ch
 skipMuluVal2:
 	mov [es:expectedResult1], bx
 	mov ax, 0xF242
-	cmp bh, 0
+	xor bh, 0
 	jz noMuluOverflow
 	or ax, 0x0801
 noMuluOverflow:
 	mov [es:expectedFlags], ax
 	call testMulu8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopMuluTest
 continueMulu:
 	inc cx
@@ -3147,7 +3150,7 @@ continueMulu:
 	ret
 stopMuluTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueMulu
 	ret
 
@@ -3234,7 +3237,7 @@ testMulsLoop:
 	neg bx
 noNeg:
 	mov [es:inputVal1], cl
-	cmp cl, 0
+	xor cl, 0
 	jnz skipMulsVal2
 	xor bx, bx
 	mov [es:inputVal2], ch
@@ -3244,13 +3247,13 @@ skipMulsVal2:
 	sar bx, 7
 	jz noMulsOverflow
 	not bx
-	cmp bx, 0
+	xor bx, 0
 	jz noMulsOverflow
 	or ax, 0x0801
 noMulsOverflow:
 	mov [es:expectedFlags], ax
 	call testMuls8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopMulsTest
 continueMuls:
 	inc cx
@@ -3265,7 +3268,7 @@ continueMuls:
 	ret
 stopMulsTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueMuls
 	ret
 
@@ -3350,7 +3353,7 @@ testAadLoop:
 	mov [es:inputVal2], cx
 	call calcAadResult
 	call testAadSingle
-	cmp al, 0
+	xor al, 0
 	jnz stopAadTest
 continueAad:
 	inc cx
@@ -3368,7 +3371,7 @@ continueAad:
 	ret
 stopAadTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueAad
 	ret
 
@@ -3441,7 +3444,7 @@ calcAadResult:
 	mov ax, [es:inputVal2]
 	mov bh, al
 	xor al, al
-	cmp bl, 0
+	xor bl, 0
 	jz aadSetRes
 aadLoop:
 	add al, ah
@@ -3476,7 +3479,7 @@ testDivu8Loop:
 	mov [es:inputVal2], cx
 	call calcDivu8Result
 	call testDivu8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopDivu8Test
 continueDivu8:
 	inc cx
@@ -3494,7 +3497,7 @@ continueDivu8:
 	ret
 stopDivu8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueDivu8
 	ret
 
@@ -3650,7 +3653,7 @@ testDivs8Loop:
 	mov [es:inputVal2], cx
 	call calcDivs8Result
 	call testDivs8Single
-	cmp al, 0
+	xor al, 0
 	jnz stopDivs8Test
 continue8Divs:
 	mov byte [es:isTesting], 2
@@ -3669,7 +3672,7 @@ continue8Divs:
 	ret
 stopDivs8Test:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continue8Divs
 	ret
 
@@ -3850,7 +3853,7 @@ testAamLoop:
 	mov [es:inputVal2], ch
 	call calcAamResult
 	call testAamSingle
-	cmp al, 0
+	xor al, 0
 	jnz stopAamTest
 continueAam:
 	inc cx
@@ -3866,7 +3869,7 @@ continueAam:
 	ret
 stopAamTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueAam
 	ret
 
@@ -3956,7 +3959,7 @@ calcAamResult:
 	mov ah, al
 	xor ah, 0xa5
 	mov [es:expectedResult1], ax
-	cmp bl, 0
+	xor bl, 0
 	jz aamError
 	xor ah, ah
 aamLoop:
@@ -4011,7 +4014,7 @@ testDaaLoop:
 	mov [es:inputVal2], ch
 	call calcDaaResult
 	call testDaaSingle
-	cmp al, 0
+	xor al, 0
 	jnz stopDaaTest
 continueDaa:
 	inc cx
@@ -4028,7 +4031,7 @@ continueDaa:
 	ret
 stopDaaTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueDaa
 	ret
 
@@ -4182,7 +4185,7 @@ testDasLoop:
 	mov [es:inputVal2], ch
 	call calcDasResult
 	call testDasSingle
-	cmp al, 0
+	xor al, 0
 	jnz stopDasTest
 continueDas:
 	inc cx
@@ -4199,7 +4202,7 @@ continueDas:
 	ret
 stopDasTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueDas
 	ret
 
@@ -4355,7 +4358,7 @@ testAaaLoop2:
 	mov [es:inputVal2], cx
 	call calcAaaResult
 	call testAaaSingle
-	cmp al, 0
+	xor al, 0
 	jnz stopAaaTest
 continueAaa:
 	inc cx
@@ -4375,7 +4378,7 @@ continueAaa:
 	ret
 stopAaaTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueAaa
 	ret
 
@@ -4497,7 +4500,7 @@ testAasLoop2:
 	mov [es:inputVal2], cx
 	call calcAasResult
 	call testAasSingle
-	cmp al, 0
+	xor al, 0
 	jnz stopAasTest
 continueAas:
 	inc cx
@@ -4517,7 +4520,7 @@ continueAas:
 	ret
 stopAasTest:
 	call checkKeyInput
-	cmp al, 0
+	xor al, 0
 	jnz continueAas
 	ret
 
@@ -4792,7 +4795,7 @@ writeString:
 textLoop:
 	lodsb
 	int 0x10
-	cmp al, 0
+	xor al, 0
 	jz endString
 	dec cx
 	jnz textLoop
@@ -4843,7 +4846,7 @@ vblankInterruptHandler:
 	out IO_SCR2_SCRL_X, ax
 
 	mov al, [es:isTesting]
-	cmp al, 0
+	xor al, 0
 	jz skipValuePrint
 	cmp al, 1
 	jnz skipValue8x8Print
@@ -4938,7 +4941,7 @@ outputCharHandler:
 	shl bx, 1
 	mov di, backgroundMap
 	add di, bx
-	cmp al, 0
+	xor al, 0
 	jz endOutput
 	cmp al, 10
 	jz newLine
