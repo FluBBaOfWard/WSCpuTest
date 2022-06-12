@@ -198,6 +198,7 @@ monoFontLoop:
 	call testCmp8
 	call testNeg8
 	call testAdc8
+	call testSbb8
 
 	call testRol8
 	call testRor8
@@ -1271,7 +1272,7 @@ add8NoAC:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test ADC for all bytes & bytes values + carry.
+; Test ADC/ADDC for all bytes & bytes values + carry.
 ;-----------------------------------------------------------------------------
 testAdc8:
 	mov si, testingAdc8Str
@@ -1558,6 +1559,163 @@ sub8NoOv:
 	jz sub8NoAC
 	or cl, 0x10
 sub8NoAC:
+	lea bx, PZSTable
+	xlat
+	or cl, al
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test SBB/SUBC for all bytes & bytes values + carry.
+;-----------------------------------------------------------------------------
+testSbb8:
+	mov si, testingSbb8Str
+	call writeString
+	mov si, test8x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+	mov byte [es:inputCarry], 0
+
+testSbb8CLoop:
+	xor cx, cx
+testSbb8Loop:
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ch
+	call calcSbb8Result
+	call testSbb8Single
+	xor al, 0
+	jnz stopSbb8Test
+continueSbb8:
+	inc cx
+	jnz testSbb8Loop
+	cmp byte [es:inputCarry], 0
+	jnz testSbbEnd
+	mov byte [es:inputCarry], 1
+	jmp testSbb8CLoop
+
+testSbbEnd:
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	mov byte [es:inputCarry], 0
+	xor ax, ax
+	ret
+stopSbb8Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueSbb8
+	mov byte [es:inputCarry], 0
+	ret
+
+;-----------------------------------------------------------------------------
+testSbb8Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov bl, [es:inputCarry]
+	and bl, 1
+	or al, bl
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cl, [es:inputVal1]
+	mov bl, [es:inputVal2]
+	popf
+	sbb bl, cl
+	pushf
+
+	mov [es:testedResult1], bl
+	pop cx
+	mov [es:testedFlags], cx
+	mov al, [es:expectedResult1]
+	xor al, bl
+	jnz sbb8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sbb8Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FE
+	mov al, [es:inputCarry]
+	and al, 1
+	or bl, al
+	push bx
+	mov [es:inputFlags], bx
+
+	mov cl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	popf
+	sbb al, cl
+	pushf
+
+	mov [es:testedResult1], al
+	pop cx
+	mov [es:testedFlags], cx
+	mov bl, [es:expectedResult1]
+	xor al, bl
+	jnz sbb8Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sbb8Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+sbb8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcSbb8Result:
+	push bx
+	push cx
+
+	xor ah, ah
+	xor bh, bh
+	xor ch, ch
+	mov bl, [es:inputVal1]
+	mov al, [es:inputVal2]
+	mov cl, bl
+	xor cl, al
+	add bx, [es:inputCarry]
+	xor bx, 0
+	jz sbb8SetRes
+sbb8Loop:
+	dec ax
+	dec bx
+	jnz sbb8Loop
+
+sbb8SetRes:
+	mov [es:expectedResult1], al
+	xor cl, al
+	mov bl, cl
+	mov cx, 0xF202
+	test ah, 1
+	jz sbb8NoC
+	or cx, 0x801
+sbb8NoC:
+	test bl, 0x80
+	jz sbb8NoOv
+	xor ch, 0x08
+sbb8NoOv:
+	test bl, 0x10
+	jz sbb8NoAC
+	or cl, 0x10
+sbb8NoAC:
 	lea bx, PZSTable
 	xlat
 	or cl, al
