@@ -1299,9 +1299,9 @@ continueAdc8:
 	inc al
 	mov bl, [es:inputCarry]
 	xor bl, 0
-	jz adcNoInpCarry
+	jz adc8NoInpCarry
 	inc ax
-adcNoInpCarry:
+adc8NoInpCarry:
 	mov [es:expectedResult1], ax
 	inc ch
 	jnz testAdc8Loop
@@ -1572,8 +1572,11 @@ testSbb8:
 	mov byte [es:isTesting], 1
 	mov byte [es:inputCarry], 0
 
-testSbb8CLoop:
 	xor cx, cx
+testSbb8CLoop:
+	mov ax, [es:inputCarry]
+	neg ax
+	mov [es:expectedResult1], ax
 testSbb8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1582,7 +1585,19 @@ testSbb8Loop:
 	xor al, 0
 	jnz stopSbb8Test
 continueSbb8:
-	inc cx
+	dec word [es:expectedResult1]
+	inc cl
+	jnz testSbb8Loop
+	xor ah, ah
+	mov al, ch
+	inc al
+	mov bl, [es:inputCarry]
+	xor bl, 0
+	jz sbb8NoInpCarry
+	dec ax
+sbb8NoInpCarry:
+	mov [es:expectedResult1], ax
+	inc ch
 	jnz testSbb8Loop
 	cmp byte [es:inputCarry], 0
 	jnz testSbbEnd
@@ -1677,25 +1692,12 @@ calcSbb8Result:
 	push bx
 	push cx
 
-	xor ah, ah
-	xor bh, bh
-	xor ch, ch
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
-	mov cl, bl
-	xor cl, al
-	add bx, [es:inputCarry]
-	xor bx, 0
-	jz sbb8SetRes
-sbb8Loop:
-	dec ax
-	dec bx
-	jnz sbb8Loop
+	xor bl, al
 
-sbb8SetRes:
-	mov [es:expectedResult1], al
-	xor cl, al
-	mov bl, cl
+	mov ax, [es:expectedResult1]
+	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
 	jz sbb8NoC
