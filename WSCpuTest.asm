@@ -1144,6 +1144,7 @@ testAdd8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
+	mov cx, [es:expectedResult1]
 testAdd8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1152,7 +1153,12 @@ testAdd8Loop:
 	cmp al, 0
 	jnz stopAdd8Test
 continueAdd8:
-	inc cx
+	inc word [es:expectedResult1]
+	inc cl
+	jnz testAdd8Loop
+	mov word [es:expectedResult1], 0
+	inc ch
+	mov [es:expectedResult1], ch
 	jnz testAdd8Loop
 
 	hlt						; Wait for VBlank
@@ -1236,20 +1242,11 @@ calcAdd8Result:
 
 	mov bl, [es:inputVal1]
 	mov al, [es:inputVal2]
-	mov cl, bl
-	xor cl, al
-	xor ah, ah
-	xor bl, 0
-	jz add8SetRes
-add8Loop:
-	inc ax
-	dec bl
-	jnz add8Loop
+	xor bl, al
 
 add8SetRes:
-	mov [es:expectedResult1], al
-	xor cl, al
-	mov bl, cl
+	mov ax, [es:expectedResult1]
+	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
 	jz add8NoC
