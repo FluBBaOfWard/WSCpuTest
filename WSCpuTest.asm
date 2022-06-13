@@ -3116,7 +3116,10 @@ testMulu8:
 
 	xor cx, cx
 	mov word [es:inputVal2], cx
-	mov [es:expectedResult1], cx
+testMuluLoop2:
+	mov [es:inputVal2], ch
+	xor bx, bx
+	mov [es:expectedResult1], bx
 testMuluLoop:
 	mov [es:inputVal1], cl
 	mov ax, 0xF242
@@ -3135,11 +3138,8 @@ continueMulu:
 	add [es:expectedResult1], bx
 	inc cl
 	jnz testMuluLoop
-	xor bx, bx
-	mov [es:expectedResult1], bx
 	inc ch
-	mov [es:inputVal2], ch
-	jnz testMuluLoop
+	jnz testMuluLoop2
 
 	hlt						; Wait for VBlank
 	mov byte [es:isTesting], 0
