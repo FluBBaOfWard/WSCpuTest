@@ -3349,18 +3349,24 @@ testAad:
 
 	xor cx, cx
 	xor dx, dx
-testAadLoop:
+testAadLoop2:
+	mov byte [es:expectedResult2], 0
 	mov [es:inputVal1], dl
+	mov [es:selfModifyingCode+1], dl	; multiplicand
+testAadLoop:
 	mov [es:inputVal2], cx
 	call calcAadResult
 	call testAadSingle
 	xor al, 0
 	jnz stopAadTest
 continueAad:
-	inc cx
+	inc cl
+	jnz testAadLoop
+	add [es:expectedResult2], dl
+	inc ch
 	jnz testAadLoop
 	inc dl
-	jnz testAadLoop
+	jnz testAadLoop2
 
 	hlt						; Wait for VBlank
 	mov byte [es:isTesting], 0
@@ -3386,9 +3392,6 @@ testAadSingle:
 	and ax, 0x8700
 	push ax
 	mov [es:inputFlags], ax
-
-	mov bl, [es:inputVal1]
-	mov [es:selfModifyingCode+1], bl	; dividend
 
 	mov ax, [es:inputVal2]
 	popf
@@ -3439,27 +3442,14 @@ aadFailed:
 	ret
 ;-----------------------------------------------------------------------------
 calcAadResult:
-	push bx
-
-	mov bl, [es:inputVal1]
-	mov ax, [es:inputVal2]
-	mov bh, al
-	xor al, al
-	xor bl, 0
-	jz aadSetRes
-aadLoop:
+	mov ah, [es:inputVal2]
+	mov al, [es:expectedResult2]
 	add al, ah
-	dec bl
-	jnz aadLoop
-
-aadSetRes:
-	add al, bh
 	pushf
 	xor ah, ah
 	mov [es:expectedResult1], ax
 	pop ax							; All flags are from the last add.
 	mov [es:expectedFlags], ax
-	pop bx
 	ret
 
 ;-----------------------------------------------------------------------------
