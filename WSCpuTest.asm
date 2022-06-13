@@ -3112,22 +3112,15 @@ testMulu8:
 	mov si, test8x8InputStr
 	call writeString
 
-	mov word [es:inputVal2], 0
 	mov byte [es:isTesting], 1
 
-	mov cx, 0
+	xor cx, cx
+	mov word [es:inputVal2], cx
+	mov [es:expectedResult1], cx
 testMuluLoop:
-	mov bx, [es:expectedResult1]
-	mov ax, [es:inputVal2]
-	add bx, ax
 	mov [es:inputVal1], cl
-	xor cl, 0
-	jnz skipMuluVal2
-	xor bx, bx
-	mov [es:inputVal2], ch
-skipMuluVal2:
-	mov [es:expectedResult1], bx
 	mov ax, 0xF242
+	mov bx, [es:expectedResult1]
 	xor bh, 0
 	jz noMuluOverflow
 	or ax, 0x0801
@@ -3137,7 +3130,15 @@ noMuluOverflow:
 	xor al, 0
 	jnz stopMuluTest
 continueMulu:
-	inc cx
+	xor bx, bx
+	mov bl, ch
+	add [es:expectedResult1], bx
+	inc cl
+	jnz testMuluLoop
+	xor bx, bx
+	mov [es:expectedResult1], bx
+	inc ch
+	mov [es:inputVal2], ch
 	jnz testMuluLoop
 
 	hlt						; Wait for VBlank
@@ -3226,7 +3227,7 @@ testMuls8:
 
 	mov byte [es:isTesting], 1
 
-	mov cx, 0
+	xor cx, cx
 testMulsLoop:
 	mov bx, [es:expectedResult1]
 	mov al, ch
@@ -4349,7 +4350,7 @@ testAaa:
 	call writeString
 
 	mov byte [es:isTesting], 2
-	mov bl, 0
+	xor bl, bl
 
 testAaaLoop:
 	mov [es:inputVal1], bl
@@ -4491,7 +4492,7 @@ testAas:
 	call writeString
 
 	mov byte [es:isTesting], 2
-	mov bl, 0
+	xor bl, bl
 
 testAasLoop:
 	mov [es:inputVal1], bl
@@ -5122,7 +5123,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220612",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220613",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0

@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.0.1 (20220612)
+# WonderSwan CPU Test V0.1.0 (20220613)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -142,8 +142,7 @@ If division exception:
 	Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
 
 ### AAD / CVTDB
-The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL
-and AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
+The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL and AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
 
 ### DAA / ADJ4A
 All flags are the same as a normal addition except that AuxCarry & Carry are never cleared.
