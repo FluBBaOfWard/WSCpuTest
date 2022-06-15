@@ -1289,9 +1289,12 @@ testAdc8:
 	mov byte [es:inputCarry], 0
 
 	xor cx, cx
+	mov [es:expectedResult1], cx
+	mov [es:inputVal1], cx
+	mov [es:inputVal2], cx
 testAdc8CLoop:
 	mov ax, [es:inputCarry]
-	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], ax
 testAdc8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1300,7 +1303,7 @@ testAdc8Loop:
 	xor al, 0
 	jnz stopAdc8Test
 continueAdc8:
-	inc word [es:expectedResult1]
+	inc word [es:expectedResult2]
 	inc cl
 	jnz testAdc8Loop
 	xor ah, ah
@@ -1311,7 +1314,7 @@ continueAdc8:
 	jz adc8NoInpCarry
 	inc ax
 adc8NoInpCarry:
-	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], ax
 	inc ch
 	jnz testAdc8Loop
 	cmp byte [es:inputCarry], 0
@@ -1411,7 +1414,8 @@ calcAdc8Result:
 	mov al, [es:inputVal2]
 	xor bl, al
 
-	mov ax, [es:expectedResult1]
+	mov ax, [es:expectedResult2]
+	mov [es:expectedResult1], al
 	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
@@ -1582,10 +1586,11 @@ testSbb8:
 	mov byte [es:inputCarry], 0
 
 	xor cx, cx
+	mov [es:expectedResult1], cx
 testSbb8CLoop:
 	mov ax, [es:inputCarry]
 	neg ax
-	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], ax
 testSbb8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1594,7 +1599,7 @@ testSbb8Loop:
 	xor al, 0
 	jnz stopSbb8Test
 continueSbb8:
-	dec word [es:expectedResult1]
+	dec word [es:expectedResult2]
 	inc cl
 	jnz testSbb8Loop
 	xor ah, ah
@@ -1605,7 +1610,7 @@ continueSbb8:
 	jz sbb8NoInpCarry
 	dec ax
 sbb8NoInpCarry:
-	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], ax
 	inc ch
 	jnz testSbb8Loop
 	cmp byte [es:inputCarry], 0
@@ -1705,7 +1710,8 @@ calcSbb8Result:
 	mov al, [es:inputVal2]
 	xor bl, al
 
-	mov ax, [es:expectedResult1]
+	mov ax, [es:expectedResult2]
+	mov [es:expectedResult1], al
 	xor bl, al
 	mov cx, 0xF202
 	test ah, 1
@@ -4622,8 +4628,6 @@ aasSetRes:
 testSPStack:
 	mov si, testingSPStackStr
 	call writeString
-	mov si, testPushSPStr
-	call writeString
 
 	mov ax, sp
 	mov [es:inputVal1], ax
@@ -4635,15 +4639,14 @@ testSPStack:
 	xor bx, ax
 	jz testPopSpStack
 
+	mov si, testPushSPStr
+	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
 	jz spStackFailed
 
 testPopSpStack:
-	mov si, testPopSPStr
-	call writeString
-
 	mov ax, sp
 	mov bx, ax
 	mov [es:expectedResult1], bx
@@ -4656,15 +4659,14 @@ testPopSpStack:
 	xor bx, cx
 	jz testPusha
 
+	mov si, testPopSPStr
+	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
 	jz spStackFailed
 
 testPusha:
-	mov si, testPushaStr
-	call writeString
-
 	mov ax, sp
 	mov [es:inputVal1], ax
 	mov [es:expectedResult1], ax
@@ -4681,15 +4683,14 @@ testPusha:
 	xor bx, ax
 	jz testPopa
 
+	mov si, testPushaStr
+	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
 	jz spStackFailed
 
 testPopa:
-	mov si, testPopaStr
-	call writeString
-
 	mov cx, sp
 	mov ax, cx
 	sub ax, 20
@@ -4711,6 +4712,8 @@ testPopa:
 	xor bx, cx
 	jz spStackOk
 
+	mov si, testPopaStr
+	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
@@ -5250,8 +5253,8 @@ testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
 testingSPStackStr: db "PUSH/POP SP to/from stack", 10, 0
 testPushSPStr: db "Push SP", 10, 0
 testPopSPStr: db "Pop SP", 10, 0
-testPushaStr: db "Pusha", 10, 0
-testPopaStr: db "Popa", 10, 0
+testPushaStr: db "Pusha SP", 10, 0
+testPopaStr: db "Popa SP", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test8x8InputStr: db "Testing Input: 0x00, 0x00", 0
