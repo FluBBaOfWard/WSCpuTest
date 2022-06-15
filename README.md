@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.1.0 (20220613)
+# WonderSwan CPU Test V0.1.0 (20220615)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -165,11 +165,18 @@ AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
 Sign is set when AuxCarry (, Carry & Zero) is not set.
 AL is always masked to lower nybble.
 
-### Push SP to stack
+### PUSH/POP SP to/from stack
 8086/80186
+PUSH
 {
 	SP      = SP - 2
 	[SS:SP] = SP
+}
+
+POP
+{
+	SP = [SS:SP]
+	SP = SP + 2
 }
 
 ## Controls:

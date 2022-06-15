@@ -4615,7 +4615,7 @@ aasSetRes:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test pushing SP to stack.
+; Test pushing/popping SP to/from stack.
 ;-----------------------------------------------------------------------------
 testSPStack:
 	mov si, testingSPStackStr
@@ -4623,8 +4623,20 @@ testSPStack:
 
 	push sp				; Save SP on stack to look at
 	pop bx				; Get SP saved on stack
-	xor bx,sp
-	jz spStackFailed
+	add bx, 2
+	xor bx, sp
+	jnz spStackFailed
+
+	mov ax, sp
+	mov bx, sp			; Move SP to BX
+	sub bx, 2
+	push bx				; Save BX on stack to look at
+	pop sp				; Get SP saved on stack
+	mov cx, sp
+	mov sp, ax
+	add bx, 2
+	xor bx, cx
+	jnz spStackFailed
 
 spStackOk:
 	mov si, okStr
@@ -5113,7 +5125,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220613",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220615",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -5156,7 +5168,7 @@ testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
 
-testingSPStackStr: db "Pushing SP to stack", 10, 0
+testingSPStackStr: db "PUSH/POP SP to/from stack", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test8x8InputStr: db "Testing Input: 0x00, 0x00", 0
