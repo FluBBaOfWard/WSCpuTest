@@ -3115,7 +3115,8 @@ testMulu8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
-	mov word [es:inputVal2], cx
+	mov [es:inputVal1], cx
+	mov [es:inputVal2], cx
 testMuluLoop2:
 	mov [es:inputVal2], ch
 	xor bx, bx
@@ -3228,6 +3229,7 @@ testMuls8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
+	mov [es:inputVal2], cx
 testMulsLoop:
 	mov bx, [es:expectedResult1]
 	mov al, ch
@@ -4620,29 +4622,106 @@ aasSetRes:
 testSPStack:
 	mov si, testingSPStackStr
 	call writeString
-
-	push sp				; Save SP on stack to look at
-	pop bx				; Get SP saved on stack
-	add bx, 2
-	xor bx, sp
-	jnz spStackFailed
+	mov si, testPushSPStr
+	call writeString
 
 	mov ax, sp
-	mov bx, sp			; Move SP to BX
-	sub bx, 2
+	mov [es:inputVal1], ax
+	sub ax, 2
+	mov [es:expectedResult1], ax
+	push sp				; Save SP on stack to look at
+	pop bx				; Get SP saved on stack
+	mov [es:testedResult1], bx
+	xor bx, ax
+	jz testPopSpStack
+
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz spStackFailed
+
+testPopSpStack:
+	mov si, testPopSPStr
+	call writeString
+
+	mov ax, sp
+	mov bx, ax
+	mov [es:expectedResult1], bx
+	mov [es:inputVal1], bx
 	push bx				; Save BX on stack to look at
 	pop sp				; Get SP saved on stack
 	mov cx, sp
 	mov sp, ax
-	add bx, 2
+	mov [es:testedResult1], cx
 	xor bx, cx
-	jnz spStackFailed
+	jz testPusha
+
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz spStackFailed
+
+testPusha:
+	mov si, testPushaStr
+	call writeString
+
+	mov ax, sp
+	mov [es:inputVal1], ax
+	mov [es:expectedResult1], ax
+	pusha
+	pop cx				; IY
+	pop cx				; IX
+	pop cx				; BP
+	pop bx				; SP
+	pop cx				; BW
+	pop cx				; DW
+	pop cx				; CW
+	pop cx				; AW
+	mov [es:testedResult1], bx
+	xor bx, ax
+	jz testPopa
+
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz spStackFailed
+
+testPopa:
+	mov si, testPopaStr
+	call writeString
+
+	mov cx, sp
+	mov ax, cx
+	sub ax, 20
+	mov [es:inputVal1], ax
+	mov [es:expectedResult1], cx
+	push ax				; AW
+	push ax				; CW
+	push ax				; DW
+	push ax				; BW
+	push ax				; SP
+	push ax				; BP
+	push ax				; IX
+	push ax				; IY
+	popa
+	mov bx, sp
+	mov cx, [es:expectedResult1]
+	mov sp, cx
+	mov [es:testedResult1], bx
+	xor bx, cx
+	jz spStackOk
+
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz spStackFailed
 
 spStackOk:
 	mov si, okStr
 	call writeString
 	xor ax, ax
 	ret
+
 spStackFailed:
 	mov si, failedStr
 	call writeString
@@ -5169,6 +5248,10 @@ testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
 
 testingSPStackStr: db "PUSH/POP SP to/from stack", 10, 0
+testPushSPStr: db "Push SP", 10, 0
+testPopSPStr: db "Pop SP", 10, 0
+testPushaStr: db "Pusha", 10, 0
+testPopaStr: db "Popa", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test8x8InputStr: db "Testing Input: 0x00, 0x00", 0

@@ -176,7 +176,6 @@ PUSH
 POP
 {
 	SP = [SS:SP]
-	SP = SP + 2
 }
 
 ## Controls:
