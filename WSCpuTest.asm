@@ -213,6 +213,7 @@ monoFontLoop:
 	call testAaa
 	call testAas
 	call testSPStack
+	call testJmp
 
 	call testMulu8
 	call testMuls8
@@ -4623,6 +4624,455 @@ aasSetRes:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test all conditional JMP/BRA with all flags.
+;-----------------------------------------------------------------------------
+testJmp:
+	mov si, testingJmpStr
+	call writeString
+	mov si, test16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+
+	xor cx, cx
+testJmpLoop:
+	mov [es:inputVal1], cx
+	call calcJmpFlags
+	call testJmpSingle
+	xor al, 0
+	jnz stopJmpTest
+continueJmp:
+	inc cx
+	cmp ch, 0x04
+	jnz testJmpLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+stopJmpTest:
+	call checkKeyInput
+	xor al, 0
+	jnz continueJmp
+	ret
+
+;-----------------------------------------------------------------------------
+testJmpSingle:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov bx, [es:inputFlags]
+	or ax, bx
+	push ax					; Push flags for test.
+	mov bx, [es:inputVal1]
+	shr bx, 6
+	cmp bl, 0
+	jz jmpTestJo
+	cmp bl, 1
+	jz jmpTestJno
+	cmp bl, 2
+	jz jmpTestJb
+	cmp bl, 3
+	jz jmpTestJnb
+	cmp bl, 4
+	jz jmpTestJz
+	cmp bl, 5
+	jz jmpTestJnz
+	cmp bl, 6
+	jz jmpTestJbe
+	cmp bl, 7
+	jz jmpTestJnbe
+	cmp bl, 8
+	jz jmpTestJs
+	cmp bl, 9
+	jz jmpTestJns
+	cmp bl, 10
+	jz jmpTestJp
+	cmp bl, 11
+	jz jmpTestJnp
+	cmp bl, 12
+	jz jmpTestJl
+	cmp bl, 13
+	jz jmpTestJnl
+	cmp bl, 14
+	jz jmpTestJle
+	jmp jmpTestJnle
+
+;-------------------------------------
+jmpTestJo:
+	test ah, 0x08
+	jz jmpTestJoNoO
+	popf
+	jo jmpJoOk
+jmpJoFailed:
+	mov si, joFailedStr
+	jmp jmpFailed
+jmpTestJoNoO:
+	popf
+	jo jmpJoFailed
+jmpJoOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJno:
+	test ah, 0x08
+	jnz jmpTestJnoO
+	popf
+	jno jmpJnoOk
+jmpJnoFailed:
+	mov si, jnoFailedStr
+	jmp jmpFailed
+jmpTestJnoO:
+	popf
+	jno jmpJnoFailed
+jmpJnoOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJb:
+	test al, 0x01
+	jz jmpTestJbNoC
+	popf
+	jb jmpJbOk
+jmpJbFailed:
+	mov si, jbFailedStr
+	jmp jmpFailed
+jmpTestJbNoC:
+	popf
+	jb jmpJbFailed
+jmpJbOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJnb:
+	test al, 0x01
+	jnz jmpTestJnbC
+	popf
+	jnb jmpJnbOk
+jmpJnbFailed:
+	mov si, jnbFailedStr
+	jmp jmpFailed
+jmpTestJnbC:
+	popf
+	jnb jmpJnbFailed
+jmpJnbOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJz:
+	test al, 0x40
+	jz jmpTestJzNoZ
+	popf
+	jz jmpJzOk
+jmpJzFailed:
+	mov si, jzFailedStr
+	jmp jmpFailed
+jmpTestJzNoZ:
+	popf
+	jz jmpJzFailed
+jmpJzOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJnz:
+	test al, 0x40
+	jnz jmpTestJnzZ
+	popf
+	jnz jmpJnzOk
+jmpJnzFailed:
+	mov si, jnzFailedStr
+	jmp jmpFailed
+jmpTestJnzZ:
+	popf
+	jnz jmpJnzFailed
+jmpJnzOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJbe:
+	test al, 0x41
+	jz jmpTestJbeNoZ
+	popf
+	jbe jmpJbeOk
+jmpJbeFailed:
+	mov si, jbeFailedStr
+	jmp jmpFailed
+jmpTestJbeNoZ:
+	popf
+	jbe jmpJbeFailed
+jmpJbeOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJnbe:
+	test al, 0x41
+	jnz jmpTestJnbeZ
+	popf
+	jnbe jmpJnbeOk
+jmpJnbeFailed:
+	mov si, jnbeFailedStr
+	jmp jmpFailed
+jmpTestJnbeZ:
+	popf
+	jnbe jmpJnbeFailed
+jmpJnbeOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJs:
+	test al, 0x80
+	jz jmpTestJsNoS
+	popf
+	js jmpJnbeOk
+jmpJsFailed:
+	mov si, jsFailedStr
+	jmp jmpFailed
+jmpTestJsNoS:
+	popf
+	js jmpJsFailed
+jmpJsOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJns:
+	test al, 0x80
+	jnz jmpTestJnsS
+	popf
+	jns jmpJnsOk
+jmpJnsFailed:
+	mov si, jnsFailedStr
+	jmp jmpFailed
+jmpTestJnsS:
+	popf
+	jns jmpJnsFailed
+jmpJnsOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJp:
+	test al, 0x04
+	jz jmpTestJpNoP
+	popf
+	jp jmpJpOk
+jmpJpFailed:
+	mov si, jpFailedStr
+	jmp jmpFailed
+jmpTestJpNoP:
+	popf
+	jp jmpJpFailed
+jmpJpOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJnp:
+	test al, 0x04
+	jnz jmpTestJnpP
+	popf
+	jnp jmpJnpOk
+jmpJnpFailed:
+	mov si, jnpFailedStr
+	jmp jmpFailed
+jmpTestJnpP:
+	popf
+	jnp jmpJnpFailed
+jmpJnpOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJl:
+	and ax, 0x880
+	jz jmpTestJlZ
+	xor ax, 0x880
+	jz jmpTestJlZ
+	popf
+	jl jmpJlOk
+jmpJlFailed:
+	mov si, jlFailedStr
+	jmp jmpFailed
+jmpTestJlZ:
+	popf
+	jl jmpJlFailed
+jmpJlOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJnl:
+	and ax, 0x880
+	jz jmpTestJnlNoL
+	xor ax, 0x880
+	jz jmpTestJnlNoL
+	popf
+	jnl jmpJnlFailed
+jmpJnlOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+jmpTestJnlNoL:
+	popf
+	jnl jmpJnlOk
+jmpJnlFailed:
+	mov si, jnlFailedStr
+	jmp jmpFailed
+;-------------------------------------
+jmpTestJle:
+	and ax, 0x8C0
+	jz jmpTestJleNoLe
+	xor ax, 0x880
+	jz jmpTestJleNoLe
+	popf
+	jle jmpJleOk
+jmpJleFailed:
+	mov si, jleFailedStr
+	jmp jmpFailed
+jmpTestJleNoLe:
+	popf
+	jle jmpJleFailed
+jmpJleOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+;-------------------------------------
+jmpTestJnle:
+	and ax, 0x8C0
+	jz jmpTestJnleNoLe
+	xor ax, 0x880
+	jz jmpTestJnleNoLe
+	popf
+	jnle jmpJnleFailed
+jmpJnleOk:
+	pushf
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jz jmpExit
+jmpTestJnleNoLe:
+	popf
+	jnle jmpJnleOk
+jmpJnleFailed:
+	mov si, jnleFailedStr
+	jmp jmpFailed
+
+;-------------------------------------
+jmpFailed:
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	call writeString
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-------------------------------------
+jmpExit:
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+calcJmpFlags:
+	push bx
+
+	xor ax, ax
+	mov bl, [es:inputVal1]
+
+	mov al, bl
+	and al, 0x01		; Carry
+
+	test bl, 0x02		; Parity
+	jz jmpNoP
+	or al, 0x04
+jmpNoP:
+	test bl, 0x04		; Aux Carry
+	jz jmpNoAC
+	or al, 0x10
+jmpNoAC:
+	test bl, 0x08		; Zero
+	jz jmpNoZ
+	or al, 0x40
+jmpNoZ:
+	test bl, 0x10		; Sign
+	jz jmpNoS
+	or al, 0x80
+jmpNoS:
+	test bl, 0x20		; Overflow
+	jz jmpNoV
+	or ah, 0x08
+jmpNoV:
+	or ax, 0xf202		; Expected flags
+	mov [es:inputFlags], ax
+	mov [es:expectedFlags], ax
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test pushing/popping SP to/from stack.
 ;-----------------------------------------------------------------------------
 testSPStack:
@@ -5207,7 +5657,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220615",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220625",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -5250,6 +5700,8 @@ testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
 
+testingJmpStr: db "Conditional JMP/BRA", 10, 0
+
 testingSPStackStr: db "PUSH/POP SP to/from stack", 10, 0
 testPushSPStr: db "Push SP", 10, 0
 testPopSPStr: db "Pop SP", 10, 0
@@ -5257,6 +5709,7 @@ testPushaStr: db "Pusha SP", 10, 0
 testPopaStr: db "Popa SP", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
+test16InputStr: db "Testing Input: 0x0000", 0
 test8x8InputStr: db "Testing Input: 0x00, 0x00", 0
 test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
 test16x16InputStr: db "Testing Inp: 0x0000, 0x0000", 0
@@ -5265,12 +5718,30 @@ expectedStr: db "Expected Result:", 10, 0
 testedStr: db "Tested Result:", 10, 0
 valueStr: db "Value:0x",0
 flagsStr: db " Flags:0x",0
-okStr: db "Ok! ", 10, 0
-failedStr: db "Failed! ", 10, 0
+okStr: db "Ok!", 10, 0
+failedStr: db "Failed!", 10, 0
 preFlagStr: db "PreF: ", 0
 postFlagStr: db "PostF: ", 0
 hexPrefixStr: db " 0x",0
 fHexPrefixStr: db " F:0x",0
+
+joFailedStr: db "JO/BV Failed", 10, 0
+jnoFailedStr: db "JNO/BNV Failed", 10, 0
+jbFailedStr: db "JB/JNAE/JC/BC/BL Failed", 10, 0
+jnbFailedStr: db "JNB/JAE/JNC/BNC/BNL Failed", 10, 0
+jzFailedStr: db "JZ/JE/BE/BZ Failed", 10, 0
+jnzFailedStr: db "JNZ/JNE/BNE/BNZ Failed", 10, 0
+jbeFailedStr: db "JBE/JNA/BNH Failed", 10, 0
+jnbeFailedStr: db "JNBE/JA/BH Failed", 10, 0
+jsFailedStr: db "JS/BN Failed", 10, 0
+jnsFailedStr: db "JNS/BP Failed", 10, 0
+jpFailedStr: db "JP/JPE/BPE Failed", 10, 0
+jnpFailedStr: db "JNP/JPO/BPO Failed", 10, 0
+jlFailedStr: db "JL/JNGE/BLT Failed", 10, 0
+jnlFailedStr: db "JNL/JGE/BGE Failed", 10, 0
+jleFailedStr: db "JLE/JNG/BLE Failed", 10, 0
+jnleFailedStr: db "JNLE/JG/BGT Failed", 10, 0
+
 author: db "Written by Fredrik Ahlström, 2022"
 
 	ROM_HEADER initialize, MYSEGMENT, RH_WS_COLOR, RH_ROM_4MBITS, RH_NO_SRAM, RH_HORIZONTAL

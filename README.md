@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.1.0 (20220615)
+# WonderSwan CPU Test V0.1.0 (20220625)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -167,13 +167,13 @@ AL is always masked to lower nybble.
 
 ### PUSH/POP SP to/from stack
 8086/80186
-PUSH
+PUSH SP
 {
 	SP      = SP - 2
 	[SS:SP] = SP
 }
 
-POP
+POP SP
 {
 	SP = [SS:SP]
 }
