@@ -212,7 +212,7 @@ monoFontLoop:
 	call testDas
 	call testAaa
 	call testAas
-	call testSPStack
+	call testStack
 	call testJmp
 
 	call testMulu8
@@ -5073,12 +5073,13 @@ jmpNoV:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test pushing/popping SP to/from stack.
+; Test pushing/popping to/from stack.
 ;-----------------------------------------------------------------------------
-testSPStack:
-	mov si, testingSPStackStr
+testStack:
+	mov si, testingStackStr
 	call writeString
 
+stackPushSp:
 	mov ax, sp
 	mov [es:inputVal1], ax
 	sub ax, 2
@@ -5087,16 +5088,16 @@ testSPStack:
 	pop bx				; Get SP saved on stack
 	mov [es:testedResult1], bx
 	xor bx, ax
-	jz testPopSpStack
+	jz stackPopSp
 
 	mov si, testPushSPStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz spStackFailed
+	jz stackFailed
 
-testPopSpStack:
+stackPopSp:
 	mov ax, sp
 	mov bx, ax
 	mov [es:expectedResult1], bx
@@ -5107,75 +5108,121 @@ testPopSpStack:
 	mov sp, ax
 	mov [es:testedResult1], cx
 	xor bx, cx
-	jz testPusha
+	jz stackPusha
 
 	mov si, testPopSPStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz spStackFailed
+	jz stackFailed
 
-testPusha:
-	mov ax, sp
-	mov [es:inputVal1], ax
-	mov [es:expectedResult1], ax
+stackPusha:
+	mov cx, sp
+	mov [es:inputVal1], cx
+	mov [es:expectedResult1], cx
+	mov ax, 0xCAFE
+	mov bx, 0xBABE
+	mov cx, 0x5AB0
+	mov dx, 0x7A6E
+	mov bp, 0x0123
+	mov si, 0x4567
+	mov di, 0x89AB
 	pusha
-	pop cx				; IY
-	pop cx				; IX
-	pop cx				; BP
-	pop bx				; SP
-	pop cx				; BW
-	pop cx				; DW
-	pop cx				; CW
-	pop cx				; AW
-	mov [es:testedResult1], bx
-	xor bx, ax
-	jz testPopa
+	pop ax				; DI / IY
+	xor ax, di
+	jnz stackPushaFailed
+	pop ax				; SI / IX
+	xor ax, si
+	jnz stackPushaFailed
+	pop ax				; BP
+	xor ax, bp
+	jnz stackPushaFailed
+	pop bp				; SP
+	pop ax				; BX / BW
+	xor ax, bx
+	jnz stackPushaFailed
+	pop ax				; DX / DW
+	xor ax, dx
+	jnz stackPushaFailed
+	pop ax				; CX / CW
+	xor ax, cx
+	jnz stackPushaFailed
+	pop ax				; AX / AW
+	xor ax, 0xCAFE
+	jnz stackPushaFailed
+	mov [es:testedResult1], bp
+	mov cx, [es:expectedResult1]
+	xor cx, bp
+	jz stackPopa
 
+stackPushaFailed:
+	mov sp, cx
 	mov si, testPushaStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz spStackFailed
+	jz stackFailed
 
-testPopa:
+stackPopa:
 	mov cx, sp
-	mov ax, cx
-	sub ax, 20
-	mov [es:inputVal1], ax
 	mov [es:expectedResult1], cx
-	push ax				; AW
-	push ax				; CW
-	push ax				; DW
-	push ax				; BW
-	push ax				; SP
+	sub cx, 120
+	mov [es:inputVal1], cx
+	mov ax, 0x89AB
+	push ax				; AX / AW
+	mov ax, 0x4567
+	push ax				; CX / CW
+	mov ax, 0x0123
+	push ax				; DX / DW
+	mov ax, 0x7A6E
+	push ax				; BX / BW
+	push cx				; SP
+	mov ax, 0x5AB0
 	push ax				; BP
-	push ax				; IX
-	push ax				; IY
+	mov ax, 0xBABE
+	push ax				; SI / IX
+	mov ax, 0xCAFE
+	push ax				; DI / IY
 	popa
+	xor di, 0xCAFE
+	jnz stackPopaFailed
+	xor si, 0xBABE
+	jnz stackPopaFailed
+	xor bp, 0x5AB0
+	jnz stackPopaFailed
+	xor bx, 0x7A6E
+	jnz stackPopaFailed
+	xor dx, 0x0123
+	jnz stackPopaFailed
+	xor cx, 0x4567
+	jnz stackPopaFailed
+	xor ax, 0x89AB
+	jnz stackPopaFailed
+
 	mov bx, sp
+	mov [es:testedResult1], bx
 	mov cx, [es:expectedResult1]
 	mov sp, cx
-	mov [es:testedResult1], bx
 	xor bx, cx
-	jz spStackOk
+	jz stackOk
 
+stackPopaFailed:
 	mov si, testPopaStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz spStackFailed
+	jz stackFailed
 
-spStackOk:
+stackOk:
 	mov si, okStr
 	call writeString
 	xor ax, ax
 	ret
 
-spStackFailed:
+stackFailed:
 	mov si, failedStr
 	call writeString
 	mov ax, 1
@@ -5657,7 +5704,7 @@ MonoFont:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220625",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220626",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -5698,15 +5745,15 @@ testingDivsStr: db "Signed Division 16/8", 10, 0
 testingDivu32Str: db "Unsigned Division 32/16", 10, 0
 testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
-testingAadStr: db "AAD/CVTDB (mulu 8*8 + add 8)", 10, 0
+testingAadStr: db "AAD/CVTDB (mulu 8*8, add 8)", 10, 0
 
 testingJmpStr: db "Conditional JMP/BRA", 10, 0
 
-testingSPStackStr: db "PUSH/POP SP to/from stack", 10, 0
+testingStackStr: db "PUSH/POP to/from stack", 10, 0
 testPushSPStr: db "Push SP", 10, 0
 testPopSPStr: db "Pop SP", 10, 0
-testPushaStr: db "Pusha SP", 10, 0
-testPopaStr: db "Popa SP", 10, 0
+testPushaStr: db "Pusha", 10, 0
+testPopaStr: db "Popa", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test16InputStr: db "Testing Input: 0x0000", 0
