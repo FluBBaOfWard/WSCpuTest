@@ -5206,10 +5206,88 @@ stackPopa:
 	mov cx, [es:expectedResult1]
 	mov sp, cx
 	xor bx, cx
-	jz stackOk
+	jz stackEnter
 
 stackPopaFailed:
 	mov si, testPopaStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz stackFailed
+
+stackEnter:
+	mov [es:inputVal1], bp
+	mov [es:inputVal2], sp
+	mov ax, sp
+	sub ax, 2
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], ax
+	enter 0, 0
+	mov [es:testedResult1], bp
+	mov [es:testedResult2], sp
+	mov cx, sp
+	mov sp, [es:inputVal2]
+	mov bx, ax
+	xor ax, bp
+	jnz stackEnterFailed
+	xor bx, cx
+	jnz stackEnterFailed
+
+	mov [es:inputVal1], bp
+	mov [es:inputVal2], sp
+	mov ax, sp
+	sub ax, 2
+	mov [es:expectedResult1], ax
+	sub ax, 2
+	mov [es:expectedResult2], ax
+	enter 0, 1
+	mov [es:testedResult1], bp
+	mov [es:testedResult2], sp
+	mov cx, sp
+	mov sp, [es:inputVal2]
+	mov ax, [es:expectedResult1]
+	xor ax, bp
+	jnz stackEnterFailed
+	mov bx, [es:expectedResult2]
+	xor bx, cx
+	jnz stackEnterFailed
+
+	mov [es:inputVal1], bp
+	mov [es:inputVal2], sp
+	mov ax, sp
+	sub ax, 2
+	mov [es:expectedResult1], ax
+	sub ax, 4
+	mov [es:expectedResult2], ax
+	enter 0, 2
+	mov [es:testedResult1], bp
+	mov [es:testedResult2], sp
+	mov cx, sp
+	mov sp, [es:inputVal2]
+	mov ax, [es:expectedResult1]
+	xor ax, bp
+	jnz stackEnterFailed
+	mov bx, [es:expectedResult2]
+	xor bx, cx
+	jnz stackEnterFailed
+
+
+	jmp stackLeave
+
+stackEnterFailed:
+	mov si, testEnterStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz stackFailed
+
+stackLeave:
+	jmp stackOk
+
+stackLeaveFailed:
+	mov si, testLeaveStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -5749,11 +5827,13 @@ testingAadStr: db "AAD/CVTDB (mulu 8*8, add 8)", 10, 0
 
 testingJmpStr: db "Conditional JMP/BRA", 10, 0
 
-testingStackStr: db "PUSH/POP to/from stack", 10, 0
-testPushSPStr: db "Push SP", 10, 0
-testPopSPStr: db "Pop SP", 10, 0
-testPushaStr: db "Pusha", 10, 0
-testPopaStr: db "Popa", 10, 0
+testingStackStr: db "Stack Manipulation", 10, 0
+testPushSPStr: db "PUSH SP", 10, 0
+testPopSPStr: db "POP SP", 10, 0
+testPushaStr: db "PUSHA", 10, 0
+testPopaStr: db "POPA", 10, 0
+testEnterStr: db "ENTER/PREPARE", 10, 0
+testLeaveStr: db "LEAVE/DISPOSE", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test16InputStr: db "Testing Input: 0x0000", 0
