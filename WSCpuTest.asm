@@ -5264,12 +5264,13 @@ stackEnter:
 	mov ax, sp
 	sub ax, 2
 	mov [es:expectedResult1], ax
-	sub ax, 6
+	sub ax, 8
 	mov [es:expectedResult2], ax
-	enter 0, 3
+	enter 2, 3
 	mov [es:testedResult1], bp
 	mov [es:testedResult2], sp
 	mov cx, sp
+	pop ax						; Just increase SP
 	pop dx
 	pop si
 	pop di
@@ -5286,8 +5287,6 @@ stackEnter:
 	jnz stackEnterFailed
 	xor di, 0x570D
 	jnz stackEnterFailed
-
-
 	jmp stackLeave
 
 stackEnterFailed:
@@ -5299,6 +5298,18 @@ stackEnterFailed:
 	jz stackFailed
 
 stackLeave:
+	mov bx, sp
+	mov ax, 0xCA73
+	push ax
+	mov bp, sp
+	mov sp, 0x1000
+	leave
+	mov cx, sp
+	mov sp, bx
+	xor cx, bx
+	jnz stackLeaveFailed
+	xor ax, bp
+	jnz stackLeaveFailed
 	jmp stackOk
 
 stackLeaveFailed:
