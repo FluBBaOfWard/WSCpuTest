@@ -5253,23 +5253,38 @@ stackEnter:
 	xor bx, cx
 	jnz stackEnterFailed
 
+	mov si, prepareData
+	mov di, selfModifyingCode
+	movsw
+	movsw
+	mov bp, di
+
 	mov [es:inputVal1], bp
 	mov [es:inputVal2], sp
 	mov ax, sp
 	sub ax, 2
 	mov [es:expectedResult1], ax
-	sub ax, 4
+	sub ax, 6
 	mov [es:expectedResult2], ax
-	enter 0, 2
+	enter 0, 3
 	mov [es:testedResult1], bp
 	mov [es:testedResult2], sp
 	mov cx, sp
+	pop dx
+	pop si
+	pop di
 	mov sp, [es:inputVal2]
 	mov ax, [es:expectedResult1]
 	xor ax, bp
 	jnz stackEnterFailed
-	mov bx, [es:expectedResult2]
-	xor bx, cx
+	mov ax, [es:expectedResult2]
+	xor ax, cx
+	jnz stackEnterFailed
+	xor dx, bp
+	jnz stackEnterFailed
+	xor si, 0xF0AB
+	jnz stackEnterFailed
+	xor di, 0x570D
 	jnz stackEnterFailed
 
 
@@ -5778,11 +5793,13 @@ MonoFont:
 	db 0x10,0x10,0x10,0x00,0x10,0x10,0x10,0x00,0x20,0x10,0x10,0x08,0x10,0x10,0x20,0x00
 	db 0x00,0x00,0x60,0x92,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 
+prepareData:
+	dw 0xF0AB, 0x570D
 
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220626",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220627",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
