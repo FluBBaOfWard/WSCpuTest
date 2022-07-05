@@ -103,6 +103,18 @@ initialize:
 	mov word [es:di], divisionErrorHandler
 	mov word [es:di + 2], MYSEGMENT
 
+	mov di, 1*4		; Int1
+	mov word [es:di], int1InstructionHandler
+	mov word [es:di + 2], MYSEGMENT
+
+	mov di, 3*4		; Int3
+	mov word [es:di], int3InstructionHandler
+	mov word [es:di + 2], MYSEGMENT
+
+	mov di, 4*4		; BRKV
+	mov word [es:di], overflowExceptionHandler
+	mov word [es:di + 2], MYSEGMENT
+
 	mov di, 6*4		; Illegal instruction vector
 	mov word [es:di], illegalInstructionHandler
 	mov word [es:di + 2], MYSEGMENT
@@ -5333,6 +5345,402 @@ stackFailed:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test illegal op-codes.
+;-----------------------------------------------------------------------------
+testIllegalOps:
+	mov si, testingIllegalStr
+	call writeString
+
+illegalOp0x0F:
+	mov byte [es:expectedException], 0
+	mov ax, 0x42
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	push cs
+	mov bp, sp
+	mov [es:expectedResult2], bp
+	clc
+	db 0x0F, 0x10, 0xC0			;@ TEST1 al, cl / ADC al, al
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], sp
+	mov bx, sp
+	mov sp, bp
+	add sp, 2
+	xor bx, bp
+	jnz illegalOp0x0FFailed
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0x0FFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0x63
+
+illegalOp0x0FFailed:
+	mov si, testIllegal0x0FStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+
+illegalOp0x63:
+	mov ax, 0x39
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	clc
+	db 0x63						;@ ARPL
+	adc al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0x63Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0x64
+
+illegalOp0x63Failed:
+	mov si, testIllegal0x63Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0x64:
+	mov ax, 0x6A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	clc
+	db 0x64						;@ REPNC
+	adc al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0x64Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0x65
+
+illegalOp0x64Failed:
+	mov si, testIllegal0x64Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0x65:
+	mov ax, 0x73
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	clc
+	db 0x65						;@ REPC
+	adc al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0x65Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0x66
+
+illegalOp0x65Failed:
+	mov si, testIllegal0x65Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0x66:
+	mov ax, 0xD9
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	clc
+	db 0x66						;@ FPO2
+	adc al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0x66Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0x67
+
+illegalOp0x66Failed:
+	mov si, testIllegal0x66Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0x67:
+	mov ax, 0x6D
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	clc
+	db 0x67						;@ FPO2
+	adc al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0x67Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0x9B
+
+illegalOp0x67Failed:
+	mov si, testIllegal0x67Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0x9B:
+	mov ax, 0x71
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	clc
+	db 0x9B					;@ POLL
+	adc al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0x9BFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0xD6
+
+illegalOp0x9BFailed:
+	mov si, testIllegal0x9BStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0xD6:
+	mov ax, 0x01
+	mov [es:inputVal1], ax
+	xor bx, bx
+	mov [es:expectedResult1], bx
+	add al, al				; Clear Carry
+	db 0xD6					; SALC Set AL on Carry
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD6Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD6Failed
+
+	mov ax, 0x85
+	mov [es:inputVal1], ax
+	mov bx, 0xFF
+	mov [es:expectedResult1], bx
+	add al, al				; Set Carry
+	db 0xD6					; SALC Set AL on Carry
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD6Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0xD8
+
+illegalOp0xD6Failed:
+	mov si, testIllegal0xD6Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0xD8:
+	mov ax, 0x78
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xD8, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD8Failed
+
+	mov ax, 0x79
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xD9, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD8Failed
+
+	mov ax, 0x7A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xDA, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD8Failed
+
+	mov ax, 0x7B
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xDB, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD8Failed
+
+	mov ax, 0x7C
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xDC, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD8Failed
+
+	mov ax, 0x7D
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xDD, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD8Failed
+
+	mov ax, 0x7E
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xDE, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jnz illegalOp0xD8Failed
+
+	mov ax, 0x7F
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	db 0xDF, 0xC0					;@ FPO1
+	add al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xD8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz illegalOp0xF1
+
+illegalOp0xD8Failed:
+	mov si, testIllegal0xD8Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOp0xF1:
+	mov byte [es:expectedException], 1
+	mov ax, 0x1C
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	clc
+;	db 0xF1					;@ INT1
+	adc al, al
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz illegalOp0xF1Failed
+;	mov bl, [es:testedException]
+;	xor bl, [es:expectedException]
+	jz illegalOpOk
+
+illegalOp0xF1Failed:
+	mov si, testIllegal0xF1Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz illegalOpFailed
+
+illegalOpOk:
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	ret
+
+illegalOpFailed:
+	mov si, failedStr
+	call writeString
+	mov ax, 1
+	ret
+
+;-----------------------------------------------------------------------------
 ; Wait for input, A continue, B cancel.
 ;-----------------------------------------------------------------------------
 checkKeyInput:
@@ -5590,7 +5998,24 @@ acknowledgeVBlankInterrupt:
 ; It is called if a division error occurs.
 ;-----------------------------------------------------------------------------
 divisionErrorHandler:
-;	mov word [es:WSC_PALETTES], 0xF0F
+	mov byte [es:testedException], 1
+	iret
+
+;-----------------------------------------------------------------------------
+; Our Int1 handler
+; It is called on INT1 (0xF1).
+;-----------------------------------------------------------------------------
+int1InstructionHandler:
+;-----------------------------------------------------------------------------
+; Our Int3 handler
+; It is called on INT3 (0xCC).
+;-----------------------------------------------------------------------------
+int3InstructionHandler:
+;-----------------------------------------------------------------------------
+; Our BRKV handler
+; It is called on BRKV (0xCE).
+;-----------------------------------------------------------------------------
+overflowExceptionHandler:
 	mov byte [es:testedException], 1
 	iret
 
@@ -5599,15 +6024,7 @@ divisionErrorHandler:
 ; It is called if trying to execute an illegal instruction.
 ;-----------------------------------------------------------------------------
 illegalInstructionHandler:
-	push ax
-	push bx
-	push di
-
-	mov word [es:WSC_PALETTES], 0x0F0
-
-	pop di
-	pop bx
-	pop ax
+	mov byte [es:testedException], 1
 	iret
 
 ;-----------------------------------------------------------------------------
@@ -5810,7 +6227,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220627",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220705",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -5862,6 +6279,18 @@ testPushaStr: db "PUSHA", 10, 0
 testPopaStr: db "POPA", 10, 0
 testEnterStr: db "ENTER/PREPARE", 10, 0
 testLeaveStr: db "LEAVE/DISPOSE", 10, 0
+
+testingIllegalStr: db "Illegal instructions", 10, 0
+testIllegal0x0FStr: db "Illegal op-code 0x0F", 10, 0
+testIllegal0x63Str: db "Illegal op-code 0x63", 10, 0
+testIllegal0x64Str: db "Illegal op-code 0x64", 10, 0
+testIllegal0x65Str: db "Illegal op-code 0x65", 10, 0
+testIllegal0x66Str: db "FPO2 op-code 0x66", 10, 0
+testIllegal0x67Str: db "FPO2 op-code 0x67", 10, 0
+testIllegal0x9BStr: db "Illegal op-code 0x9B", 10, 0
+testIllegal0xD6Str: db "SALC op-code 0xD6", 10, 0
+testIllegal0xD8Str: db "ESC/FPO1 op-code 0xD8-0xDF", 10, 0
+testIllegal0xF1Str: db "Illegal op-code 0xF1", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test16InputStr: db "Testing Input: 0x0000", 0

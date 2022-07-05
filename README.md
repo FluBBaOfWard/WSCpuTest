@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.5.0 (20220627)
+# WonderSwan CPU Test V0.5.0 (20220705)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -177,6 +177,11 @@ POP SP
 {
 	SP = [SS:SP]
 }
+
+### Undefined opcodes
+0xD6 This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF
+depending on if Carry is set or not.
+
 
 ## Controls:
 Use WS X1-X4 to navigate the menus. A to select/continue, B to go back/cancel.
