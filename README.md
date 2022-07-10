@@ -200,6 +200,18 @@ On the V30MZ they are 2 byte NOPs.
 ### 0xF1
 It doesn't look like it's a simple INT1 as I couldn't get a test to work, it looks like it might be BRKS from NEC V25/V35 or at least that it switches the MD flag. This app doesn't test it, if someone can write a test that works please contact me.
 
+### 0xC0,0xF0,0x## (SAL al, ##)
+This doesn't work as Shift Arithmetic Left but instead zeros al.
+
+### 0xC1,0xF0,0x## (SAL ax, ##)
+This doesn't work as Shift Arithmetic Left but instead zeros ax.
+
+### 0xFE,0xD0 - 0xFE,0xF0
+Does the same as 0xFF variants
+
+### 0xFF,0xF8 (PUSH AX)
+This doesn't seem to do anything.
+
 ## Controls:
 Use WS X1-X4 to navigate the menus. A to select/continue, B to go back/cancel.
 

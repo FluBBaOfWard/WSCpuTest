@@ -5354,7 +5354,7 @@ stackFailed:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test undefined op-codes.
+; Test undefined opcodes.
 ;-----------------------------------------------------------------------------
 testUndefinedOps:
 	mov si, testingUndefinedStr
@@ -5552,9 +5552,10 @@ undefinedOp0x9BFailed:
 
 
 undefinedOp0xD6:
-	mov ax, 0x01
+	mov ax, 0x1001
 	mov [es:inputVal1], ax
-	xor bx, bx
+	mov bx, ax
+	xor bl, bl
 	mov [es:expectedResult1], bx
 	add al, al				; Clear Carry
 	pushf
@@ -5575,9 +5576,10 @@ undefinedOp0xD6:
 	xor bl, 0
 	jnz undefinedOp0xD6Failed
 
-	mov ax, 0x85
+	mov ax, 0x2085
 	mov [es:inputVal1], ax
-	mov bx, 0xFF
+	mov bx, ax
+	mov bl, 0xFF
 	mov [es:expectedResult1], bx
 	add al, al				; Set Carry
 	pushf
@@ -5755,10 +5757,147 @@ undefinedOp0xF1:
 	jnz undefinedOp0xF1Failed
 	mov bl, [es:testedException]
 	xor bl, [es:expectedException]
-	jz undefinedOpOk
+	jz undefinedOp0xC0F0
 
 undefinedOp0xF1Failed:
 	mov si, testUndefined0xF1Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC0F0:
+	mov byte [es:expectedException], 0
+	mov ax, 0x101A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	xor bl, bl
+	mov [es:expectedResult1], bx
+	pushf
+	db 0xC0, 0xF0, 0x02				;@ SAL al, 2
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC0F0Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xC0F0Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOp0xC1F0
+
+undefinedOp0xC0F0Failed:
+	mov si, testUndefined0xC0F0Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC1F0:
+	mov byte [es:expectedException], 0
+	mov ax, 0x501A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	xor bx, bx
+	mov [es:expectedResult1], bx
+	pushf
+	db 0xC1, 0xF0, 0x03				;@ SAL ax, 3
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC1F0Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xC1F0Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOp0xFED0
+
+undefinedOp0xC1F0Failed:
+	mov si, testUndefined0xC1F0Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xFED0:
+	mov byte [es:expectedException], 0
+	mov ax, 0xFE5A
+	mov [es:inputVal1], ax
+	mov [es:expectedResult1], ax
+	mov dx, sp
+	push dx						;@ Go down 1 step so we dont overwrite return value.
+	pushf
+	pop cx
+	mov [es:expectedFlags], cx
+	db 0xFE, 0xF0				;@ PUSH AX
+	pop ax
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov sp, dx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xFED0Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xFED0Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOp0xFFF8
+
+undefinedOp0xFED0Failed:
+	mov si, testUndefined0xFED0Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xFFF8:
+	mov byte [es:expectedException], 0
+	mov ax, 0xFF37
+	mov [es:inputVal1], ax
+	mov [es:expectedResult1], ax
+	mov dx, sp
+	push ax
+	mov ax, 0x55AA
+	pushf
+	pop cx
+	mov [es:expectedFlags], cx
+	db 0xFF, 0xF8				;@ undefined opcode, not PUSH AX
+	pop ax
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov sp, dx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xFFF8Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xFFF8Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOpOk
+
+undefinedOp0xFFF8Failed:
+	mov si, testUndefined0xFFF8Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -6334,16 +6473,20 @@ testEnterStr: db "ENTER/PREPARE", 10, 0
 testLeaveStr: db "LEAVE/DISPOSE", 10, 0
 
 testingUndefinedStr: db "Undefined instructions", 10, 0
-testUndefined0x0FStr: db "Undefined op-code 0x0F", 10, 0
-testUndefined0x63Str: db "ARPL op-code 0x63", 10, 0
-testUndefined0x64Str: db "REPNC op-code 0x64", 10, 0
-testUndefined0x65Str: db "REPC op-code 0x65", 10, 0
-testUndefined0x66Str: db "FPO2 op-code 0x66", 10, 0
-testUndefined0x67Str: db "FPO2 op-code 0x67", 10, 0
-testUndefined0x9BStr: db "POLL op-code 0x9B", 10, 0
-testUndefined0xD6Str: db "SALC op-code 0xD6", 10, 0
-testUndefined0xD8Str: db "ESC/FPO1 op-code 0xD8-0xDF", 10, 0
-testUndefined0xF1Str: db "INT1/BRKS op-code 0xF1", 10, 0
+testUndefined0x0FStr: db "Undefined opcode 0x0F", 10, 0
+testUndefined0x63Str: db "ARPL opcode 0x63", 10, 0
+testUndefined0x64Str: db "REPNC opcode 0x64", 10, 0
+testUndefined0x65Str: db "REPC opcode 0x65", 10, 0
+testUndefined0x66Str: db "FPO2 opcode 0x66", 10, 0
+testUndefined0x67Str: db "FPO2 opcode 0x67", 10, 0
+testUndefined0x9BStr: db "POLL opcode 0x9B", 10, 0
+testUndefined0xD6Str: db "SALC opcode 0xD6", 10, 0
+testUndefined0xD8Str: db "ESC/FPO1 opcode 0xD8-0xDF", 10, 0
+testUndefined0xF1Str: db "INT1/BRKS opcode 0xF1", 10, 0
+testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
+testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
+testUndefined0xFED0Str: db "Undefined opcode 0xFED0", 10, 0
+testUndefined0xFFF8Str: db "PUSH AX opcode 0xFFF8", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test16InputStr: db "Testing Input: 0x0000", 0
