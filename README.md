@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.5.0 (20220705)
+# WonderSwan CPU Test V0.6.0 (20220710)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -14,9 +14,10 @@ B to go back.
 ## Building:
 	I use nasm https://nasm.us/ by running "nasm -f bin -o WSCpuTest.wsc WSCpuTest.asm".
 
-## How do the undefined flags / undocumented op-codes work?
+## How do the undefined flags / opcodes work?
 If there is a division exception the input (AL, AX/AW) is not modified.
 The flags marked as Undefined in the manual are always modified by the instructions, the flags are never kept as they were before the instruction.
+Most opcodes are just 1 byte NOPs, the FPO1 (0xD8 - 0xDF) opcodes are 2 bytes NOPs.
 
 ### AND, OR, XOR & TEST
 AuxCarry, Carry & Overflow are always cleared.
@@ -132,7 +133,7 @@ If division exception:
 	Zero is set in some weird way (not tested).
 
 ### AAM / CVTBD
-The AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So it's basically a byte by byte divide though the result is in AH and remainder in AL.
+The AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So it's basically a byte by byte divide though the result is in AH and remainder in AL.
 Normaly:
 	AuxCarry, Carry & Overflow are cleared.
 	Parity, Sign & Zero are set according to result (of AL, remainder).
@@ -142,7 +143,7 @@ If division exception:
 	Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
 
 ### AAD / CVTDB
-The AAD op-code just as the AAM op-code is a 2 byte op-code, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL and AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
+The AAD opcode just as the AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL and AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
 
 ### DAA / ADJ4A
 All flags are the same as a normal addition except that AuxCarry & Carry are never cleared.
@@ -178,10 +179,26 @@ POP SP
 	SP = [SS:SP]
 }
 
-### Undefined opcodes
-0xD6 This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF
-depending on if Carry is set or not.
+## Undefined opcodes
 
+### 0x0F
+This opcode is not "POP CS" or Group3 it's just a 1 byte NOP.
+
+### 0x63, 0x64, 0x65, 0x66, 0x67
+These opcodes doesn't do anything, they are just 1 byte NOPs.
+
+### 0x9B
+This is known as POLL on other NEC Vx0 CPUs, on the V30MZ it doesn't wait or cause exception, just a 1 byte NOP.
+
+### 0xD6
+This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF depending on if Carry is set or not. Though I couldn't get STC to set the carry before the SALC...
+
+### 0xD8 - 0xDF
+These opcodes are called FPO on other NEC Vx0 CPUs, used to communicate with an FPU.
+On the V30MZ they are 2 byte NOPs.
+
+### 0xF1
+It doesn't look like it's a simple INT1 as I couldn't get a test to work, it looks like it might be BRKS from NEC V25/V35 or at least that it switches the MD flag. This app doesn't test it, if someone can write a test that works please contact me.
 
 ## Controls:
 Use WS X1-X4 to navigate the menus. A to select/continue, B to go back/cancel.

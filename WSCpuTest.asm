@@ -107,6 +107,10 @@ initialize:
 	mov word [es:di], int1InstructionHandler
 	mov word [es:di + 2], MYSEGMENT
 
+	mov di, 2*4		; NMI
+	mov word [es:di], nmiHandler
+	mov word [es:di + 2], MYSEGMENT
+
 	mov di, 3*4		; Int3
 	mov word [es:di], int3InstructionHandler
 	mov word [es:di + 2], MYSEGMENT
@@ -115,8 +119,12 @@ initialize:
 	mov word [es:di], overflowExceptionHandler
 	mov word [es:di + 2], MYSEGMENT
 
-	mov di, 6*4		; Illegal instruction vector
-	mov word [es:di], illegalInstructionHandler
+	mov di, 5*4		; CHKIND
+	mov word [es:di], boundsExceptionHandler
+	mov word [es:di + 2], MYSEGMENT
+
+	mov di, 6*4		; Undefined instruction vector
+	mov word [es:di], undefinedInstructionHandler
 	mov word [es:di + 2], MYSEGMENT
 
 	mov di, 0x10*4	; output char vector
@@ -226,6 +234,7 @@ monoFontLoop:
 	call testAas
 	call testStack
 	call testJmp
+	call testUndefinedOps
 
 	call testMulu8
 	call testMuls8
@@ -5345,13 +5354,13 @@ stackFailed:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test illegal op-codes.
+; Test undefined op-codes.
 ;-----------------------------------------------------------------------------
-testIllegalOps:
-	mov si, testingIllegalStr
+testUndefinedOps:
+	mov si, testingUndefinedStr
 	call writeString
 
-illegalOp0x0F:
+undefinedOp0x0F:
 	mov byte [es:expectedException], 0
 	mov ax, 0x42
 	mov [es:inputVal1], ax
@@ -5362,31 +5371,31 @@ illegalOp0x0F:
 	mov bp, sp
 	mov [es:expectedResult2], bp
 	clc
-	db 0x0F, 0x10, 0xC0			;@ TEST1 al, cl / ADC al, al
+	db 0x0F, 0x10, 0xC0			;@ POP CS / TEST1 al, cl / ADC al, al
 	mov [es:testedResult1], ax
 	mov [es:testedResult2], sp
 	mov bx, sp
 	mov sp, bp
 	add sp, 2
 	xor bx, bp
-	jnz illegalOp0x0FFailed
+	jnz undefinedOp0x0FFailed
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0x0FFailed
+	jnz undefinedOp0x0FFailed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0x63
+	jz undefinedOp0x63
 
-illegalOp0x0FFailed:
-	mov si, testIllegal0x0FStr
+undefinedOp0x0FFailed:
+	mov si, testUndefined0x0FStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
 
-illegalOp0x63:
+undefinedOp0x63:
 	mov ax, 0x39
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5398,20 +5407,21 @@ illegalOp0x63:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0x63Failed
+	jnz undefinedOp0x63Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0x64
+	jz undefinedOp0x64
 
-illegalOp0x63Failed:
-	mov si, testIllegal0x63Str
+undefinedOp0x63Failed:
+	mov si, testUndefined0x63Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0x64:
+
+undefinedOp0x64:
 	mov ax, 0x6A
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5423,20 +5433,21 @@ illegalOp0x64:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0x64Failed
+	jnz undefinedOp0x64Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0x65
+	jz undefinedOp0x65
 
-illegalOp0x64Failed:
-	mov si, testIllegal0x64Str
+undefinedOp0x64Failed:
+	mov si, testUndefined0x64Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0x65:
+
+undefinedOp0x65:
 	mov ax, 0x73
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5448,20 +5459,21 @@ illegalOp0x65:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0x65Failed
+	jnz undefinedOp0x65Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0x66
+	jz undefinedOp0x66
 
-illegalOp0x65Failed:
-	mov si, testIllegal0x65Str
+undefinedOp0x65Failed:
+	mov si, testUndefined0x65Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0x66:
+
+undefinedOp0x66:
 	mov ax, 0xD9
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5473,20 +5485,21 @@ illegalOp0x66:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0x66Failed
+	jnz undefinedOp0x66Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0x67
+	jz undefinedOp0x67
 
-illegalOp0x66Failed:
-	mov si, testIllegal0x66Str
+undefinedOp0x66Failed:
+	mov si, testUndefined0x66Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0x67:
+
+undefinedOp0x67:
 	mov ax, 0x6D
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5498,20 +5511,21 @@ illegalOp0x67:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0x67Failed
+	jnz undefinedOp0x67Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0x9B
+	jz undefinedOp0x9B
 
-illegalOp0x67Failed:
-	mov si, testIllegal0x67Str
+undefinedOp0x67Failed:
+	mov si, testUndefined0x67Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0x9B:
+
+undefinedOp0x9B:
 	mov ax, 0x71
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5523,57 +5537,80 @@ illegalOp0x9B:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0x9BFailed
+	jnz undefinedOp0x9BFailed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0xD6
+	jz undefinedOp0xD6
 
-illegalOp0x9BFailed:
-	mov si, testIllegal0x9BStr
+undefinedOp0x9BFailed:
+	mov si, testUndefined0x9BStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0xD6:
+
+undefinedOp0xD6:
 	mov ax, 0x01
 	mov [es:inputVal1], ax
 	xor bx, bx
 	mov [es:expectedResult1], bx
 	add al, al				; Clear Carry
+	pushf
 	db 0xD6					; SALC Set AL on Carry
+	pushf
 	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD6Failed
+	jnz undefinedOp0xD6Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xD6Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD6Failed
+	jnz undefinedOp0xD6Failed
 
 	mov ax, 0x85
 	mov [es:inputVal1], ax
 	mov bx, 0xFF
 	mov [es:expectedResult1], bx
 	add al, al				; Set Carry
+	pushf
 	db 0xD6					; SALC Set AL on Carry
+	pushf
 	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD6Failed
+	jnz undefinedOp0xD6Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xD6Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0xD8
+	jz undefinedOp0xD8
 
-illegalOp0xD6Failed:
-	mov si, testIllegal0xD6Str
+undefinedOp0xD6Failed:
+	mov si, testUndefined0xD6Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0xD8:
+
+undefinedOp0xD8:
+	xor ax, ax
+	mov [es:testedFlags], ax
+	mov [es:expectedFlags], ax
 	mov ax, 0x78
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5584,10 +5621,10 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 
 	mov ax, 0x79
 	mov [es:inputVal1], ax
@@ -5599,10 +5636,10 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 
 	mov ax, 0x7A
 	mov [es:inputVal1], ax
@@ -5614,10 +5651,10 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 
 	mov ax, 0x7B
 	mov [es:inputVal1], ax
@@ -5629,10 +5666,10 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 
 	mov ax, 0x7C
 	mov [es:inputVal1], ax
@@ -5644,10 +5681,10 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 
 	mov ax, 0x7D
 	mov [es:inputVal1], ax
@@ -5659,10 +5696,10 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 
 	mov ax, 0x7E
 	mov [es:inputVal1], ax
@@ -5674,10 +5711,10 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 
 	mov ax, 0x7F
 	mov [es:inputVal1], ax
@@ -5689,52 +5726,52 @@ illegalOp0xD8:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xD8Failed
+	jnz undefinedOp0xD8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz illegalOp0xF1
+	jz undefinedOp0xF1
 
-illegalOp0xD8Failed:
-	mov si, testIllegal0xD8Str
+undefinedOp0xD8Failed:
+	mov si, testUndefined0xD8Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOp0xF1:
-	mov byte [es:expectedException], 1
+undefinedOp0xF1:
+	mov byte [es:expectedException], 0
 	mov ax, 0x1C
 	mov [es:inputVal1], ax
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-;	db 0xF1					;@ INT1
+;	db 0xF1, 0x01				;@ BRKS
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz illegalOp0xF1Failed
-;	mov bl, [es:testedException]
-;	xor bl, [es:expectedException]
-	jz illegalOpOk
+	jnz undefinedOp0xF1Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOpOk
 
-illegalOp0xF1Failed:
-	mov si, testIllegal0xF1Str
+undefinedOp0xF1Failed:
+	mov si, testUndefined0xF1Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
 	xor al, 0
-	jz illegalOpFailed
+	jz undefinedOpFailed
 
-illegalOpOk:
+undefinedOpOk:
 	mov si, okStr
 	call writeString
 	xor ax, ax
 	ret
 
-illegalOpFailed:
+undefinedOpFailed:
 	mov si, failedStr
 	call writeString
 	mov ax, 1
@@ -5994,37 +6031,53 @@ acknowledgeVBlankInterrupt:
 	iret
 
 ;-----------------------------------------------------------------------------
-; Our division error handler
+; The division error handler
 ; It is called if a division error occurs.
 ;-----------------------------------------------------------------------------
 divisionErrorHandler:
 	mov byte [es:testedException], 1
 	iret
-
 ;-----------------------------------------------------------------------------
-; Our Int1 handler
+; The Int1 handler
 ; It is called on INT1 (0xF1).
 ;-----------------------------------------------------------------------------
 int1InstructionHandler:
+	mov byte [es:testedException], 1
+	iret
 ;-----------------------------------------------------------------------------
-; Our Int3 handler
+; The NMI handler
+;-----------------------------------------------------------------------------
+nmiHandler:
+	mov byte [es:testedException], 2
+	iret
+;-----------------------------------------------------------------------------
+; The Int3 handler
 ; It is called on INT3 (0xCC).
 ;-----------------------------------------------------------------------------
 int3InstructionHandler:
+	mov byte [es:testedException], 3
+	iret
 ;-----------------------------------------------------------------------------
-; Our BRKV handler
+; The BRKV handler
 ; It is called on BRKV (0xCE).
 ;-----------------------------------------------------------------------------
 overflowExceptionHandler:
-	mov byte [es:testedException], 1
+	mov byte [es:testedException], 4
+	iret
+;-----------------------------------------------------------------------------
+; The CHKIND handler
+; It is called on bounds exception for CHKIND (0x62).
+;-----------------------------------------------------------------------------
+boundsExceptionHandler:
+	mov byte [es:testedException], 5
 	iret
 
 ;-----------------------------------------------------------------------------
-; Our illegal instruction handler
-; It is called if trying to execute an illegal instruction.
+; The undefined instruction handler
+; It is called if trying to execute an undefined instruction (not on V30MZ).
 ;-----------------------------------------------------------------------------
-illegalInstructionHandler:
-	mov byte [es:testedException], 1
+undefinedInstructionHandler:
+	mov byte [es:testedException], 6
 	iret
 
 ;-----------------------------------------------------------------------------
@@ -6227,7 +6280,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220705",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220710",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -6280,17 +6333,17 @@ testPopaStr: db "POPA", 10, 0
 testEnterStr: db "ENTER/PREPARE", 10, 0
 testLeaveStr: db "LEAVE/DISPOSE", 10, 0
 
-testingIllegalStr: db "Illegal instructions", 10, 0
-testIllegal0x0FStr: db "Illegal op-code 0x0F", 10, 0
-testIllegal0x63Str: db "Illegal op-code 0x63", 10, 0
-testIllegal0x64Str: db "Illegal op-code 0x64", 10, 0
-testIllegal0x65Str: db "Illegal op-code 0x65", 10, 0
-testIllegal0x66Str: db "FPO2 op-code 0x66", 10, 0
-testIllegal0x67Str: db "FPO2 op-code 0x67", 10, 0
-testIllegal0x9BStr: db "Illegal op-code 0x9B", 10, 0
-testIllegal0xD6Str: db "SALC op-code 0xD6", 10, 0
-testIllegal0xD8Str: db "ESC/FPO1 op-code 0xD8-0xDF", 10, 0
-testIllegal0xF1Str: db "Illegal op-code 0xF1", 10, 0
+testingUndefinedStr: db "Undefined instructions", 10, 0
+testUndefined0x0FStr: db "Undefined op-code 0x0F", 10, 0
+testUndefined0x63Str: db "ARPL op-code 0x63", 10, 0
+testUndefined0x64Str: db "REPNC op-code 0x64", 10, 0
+testUndefined0x65Str: db "REPC op-code 0x65", 10, 0
+testUndefined0x66Str: db "FPO2 op-code 0x66", 10, 0
+testUndefined0x67Str: db "FPO2 op-code 0x67", 10, 0
+testUndefined0x9BStr: db "POLL op-code 0x9B", 10, 0
+testUndefined0xD6Str: db "SALC op-code 0xD6", 10, 0
+testUndefined0xD8Str: db "ESC/FPO1 op-code 0xD8-0xDF", 10, 0
+testUndefined0xF1Str: db "INT1/BRKS op-code 0xF1", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test16InputStr: db "Testing Input: 0x0000", 0
