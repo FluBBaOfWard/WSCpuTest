@@ -380,9 +380,9 @@ testAnd8:
 	call writeString
 
 	mov byte [es:isTesting], 1
-	mov word [es:expectedResult1], 0
 
 	xor cx, cx
+	mov [es:expectedResult1], cx
 testAnd8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -490,9 +490,9 @@ testNot8:
 	call writeString
 
 	mov byte [es:isTesting], 4
-	mov word [es:expectedResult1], 0
 
 	xor cx, cx
+	mov [es:expectedResult1], cx
 	dec ch
 testNot8Loop:
 	mov [es:inputVal1], cl
@@ -594,9 +594,9 @@ testOr8:
 	call writeString
 
 	mov byte [es:isTesting], 1
-	mov word [es:expectedResult1], 0
 
 	mov cx, 0
+	mov [es:expectedResult1], cx
 testOr8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -704,9 +704,9 @@ testTest8:
 	call writeString
 
 	mov byte [es:isTesting], 1
-	mov word [es:expectedResult1], 0
 
 	xor cx, cx
+	mov [es:expectedResult1], cx
 testTest8Loop:
 	mov [es:inputVal1], cl
 	mov [es:expectedResult1], cl
@@ -812,9 +812,9 @@ testXor8:
 	call writeString
 
 	mov byte [es:isTesting], 1
-	mov word [es:expectedResult1], 0
 
 	mov cx, 0
+	mov [es:expectedResult1], cx
 testXor8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1175,7 +1175,7 @@ testAdd8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
-	mov cx, [es:expectedResult1]
+	mov [es:expectedResult1], cx
 testAdd8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1472,7 +1472,7 @@ testSub8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
-	mov cx, [es:expectedResult1]
+	mov [es:expectedResult1], cx
 testSub8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch
@@ -1768,7 +1768,7 @@ testCmp8:
 	mov byte [es:isTesting], 1
 
 	xor cx, cx
-	mov cx, [es:expectedResult2]
+	mov [es:expectedResult2], cx
 testCmp8Loop:
 	mov [es:inputVal1], cl
 	mov [es:inputVal2], ch

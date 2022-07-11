@@ -206,6 +206,9 @@ This doesn't work as Shift Arithmetic Left but instead zeros al.
 ### 0xC1,0xF0,0x## (SAL ax, ##)
 This doesn't work as Shift Arithmetic Left but instead zeros ax.
 
+### 0xF6,0xC8
+### 0xF7,0xC8
+
 ### 0xFE,0xD0 - 0xFE,0xF0
 Does the same as 0xFF variants
 
