@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.6.0 (20220710)
+# WonderSwan CPU Test V0.6.0 (20220713)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -17,7 +17,7 @@ B to go back.
 ## How do the undefined flags / opcodes work?
 If there is a division exception the input (AL, AX/AW) is not modified.
 The flags marked as Undefined in the manual are always modified by the instructions, the flags are never kept as they were before the instruction.
-Most opcodes are just 1 byte NOPs, the FPO1 (0xD8 - 0xDF) opcodes are 2 bytes NOPs.
+Most undefined opcodes are just 1 byte NOPs, the FPO1 (0xD8 - 0xDF) opcodes are 2 bytes NOPs.
 
 ### AND, OR, XOR & TEST
 AuxCarry, Carry & Overflow are always cleared.

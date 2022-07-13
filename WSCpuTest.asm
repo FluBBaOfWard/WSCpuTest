@@ -5823,10 +5823,76 @@ undefinedOp0xC1F0:
 	jnz undefinedOp0xC1F0Failed
 	mov bl, [es:testedException]
 	xor bl, [es:expectedException]
-	jz undefinedOp0xFED0
+	jz undefinedOp0xF6C8
 
 undefinedOp0xC1F0Failed:
 	mov si, testUndefined0xC1F0Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xF6C8:
+	mov byte [es:expectedException], 0
+	mov ax, 0xD01A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	xor bx, bx						; Set Zero
+	mov [es:expectedResult1], ax
+	pushf
+	db 0xF6, 0xC8, 0x90				; Test al, 0x90 ?
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xF6C8Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xF6C8Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOp0xF7C8
+
+undefinedOp0xF6C8Failed:
+	mov si, testUndefined0xF6C8Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xF7C8:
+	mov byte [es:expectedException], 0
+	mov ax, 0xD01A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	xor bx, bx							; Set Zero
+	mov [es:expectedResult1], ax
+	pushf
+	db 0xF7, 0xC8, 0x90, 0x90			; Test ax, 0x9090 ?
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xF7C8Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xF7C8Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOp0xFED0
+
+undefinedOp0xF7C8Failed:
+	mov si, testUndefined0xF7C8Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -6419,7 +6485,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220710",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220713",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -6485,6 +6551,8 @@ testUndefined0xD8Str: db "ESC/FPO1 opcode 0xD8-0xDF", 10, 0
 testUndefined0xF1Str: db "INT1/BRKS opcode 0xF1", 10, 0
 testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
 testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
+testUndefined0xF6C8Str: db "Undefined opcode 0xF6C8", 10, 0
+testUndefined0xF7C8Str: db "Undefined opcode 0xF7C8", 10, 0
 testUndefined0xFED0Str: db "Undefined opcode 0xFED0", 10, 0
 testUndefined0xFFF8Str: db "PUSH AX opcode 0xFFF8", 10, 0
 
