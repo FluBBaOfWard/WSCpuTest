@@ -203,7 +203,6 @@ monoFontLoop:
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
 
-
 	call testEqu
 	call testAnd8
 	call testNot8
@@ -6485,7 +6484,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220713",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220714",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -6546,15 +6545,15 @@ testUndefined0x65Str: db "REPC opcode 0x65", 10, 0
 testUndefined0x66Str: db "FPO2 opcode 0x66", 10, 0
 testUndefined0x67Str: db "FPO2 opcode 0x67", 10, 0
 testUndefined0x9BStr: db "POLL opcode 0x9B", 10, 0
+testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
+testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
 testUndefined0xD6Str: db "SALC opcode 0xD6", 10, 0
 testUndefined0xD8Str: db "ESC/FPO1 opcode 0xD8-0xDF", 10, 0
 testUndefined0xF1Str: db "INT1/BRKS opcode 0xF1", 10, 0
-testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
-testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
 testUndefined0xF6C8Str: db "Undefined opcode 0xF6C8", 10, 0
 testUndefined0xF7C8Str: db "Undefined opcode 0xF7C8", 10, 0
 testUndefined0xFED0Str: db "Undefined opcode 0xFED0", 10, 0
-testUndefined0xFFF8Str: db "PUSH AX opcode 0xFFF8", 10, 0
+testUndefined0xFFF8Str: db "Undefined opcode 0xFFF8", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test16InputStr: db "Testing Input: 0x0000", 0
