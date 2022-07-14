@@ -190,19 +190,133 @@ monoFontLoop:
 ; Make background map point to our tiles, essentially "painting" the
 ; background layer with our tiles, coloured as per our palettes
 ;-----------------------------------------------------------------------------
-
+main:
 	call clearScreen
 
 	mov si, headLineStr
+	call writeString
+
+	mov si, menuTestAllStr
+	call writeString
+	mov si, menuTestLogicStr
+	call writeString
+	mov si, menuTestArithmeticStr
+	call writeString
+	mov si, menuTestRolShiftStr
+	call writeString
+	mov si, menuTestMiscStr
+	call writeString
+	mov si, menuTestMultiplicationStr
+	call writeString
+	mov si, menuTestDivisionStr
+	call writeString
+	mov si, menuTestSDivisionStr
 	call writeString
 
 	; Turn on display
 	mov al, BG_ON
 	out IO_DISPLAY_CTRL, al
 
+;-----------------------------------------------------------------------------
+;
+; BEGIN main area
+;
+;-----------------------------------------------------------------------------
+mainLoop:
+	hlt					; Wait until next interrupt
+
+	mov al, KEYPAD_READ_ARROWS_H
+	out IO_KEYPAD, al
+	nop
+	nop
+	nop
+	nop
+	in al, IO_KEYPAD
+	mov bl, al
 	mov al, KEYPAD_READ_BUTTONS
 	out IO_KEYPAD, al
+	nop
+	nop
+	nop
+	nop
+	in al, IO_KEYPAD
+	and al, 0x0F
+	shl bl, 4
+	or al, bl
+	mov bl, [es:keysHeld]
+	mov [es:keysHeld], al
+	xor bl, al
+	and bl, al
+	mov [es:keysDown], bl
 
+	; Check player input
+;	test al, PAD_RIGHT
+;	jnz speed_up
+
+;	test al, PAD_LEFT
+;	jnz speed_down
+
+	mov cl, [es:menuYPos]
+	test bl, (PAD_UP<<4)
+	jz dontMoveUp
+	sub cl, 1
+	jns dontMoveUp
+	mov cl, 0
+dontMoveUp:
+	test bl, (PAD_DOWN<<4)
+	jz dontMoveDown
+	add cl, 1
+	cmp cl, 7
+	js dontMoveDown
+	mov cl, 7
+dontMoveDown:
+	mov [es:menuYPos], cl
+
+	mov ch, cl
+	add ch, 1
+	mov byte [es:cursorXPos], 0
+	mov [es:cursorYPos], ch
+	mov al, ' '
+	int 0x10
+	add ch, 1
+	mov byte [es:cursorXPos], 0
+	mov [es:cursorYPos], ch
+	mov al, '>'
+	int 0x10
+	add ch, 1
+	mov byte [es:cursorXPos], 0
+	mov [es:cursorYPos], ch
+	mov al, ' '
+	int 0x10
+
+	test bl, PAD_A
+	jz mainLoop
+	call clearScreen
+
+	cmp cl, 0
+	jz testAll
+	cmp cl, 1
+	jz testLogic
+	cmp cl, 2
+	jz testArithmetic
+	cmp cl, 3
+	jz testRolShift
+	cmp cl, 4
+	jz testMisc
+	cmp cl, 5
+	jz testMultiplication
+	cmp cl, 6
+	jz testDivision
+	cmp cl, 7
+	jz testSDivision
+	; No input, restart main loop
+	jmp mainLoop
+;-----------------------------------------------------------------------------
+;
+; END main area
+;
+;-----------------------------------------------------------------------------
+testAll:
 	call testEqu
 	call testAnd8
 	call testNot8
@@ -243,13 +357,84 @@ monoFontLoop:
 	call testDivu8
 	call testDivs8
 
-skipTests:
-;-----------------------------------------------------------------------------
-; Done initializing... We can now start the main loop.
-;-----------------------------------------------------------------------------
-	; Start main loop
-	jmp main_loop
+	call checkKeyInput
+	jmp main
 
+;-----------------------------------------------------------------------------
+testLogic:
+	call testEqu
+	call testAnd8
+	call testNot8
+	call testOr8
+	call testTest8
+	call testXor8
+	call testInc8
+	call testDec8
+
+	call checkKeyInput
+	jmp main
+
+;-----------------------------------------------------------------------------
+testArithmetic:
+	call testAdd8
+	call testSub8
+	call testCmp8
+	call testNeg8
+	call testAdc8
+	call testSbb8
+
+	call checkKeyInput
+	jmp main
+
+;-----------------------------------------------------------------------------
+testRolShift:
+	call testRol8
+	call testRor8
+	call testRcl8
+	call testRcr8
+	call testShl8
+	call testShr8
+	call testSar8
+
+	call checkKeyInput
+	jmp main
+
+;-----------------------------------------------------------------------------
+testMisc:
+	call testDaa
+	call testDas
+	call testAaa
+	call testAas
+	call testStack
+	call testJmp
+	call testUndefinedOps
+
+	call checkKeyInput
+	jmp main
+
+;-----------------------------------------------------------------------------
+testMultiplication:
+	call testMulu8
+	call testMuls8
+	call testAad
+
+	call checkKeyInput
+	jmp main
+
+;-----------------------------------------------------------------------------
+testDivision:
+	call testAam
+	call testDivu8
+	call testDivs8
+
+	call checkKeyInput
+	jmp main
+;-----------------------------------------------------------------------------
+testSDivision:
+	call testDivs8
+
+	call checkKeyInput
+	jmp main
 ;-----------------------------------------------------------------------------
 ; Test equality by CMP, SUB & XOR of all byte/word values.
 ;-----------------------------------------------------------------------------
@@ -6004,7 +6189,7 @@ keyCancel:
 	xor al, al
 	ret
 ;-----------------------------------------------------------------------------
-; Gets a new number from LFSR1
+; Gets the next number from LFSR1
 ;-----------------------------------------------------------------------------
 getLFSR1Value:
 	mov ax, [es:lfsr1]
@@ -6015,7 +6200,7 @@ noTaps1:
 	mov [es:lfsr1], ax
 	ret
 ;-----------------------------------------------------------------------------
-; Gets a new number from LFSR2
+; Gets the next number from LFSR2
 ;-----------------------------------------------------------------------------
 getLFSR2Value:
 	mov ax, [es:lfsr2]
@@ -6093,9 +6278,8 @@ printFailedResult:
 ; Clear tilemap line.
 ;-----------------------------------------------------------------------------
 clearLine:
-	xor bh, bh
 	mov bl, [es:cursorYPos]
-	and bl, 0x1f
+	and bx, 0x1f
 	shl bx, 6		; ax * MAP_TWIDTH
 	mov di, backgroundMap
 	add di, bx
@@ -6113,6 +6297,7 @@ clearForegroundMap:
 ; Clear background tilemap.
 ;-----------------------------------------------------------------------------
 clearScreen:
+	push cx
 	mov di, backgroundMap
 clearTileMap:
 	; Clear a tilemap by writing space (0x20) to all locations.
@@ -6121,6 +6306,8 @@ clearTileMap:
 	rep stosw
 	xor ax, ax
 	mov [es:cursorPos], ax
+	mov [es:bgPos], ax
+	pop cx
 	ret
 ;-----------------------------------------------------------------------------
 ; Write text to background. si = source
@@ -6332,51 +6519,6 @@ endOutput:
 	iret
 
 ;-----------------------------------------------------------------------------
-;
-; BEGIN main area
-;
-;-----------------------------------------------------------------------------
-main_loop:
-	hlt					; Wait until next interrupt
-
-;	mov bl, [es:enemySpawnPosition]
-;	cmp bl, 0
-;	jnz dontPrint
-;	mov si, alphabet
-;	call writeString
-dontPrint:
-
-	mov al, KEYPAD_READ_ARROWS_H
-	out IO_KEYPAD, al
-	nop
-	nop
-	nop
-	nop
-	in al, IO_KEYPAD
-
-	; Check player input
-;	test al, PAD_RIGHT
-;	jnz speed_up
-
-;	test al, PAD_LEFT
-;	jnz speed_down
-
-;	test al, PAD_UP
-;	jnz move_up
-
-;	test al, PAD_DOWN
-;	jnz move_down
-
-	; No input, restart main loop
-	jmp main_loop
-
-;-----------------------------------------------------------------------------
-;
-; END main area
-;
-;-----------------------------------------------------------------------------
-
-;-----------------------------------------------------------------------------
 ; Constants area
 ;-----------------------------------------------------------------------------
 
@@ -6485,6 +6627,15 @@ alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
 headLineStr: db "WonderSwan CPU Test 20220714",10 , 0
+
+menuTestAllStr: db "  Test All.",10 , 0
+menuTestLogicStr: db "  Test Logic.",10 , 0
+menuTestArithmeticStr: db "  Test Arithmetic.",10 , 0
+menuTestRolShiftStr: db "  Test Rol & Shift.",10 , 0
+menuTestMiscStr: db "  Test Misc.",10 , 0
+menuTestMultiplicationStr: db "  Test Multiplication.",10 , 0
+menuTestDivisionStr: db "  Test Division.",10 , 0
+menuTestSDivisionStr: db "  Test Signed Division.",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
@@ -6605,6 +6756,10 @@ fgYPos: resb 1
 cursorPos:
 cursorXPos: resb 1
 cursorYPos: resb 1
+menuXPos: resb 1
+menuYPos: resb 1
+keysHeld: resb 1
+keysDown: resb 1
 
 lfsr1: resw 1
 lfsr2: resw 1
