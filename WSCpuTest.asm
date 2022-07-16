@@ -5067,7 +5067,7 @@ jmpTestJs:
 	test al, 0x80
 	jz jmpTestJsNoS
 	popf
-	js jmpJnbeOk
+	js jmpJsOk
 jmpJsFailed:
 	mov si, jsFailedStr
 	jmp jmpFailed
@@ -6626,7 +6626,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220714",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220716",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
