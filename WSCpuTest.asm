@@ -6626,7 +6626,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220717",10 , 0
+headLineStr: db "WonderSwan CPU Test 20220726",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0

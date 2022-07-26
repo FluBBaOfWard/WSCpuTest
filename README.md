@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.6.0 (20220717)
+# WonderSwan CPU Test V0.6.0 (20220726)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -182,20 +182,20 @@ POP SP
 ## Undefined opcodes
 
 ### 0x0F
-This opcode is not "POP CS" or Group3 it's just a 1 byte NOP.
+This opcode is not "POP CS" or Group3 it's just a 1 byte NOP (1 cycle).
 
 ### 0x63, 0x64, 0x65, 0x66, 0x67
-These opcodes doesn't do anything, they are just 1 byte NOPs.
+These opcodes doesn't do anything, they are just 1 byte NOPs (1 cycle).
 
-### 0x9B
-This is known as POLL on other NEC Vx0 CPUs, on the V30MZ it doesn't wait or cause exception, just a 1 byte NOP.
+### 0x9B (POLL)
+On the WonderSwan it doesn't wait or cause exception, the POLL pin is probably held low at all times, works as a 1 byte NOP (10 cycles).
 
 ### 0xD6 (SALC)
-This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF depending on if Carry is set or not. Though I couldn't get STC to set the carry before the SALC...
+This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF depending on if Carry is set or not (8 cycles). Though I couldn't get STC to set the carry before the SALC...
 
 ### 0xD8 - 0xDF
 These opcodes are called FPO on other NEC Vx0 CPUs, used to communicate with an FPU.
-On the V30MZ they are 2 byte NOPs.
+On the V30MZ they are 2 byte NOPs (1 cycle).
 
 ### 0xC0,0xF0,0x## (SAL al, ##)
 This doesn't work as Shift Arithmetic Left but instead zeros al.
@@ -207,7 +207,7 @@ This doesn't work as Shift Arithmetic Left but instead zeros ax.
 It doesn't look like it's a simple INT1 as I couldn't get a test to work, it looks like it might be BRKS from NEC V25/V35 or at least that it switches the MD flag. This app doesn't test it, if someone can write a test that works please contact me.
 
 ### 0xF6,0xC8 / 0xF7,0xC8 (TEST)
-This doesn't seem to set flags or change registers.
+This doesn't seem to change flags or registers (1 cycle).
 
 ### 0xFE,0xD0 - 0xFE,0xF0
 Does the same as 0xFF variants (CALL, BRA & PUSH).
@@ -216,7 +216,7 @@ Does the same as 0xFF variants (CALL, BRA & PUSH).
 This doesn't seem to do anything.
 
 ## Controls:
-Use WS X1-X4 to navigate the menus. A to select/continue, B to go back/cancel.
+Use WS X1-X4 to navigate the menus. A to select/continue failed test, B to go back/skip failed test.
 
 
 ## Credits:
