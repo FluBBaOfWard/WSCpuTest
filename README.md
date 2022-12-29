@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.6.0 (20220726)
+# WonderSwan CPU Test V0.6.0 (20221229)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -188,7 +188,7 @@ This opcode is not "POP CS" or Group3 it's just a 1 byte NOP (1 cycle).
 These opcodes doesn't do anything, they are just 1 byte NOPs (1 cycle).
 
 ### 0x9B (POLL)
-On the WonderSwan it doesn't wait or cause exception, the POLL pin is probably held low at all times, works as a 1 byte NOP (10 cycles).
+On the WonderSwan it doesn't wait or cause exception, the POLL pin is probably held low at all times, works as a 1 byte NOP (9 cycles).
 
 ### 0xD6 (SALC)
 This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF depending on if Carry is set or not (8 cycles). Though I couldn't get STC to set the carry before the SALC...
