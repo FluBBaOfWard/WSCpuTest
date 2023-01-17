@@ -1,11 +1,8 @@
 ;-----------------------------------------------------------------------------
 ;
 ;  WonderSwan CPU Test
-;         by Fredrik Ahlström, 2022
+;         by Fredrik Ahlström, 2022-2023
 ;         https://github.com/FluBBaOfWard/WSCpuTest
-;
-;  For more information on the hardware specs, port descriptions, sprite
-;  format, etc., see the hardware.txt file in the wonderdev root directory.
 ;
 ;  UP/DOWN    - Choose option
 ;  A          - Start
@@ -27,7 +24,6 @@ SECTION .data
 	backgroundMap equ foregroundMap - MAP_SIZE
 	spriteTable equ backgroundMap - SPR_TABLE_SIZE
 
-	COLLISION_RADIUS equ 6
 	PSR_S equ 0x80
 	PSR_Z equ 0x40
 	PSR_P equ 0x04
@@ -38,14 +34,6 @@ SECTION .text
 initialize:
 	cli
 	cld
-
-;-----------------------------------------------------------------------------
-; If it's not the Color version of the console, lock the CPU
-;-----------------------------------------------------------------------------
-;	in al, IO_HARDWARE_TYPE
-;	test al, WS_COLOR
-;lock_cpu:
-;	jz lock_cpu
 
 ;-----------------------------------------------------------------------------
 ; Initialize registers and RAM
@@ -5698,10 +5686,65 @@ undefinedOp0x67:
 	jnz undefinedOp0x67Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz undefinedOp0x9B
+	jz undefinedOp0x8CF8
 
 undefinedOp0x67Failed:
 	mov si, testUndefined0x67Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+
+undefinedOp0x8CF8:
+	push ds
+	mov bx, 0x1234
+	mov ds, bx
+	mov ax, 0xFEDC
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], bx
+	mov [es:expectedResult1], bx
+	db 0x8C, 0xF8				;@ mov ax, sreg DS + 4
+	pop ds
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0x8CF8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8EF8
+
+undefinedOp0x8CF8Failed:
+	mov si, testUndefined0x8CF8Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+
+undefinedOp0x8EF8:
+	push ds
+	mov bx, 0x1234
+	mov ds, bx
+	mov ax, 0xFEDC
+	mov [es:inputVal1], bx
+	mov [es:inputVal2], ax
+	mov [es:expectedResult1], ax
+	db 0x8E, 0xF8				;@ mov sreg DS + 4, ax
+	mov ax, ds
+	pop ds
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0x8EF8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x9B
+
+undefinedOp0x8EF8Failed:
+	mov si, testUndefined0x8EF8Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -5724,10 +5767,49 @@ undefinedOp0x9B:
 	jnz undefinedOp0x9BFailed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz undefinedOp0xD6
+	jz undefinedOp0xC5D8
 
 undefinedOp0x9BFailed:
 	mov si, testUndefined0x9BStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+
+undefinedOp0xC5D8:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, prepareData
+	mov cx, 0x0000
+	mov dx, 0x0000
+	mov bx, 0x0000
+	mov bp, 0x0000
+	mov si, prepareData			; dw 0xF0AB, 0x570D
+	mov di, prepareData			; dw 0xF0AB, 0x570D
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], cx
+	push ds
+	db 0xC5, 0xD8				;@ lds bx, ax
+	mov dx, ds
+	pop ds
+	mov [es:testedResult1], bx
+	mov [es:testedResult2], dx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5D8Failed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5D8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xD6
+
+undefinedOp0xC5D8Failed:
+	mov si, testUndefined0xC5D8Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -6430,7 +6512,7 @@ divisionErrorHandler:
 	iret
 ;-----------------------------------------------------------------------------
 ; The Int1 handler
-; It is called on INT1 (0xF1).
+; It is called on INT1 (Trap).
 ;-----------------------------------------------------------------------------
 int1InstructionHandler:
 	mov byte [es:testedException], 1
@@ -6626,7 +6708,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20220726",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230116",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -6695,9 +6777,12 @@ testUndefined0x64Str: db "REPNC opcode 0x64", 10, 0
 testUndefined0x65Str: db "REPC opcode 0x65", 10, 0
 testUndefined0x66Str: db "FPO2 opcode 0x66", 10, 0
 testUndefined0x67Str: db "FPO2 opcode 0x67", 10, 0
+testUndefined0x8CF8Str: db "MOV WSREG opcode 0x8CF8", 10, 0
+testUndefined0x8EF8Str: db "MOV SREGW opcode 0x8EF8", 10, 0
 testUndefined0x9BStr: db "POLL opcode 0x9B", 10, 0
 testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
 testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
+testUndefined0xC5D8Str: db "LDS bx opcode 0xC5D8", 10, 0
 testUndefined0xD6Str: db "SALC opcode 0xD6", 10, 0
 testUndefined0xD8Str: db "ESC/FPO1 opcode 0xD8-0xDF", 10, 0
 testUndefined0xF1Str: db "INT1/BRKS opcode 0xF1", 10, 0
@@ -6740,7 +6825,7 @@ jnlFailedStr: db "JNL/JGE/BGE Failed", 10, 0
 jleFailedStr: db "JLE/JNG/BLE Failed", 10, 0
 jnleFailedStr: db "JNLE/JG/BGT Failed", 10, 0
 
-author: db "Written by Fredrik Ahlström, 2022"
+author: db "Written by Fredrik Ahlström, 2023"
 
 	ROM_HEADER initialize, MYSEGMENT, RH_WS_COLOR, RH_ROM_4MBITS, RH_NO_SRAM, RH_HORIZONTAL
 

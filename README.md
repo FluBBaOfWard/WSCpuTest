@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.6.0 (20221231)
+# WonderSwan CPU Test V0.6.0 (20230117)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -213,6 +213,10 @@ This opcode is not "POP CS" or Group3 it's just a 1 byte NOP (1 cycle).
 ### 0x63, 0x64, 0x65, 0x66, 0x67
 
 These opcodes doesn't do anything, they are just 1 byte NOPs (1 cycle).
+
+### 0x8C, 0xF8 / 0x8E, 0xF8
+
+This is to test that bit 5 (0x20) does not affect which segment register is accessed.
 
 ### 0x9B (POLL/WAIT)
 
