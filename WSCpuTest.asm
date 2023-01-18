@@ -329,13 +329,13 @@ testAll:
 	call testShr8
 	call testSar8
 
+	call testStack
+	call testJmp
+	call testUndefinedOps
 	call testDaa
 	call testDas
 	call testAaa
 	call testAas
-	call testStack
-	call testJmp
-	call testUndefinedOps
 
 	call testMulu8
 	call testMuls8
@@ -389,13 +389,13 @@ testRolShift:
 
 ;-----------------------------------------------------------------------------
 testMisc:
+	call testStack
+	call testJmp
+	call testUndefinedOps
 	call testDaa
 	call testDas
 	call testAaa
 	call testAas
-	call testStack
-	call testJmp
-	call testUndefinedOps
 
 	call checkKeyInput
 	jmp main
@@ -5783,17 +5783,17 @@ undefinedOp0xC5D8:
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
 	mov [es:expectedResult2], cx
-	mov ax, prepareData
-	mov cx, 0x0000
-	mov dx, 0x0000
-	mov bx, 0x0000
-	mov bp, 0x0000
-	mov si, prepareData			; dw 0xF0AB, 0x570D
-	mov di, prepareData			; dw 0xF0AB, 0x570D
+	mov ax, prepareData-0x3333	; dw 0xF0AB, 0x570D
+	mov cx, 0x1111
+	mov dx, 0x2222
+	mov bx, 0x3333
+	mov bp, 0x4444
+	mov si, 0x5555
+	mov di, 0x6666
 	mov [es:inputVal1], ax
-	mov [es:inputVal2], cx
+	mov [es:inputVal2], bx
 	push ds
-	db 0xC5, 0xD8				;@ lds bx, ax
+	db 0xC5, 0xD8				;@ lds bx, [ds:bx + ax]
 	mov dx, ds
 	pop ds
 	mov [es:testedResult1], bx
@@ -5806,10 +5806,290 @@ undefinedOp0xC5D8:
 	jnz undefinedOp0xC5D8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz undefinedOp0xD6
+	jz undefinedOp0xC5D9
 
 undefinedOp0xC5D8Failed:
 	mov si, testUndefined0xC5D8Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC5D9:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, 0x1111
+	mov cx, prepareData-0x3333	; dw 0xF0AB, 0x570D
+	mov dx, 0x2222
+	mov bx, 0x3333
+	mov bp, 0x4444
+	mov si, 0x5555
+	mov di, 0x6666
+	mov [es:inputVal1], cx
+	mov [es:inputVal2], bx
+	push ds
+	db 0xC5, 0xD9				;@ lds bx, [ds:bx + cx]
+	mov dx, ds
+	pop ds
+	mov [es:testedResult1], bx
+	mov [es:testedResult2], dx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5D9Failed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5D9Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xC5DA
+
+undefinedOp0xC5D9Failed:
+	mov si, testUndefined0xC5D9Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC5DA:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, 0x1111
+	mov cx, 0x2222
+	mov dx, prepareData-0x5555	; dw 0xF0AB, 0x570D
+	mov bx, 0x4444
+	mov bp, 0x5555
+	mov si, 0x6666
+	mov [es:inputVal1], dx
+	mov [es:inputVal2], bp
+	push ds
+	mov di, ss
+	mov ax, MYSEGMENT
+	mov ss, ax
+	mov ds, bx
+	db 0xC5, 0xDA				;@ lds bx, [ss:bp + dx]
+	mov dx, ds
+	mov ss, di
+	pop ds
+	mov [es:testedResult1], dx
+	mov [es:testedResult2], bx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5DAFailed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5DAFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xC5DB
+
+undefinedOp0xC5DAFailed:
+	mov si, testUndefined0xC5DAStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC5DB:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, 0x1111
+	mov cx, 0x2222
+	mov dx, 0x3333
+	mov bx, prepareData-0x5555	; dw 0xF0AB, 0x570D
+	mov bp, 0x5555
+	mov si, 0x6666
+	mov [es:inputVal1], bx
+	mov [es:inputVal2], bp
+	push ds
+	mov di, ss
+	mov ax, MYSEGMENT
+	mov ss, ax
+	mov ds, dx
+	db 0xC5, 0xDB				;@ lds bx, [ss:bp + bx]
+	mov dx, ds
+	mov ss, di
+	pop ds
+	mov [es:testedResult1], dx
+	mov [es:testedResult2], bx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5DBFailed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5DBFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xC5DC
+
+undefinedOp0xC5DBFailed:
+	mov si, testUndefined0xC5DBStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC5DC:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, 0x1111
+	mov cx, 0x2222
+	mov dx, 0x3333
+	mov bx, 0x4444
+	mov bp, 0x5555
+	mov si, prepareData-0x7777	; dw 0xF0AB, 0x570D
+	push ds
+	mov di, sp
+	mov sp, 0x7777
+	mov [es:inputVal1], si
+	mov [es:inputVal2], sp
+	db 0xC5, 0xDC				;@ lds bx, [ds:si + sp]
+	mov dx, ds
+	mov sp, di
+	pop ds
+	mov [es:testedResult1], dx
+	mov [es:testedResult2], bx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5DCFailed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5DCFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xC5DD
+
+undefinedOp0xC5DCFailed:
+	mov si, testUndefined0xC5DCStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC5DD:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, 0x1111
+	mov cx, 0x2222
+	mov dx, 0x3333
+	mov bx, 0x4444
+	mov bp, 0x5555
+	mov si, 0x6666
+	mov di, prepareData-0x5555	; dw 0xF0AB, 0x570D
+	mov [es:inputVal1], di
+	mov [es:inputVal2], bp
+	push ds
+	db 0xC5, 0xDD				;@ lds bx, [ds:di + bp]
+	mov dx, ds
+	pop ds
+	mov [es:testedResult1], dx
+	mov [es:testedResult2], bx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5DDFailed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5DDFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xC5DE
+
+undefinedOp0xC5DDFailed:
+	mov si, testUndefined0xC5DDStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC5DE:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, 0x1111
+	mov cx, 0x2222
+	mov dx, 0x3333
+	mov bx, 0x4444
+	mov bp, 0x5555
+	mov si, prepareData-0x5555	; dw 0xF0AB, 0x570D
+	mov [es:inputVal1], si
+	mov [es:inputVal2], bp
+	push ds
+	mov di, ss
+	mov ax, MYSEGMENT
+	mov ss, ax
+	mov ds, bx
+	db 0xC5, 0xDE				;@ lds bx, [ss:bp + si]
+	mov dx, ds
+	mov ss, di
+	pop ds
+	mov [es:testedResult1], dx
+	mov [es:testedResult2], bx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5DEFailed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5DEFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xC5DF
+
+undefinedOp0xC5DEFailed:
+	mov si, testUndefined0xC5DEStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC5DF:
+	mov ax, 0xF0AB
+	mov cx, 0x570D
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], cx
+	mov ax, 0x1111
+	mov cx, 0x2222
+	mov dx, 0x3333
+	mov bx, 0x4444
+	mov bp, 0x5555
+	mov si, 0x6666
+	mov di, prepareData-0x4444	; dw 0xF0AB, 0x570D
+	mov [es:inputVal1], di
+	mov [es:inputVal2], bx
+	push ds
+	db 0xC5, 0xDF				;@ lds bx, [ds:bx + di]
+	mov dx, ds
+	pop ds
+	mov [es:testedResult1], dx
+	mov [es:testedResult2], bx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC5DFFailed
+	mov ax, [es:expectedResult2]
+	xor ax, dx
+	jnz undefinedOp0xC5DFFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0xD6
+
+undefinedOp0xC5DFFailed:
+	mov si, testUndefined0xC5DFStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -6708,7 +6988,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230116",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230118",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -6782,7 +7062,14 @@ testUndefined0x8EF8Str: db "MOV SREGW opcode 0x8EF8", 10, 0
 testUndefined0x9BStr: db "POLL opcode 0x9B", 10, 0
 testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
 testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
-testUndefined0xC5D8Str: db "LDS bx opcode 0xC5D8", 10, 0
+testUndefined0xC5D8Str: db "LDS bx,[ds:bx+ax] op 0xC5D8", 10, 0
+testUndefined0xC5D9Str: db "LDS bx,[ds:bx+cx] op 0xC5D9", 10, 0
+testUndefined0xC5DAStr: db "LDS bx,[ss:bp+dx] op 0xC5DA", 10, 0
+testUndefined0xC5DBStr: db "LDS bx,[ss:bp+bx] op 0xC5DB", 10, 0
+testUndefined0xC5DCStr: db "LDS bx,[ds:si+sp] op 0xC5DC", 10, 0
+testUndefined0xC5DDStr: db "LDS bx,[ds:di+bp] op 0xC5DD", 10, 0
+testUndefined0xC5DEStr: db "LDS bx,[ss:bp+si] op 0xC5DE", 10, 0
+testUndefined0xC5DFStr: db "LDS bx,[ds:bx+di] op 0xC5DF", 10, 0
 testUndefined0xD6Str: db "SALC opcode 0xD6", 10, 0
 testUndefined0xD8Str: db "ESC/FPO1 opcode 0xD8-0xDF", 10, 0
 testUndefined0xF1Str: db "INT1/BRKS opcode 0xF1", 10, 0

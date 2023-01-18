@@ -214,13 +214,27 @@ This opcode is not "POP CS" or Group3 it's just a 1 byte NOP (1 cycle).
 
 These opcodes doesn't do anything, they are just 1 byte NOPs (1 cycle).
 
-### 0x8C, 0xF8 / 0x8E, 0xF8
+### 0x8C,0xF8 / 0x8E,0xF8
 
 This is to test that bit 5 (0x20) does not affect which segment register is accessed.
 
 ### 0x9B (POLL/WAIT)
 
 On the WonderSwan it doesn't wait or cause exception, the POLL pin is probably held low at all times, works as a 1 byte NOP (9 cycles).
+
+### 0xC5,0xD8 - 0xC5,0xDF (LDS bx)
+
+This is the LDS instruction but with address mode set to register.
+It doesn't use the registers directly but instead gives you a couple of new addressing modes.
+The low 3 bits are mapped like this:
+0x0 = [ds:bx + ax]
+0x1 = [ds:bx + cx]
+0x2 = [ss:bp + dx]
+0x3 = [ss:bp + bx]
+0x4 = [ds:si + sp]
+0x5 = [ds:di + bp]
+0x6 = [ss:bp + si]
+0x7 = [ds:bx + di]
 
 ### 0xD6 (SALC)
 
