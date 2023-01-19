@@ -5713,10 +5713,217 @@ undefinedOp0x8CF8:
 	jnz undefinedOp0x8CF8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz undefinedOp0x8EF8
+	jz undefinedOp0x8DC8
 
 undefinedOp0x8CF8Failed:
 	mov si, testUndefined0x8CF8Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+
+undefinedOp0x8DC8:
+	mov ax, 0x1234
+	mov bx, 0x5678
+	xor cx, cx
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], bx
+	mov dx, ax
+	add dx, bx
+	mov [es:expectedResult1], dx
+	db 0x8D, 0xC8				;@ lea cx, [bx + ax]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DC8Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8DC9
+
+undefinedOp0x8DC8Failed:
+	mov si, testUndefined0x8DC8Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0x8DC9:
+	mov bx, 0x1234
+	mov cx, 0x5678
+	mov [es:inputVal1], bx
+	mov [es:inputVal2], cx
+	mov ax, bx
+	add ax, cx
+	mov [es:expectedResult1], ax
+	db 0x8D, 0xC9				;@ lea cx, [bx + cx]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DC9Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8DCA
+
+undefinedOp0x8DC9Failed:
+	mov si, testUndefined0x8DC9Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0x8DCA:
+	xor cx, cx
+	mov dx, 0x5678
+	mov bp, 0x1234
+	mov [es:inputVal1], dx
+	mov [es:inputVal2], bp
+	mov ax, dx
+	add ax, bp
+	mov [es:expectedResult1], ax
+	db 0x8D, 0xCA				;@ lea cx, [bp + dx]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DCAFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8DCB
+
+undefinedOp0x8DCAFailed:
+	mov si, testUndefined0x8DCAStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0x8DCB:
+	xor cx, cx
+	mov bx, 0x1234
+	mov bp, 0x5678
+	mov [es:inputVal1], bx
+	mov [es:inputVal2], bp
+	mov ax, bx
+	add ax, bp
+	mov [es:expectedResult1], ax
+	db 0x8D, 0xCB				;@ lea cx, [bp + bx]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DCBFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8DCC
+
+undefinedOp0x8DCBFailed:
+	mov si, testUndefined0x8DCBStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0x8DCC:
+	xor cx, cx
+	mov si, 0x5678
+	mov [es:inputVal1], sp
+	mov [es:inputVal2], si
+	mov ax, sp
+	add ax, si
+	mov [es:expectedResult1], ax
+	db 0x8D, 0xCC				;@ lea cx, [si + sp]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DCCFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8DCD
+
+undefinedOp0x8DCCFailed:
+	mov si, testUndefined0x8DCCStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0x8DCD:
+	xor cx, cx
+	mov bp, 0x1234
+	mov di, 0x5678
+	mov [es:inputVal1], bp
+	mov [es:inputVal2], di
+	mov ax, bp
+	add ax, di
+	mov [es:expectedResult1], ax
+	db 0x8D, 0xCD				;@ lea cx, [di + bp]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DCDFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8DCE
+
+undefinedOp0x8DCDFailed:
+	mov si, testUndefined0x8DCDStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0x8DCE:
+	xor cx, cx
+	mov bp, 0x1234
+	mov si, 0x5678
+	mov [es:inputVal1], bp
+	mov [es:inputVal2], si
+	mov ax, bp
+	add ax, si
+	mov [es:expectedResult1], ax
+	db 0x8D, 0xCE				;@ lea cx, [bp + si]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DCEFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8DCF
+
+undefinedOp0x8DCEFailed:
+	mov si, testUndefined0x8DCEStr
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0x8DCF:
+	mov bx, 0x5678
+	xor cx, cx
+	mov di, 0x1234
+	mov [es:inputVal1], bx
+	mov [es:inputVal2], di
+	mov ax, bx
+	add ax, di
+	mov [es:expectedResult1], ax
+	db 0x8D, 0xCF				;@ lea cx, [bx + di]
+	mov [es:testedResult1], cx
+	mov bx, [es:expectedResult1]
+	xor cx, bx
+	jnz undefinedOp0x8DCFFailed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x8EF8
+
+undefinedOp0x8DCFFailed:
+	mov si, testUndefined0x8DCFStr
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -7313,7 +7520,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230118",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230119",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -7383,8 +7590,16 @@ testUndefined0x65Str: db "REPC opcode 0x65", 10, 0
 testUndefined0x66Str: db "FPO2 opcode 0x66", 10, 0
 testUndefined0x67Str: db "FPO2 opcode 0x67", 10, 0
 testUndefined0x8CF8Str: db "MOV WSREG opcode 0x8CF8", 10, 0
+testUndefined0x8DC8Str: db "LEA dx,[bx+ax] op 0x8DC8", 10, 0
+testUndefined0x8DC9Str: db "LEA dx,[bx+cx] op 0x8DC9", 10, 0
+testUndefined0x8DCAStr: db "LEA dx,[bp+dx] op 0x8DCA", 10, 0
+testUndefined0x8DCBStr: db "LEA dx,[bp+bx] op 0x8DCB", 10, 0
+testUndefined0x8DCCStr: db "LEA dx,[si+sp] op 0x8DCC", 10, 0
+testUndefined0x8DCDStr: db "LEA dx,[di+bp] op 0x8DCD", 10, 0
+testUndefined0x8DCEStr: db "LEA dx,[bp+si] op 0x8DCE", 10, 0
+testUndefined0x8DCFStr: db "LEA dx,[bx+di] op 0x8DCF", 10, 0
 testUndefined0x8EF8Str: db "MOV SREGW opcode 0x8EF8", 10, 0
-testUndefined0x9BStr: db "POLL opcode 0x9B", 10, 0
+testUndefined0x9BStr: db "WAIT opcode 0x9B", 10, 0
 testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
 testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
 testUndefined0xC4D8Str: db "LES bx,[ds:bx+ax] op 0xC4D8", 10, 0

@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.6.0 (20230117)
+# WonderSwan CPU Test V0.7.0 (20230119)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -218,13 +218,9 @@ These opcodes doesn't do anything, they are just 1 byte NOPs (1 cycle).
 
 This is to test that bit 5 (0x20) does not affect which segment register is accessed.
 
-### 0x9B (POLL/WAIT)
+### 0x8D,0xC8 - 0x8D,0xCF (LEA cx)
 
-On the WonderSwan it doesn't wait or cause exception, the POLL pin is probably held low at all times, works as a 1 byte NOP (9 cycles).
-
-### 0xC5,0xD8 - 0xC5,0xDF (LDS bx)
-
-This is the LDS instruction but with address mode set to register.
+This is the LEA instruction but with address mode set to register.
 It doesn't use the registers directly but instead gives you a couple of new addressing modes.
 The low 3 bits are mapped like this:
 0x0 = [ds:bx + ax]
@@ -236,14 +232,9 @@ The low 3 bits are mapped like this:
 0x6 = [ss:bp + si]
 0x7 = [ds:bx + di]
 
-### 0xD6 (SALC)
+### 0x9B (POLL/WAIT)
 
-This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF depending on if Carry is set or not (8 cycles). Though I couldn't get STC to set carry before the SALC...
-
-### 0xD8 - 0xDF
-
-These opcodes are called FPO on other NEC Vx0 CPUs, used to communicate with an FPU.
-On the V30MZ they are 2 byte NOPs (1 cycle).
+On the WonderSwan it doesn't wait or cause exception, the POLL pin is probably held low at all times, works as a 1 byte NOP (9 cycles).
 
 ### 0xC0,0xF0,0x## (SAL al, ##)
 
@@ -252,6 +243,25 @@ This doesn't work as Shift Arithmetic Left but instead zeros al.
 ### 0xC1,0xF0,0x## (SAL ax, ##)
 
 This doesn't work as Shift Arithmetic Left but instead zeros ax.
+
+### 0xC4,0xD8 - 0xC4,0xDF (LES bx)
+
+This is the LES instruction but with address mode set to register.
+It doesn't use the registers directly but instead uses the same new addressing modes as LEA.
+
+### 0xC5,0xD8 - 0xC5,0xDF (LDS bx)
+
+This is the LDS instruction but with address mode set to register.
+It doesn't use the registers directly but instead uses the same new addressing modes as LEA.
+
+### 0xD6 (SALC)
+
+This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF depending on if Carry is set or not (8 cycles). Though I couldn't get STC to set carry before the SALC...
+
+### 0xD8 - 0xDF
+
+These opcodes are called FPO on other NEC Vx0 CPUs, used to communicate with an FPU.
+On the V30MZ they are 2 byte NOPs (1 cycle).
 
 ### 0xF1
 
