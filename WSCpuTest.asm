@@ -5948,10 +5948,35 @@ undefinedOp0x8EF8:
 	jnz undefinedOp0x8EF8Failed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz undefinedOp0x9B
+	jz undefinedOp0x8FC0
 
 undefinedOp0x8EF8Failed:
 	mov si, testUndefined0x8EF8Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+
+undefinedOp0x8FC0:
+	mov bx, 0x1234
+	mov ax, 0xFEDC
+	mov [es:inputVal1], bx
+	mov [es:inputVal2], ax
+	mov [es:expectedResult1], bx
+	push bx
+	db 0x8F, 0xC0				;@ pop word ax
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0x8FC0Failed
+	mov bl, [es:testedException]
+	xor bl, 0
+	jz undefinedOp0x9B
+
+undefinedOp0x8FC0Failed:
+	mov si, testUndefined0x8FC0Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -5974,7 +5999,7 @@ undefinedOp0x9B:
 	jnz undefinedOp0x9BFailed
 	mov bl, [es:testedException]
 	xor bl, 0
-	jz undefinedOp0xC4D8
+	jz undefinedOp0xC0F0
 
 undefinedOp0x9BFailed:
 	mov si, testUndefined0x9BStr
@@ -5984,6 +6009,72 @@ undefinedOp0x9BFailed:
 	xor al, 0
 	jz undefinedOpFailed
 
+
+undefinedOp0xC0F0:
+	mov byte [es:expectedException], 0
+	mov ax, 0x101A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	xor bl, bl
+	mov [es:expectedResult1], bx
+	pushf
+	db 0xC0, 0xF0, 0x02				;@ SAL al, 2
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC0F0Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xC0F0Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOp0xC1F0
+
+undefinedOp0xC0F0Failed:
+	mov si, testUndefined0xC0F0Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
+
+undefinedOp0xC1F0:
+	mov byte [es:expectedException], 0
+	mov ax, 0x501A
+	mov [es:inputVal1], ax
+	mov bx, ax
+	xor bx, bx
+	mov [es:expectedResult1], bx
+	pushf
+	db 0xC1, 0xF0, 0x03				;@ SAL ax, 3
+	pushf
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	pop cx
+	mov [es:expectedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xC1F0Failed
+	mov bx, [es:testedFlags]
+	xor cx, bx
+	jnz undefinedOp0xC1F0Failed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jz undefinedOp0xC4D8
+
+undefinedOp0xC1F0Failed:
+	mov si, testUndefined0xC1F0Str
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailed
 
 undefinedOp0xC4D8:
 	mov ax, 0xF0AB
@@ -6835,76 +6926,10 @@ undefinedOp0xF1:
 	jnz undefinedOp0xF1Failed
 	mov bl, [es:testedException]
 	xor bl, [es:expectedException]
-	jz undefinedOp0xC0F0
+	jz undefinedOp0xF6C8
 
 undefinedOp0xF1Failed:
 	mov si, testUndefined0xF1Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
-
-undefinedOp0xC0F0:
-	mov byte [es:expectedException], 0
-	mov ax, 0x101A
-	mov [es:inputVal1], ax
-	mov bx, ax
-	xor bl, bl
-	mov [es:expectedResult1], bx
-	pushf
-	db 0xC0, 0xF0, 0x02				;@ SAL al, 2
-	pushf
-	mov [es:testedResult1], ax
-	pop cx
-	mov [es:testedFlags], cx
-	pop cx
-	mov [es:expectedFlags], cx
-	mov bx, [es:expectedResult1]
-	xor ax, bx
-	jnz undefinedOp0xC0F0Failed
-	mov bx, [es:testedFlags]
-	xor cx, bx
-	jnz undefinedOp0xC0F0Failed
-	mov bl, [es:testedException]
-	xor bl, [es:expectedException]
-	jz undefinedOp0xC1F0
-
-undefinedOp0xC0F0Failed:
-	mov si, testUndefined0xC0F0Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
-
-undefinedOp0xC1F0:
-	mov byte [es:expectedException], 0
-	mov ax, 0x501A
-	mov [es:inputVal1], ax
-	mov bx, ax
-	xor bx, bx
-	mov [es:expectedResult1], bx
-	pushf
-	db 0xC1, 0xF0, 0x03				;@ SAL ax, 3
-	pushf
-	mov [es:testedResult1], ax
-	pop cx
-	mov [es:testedFlags], cx
-	pop cx
-	mov [es:expectedFlags], cx
-	mov bx, [es:expectedResult1]
-	xor ax, bx
-	jnz undefinedOp0xC1F0Failed
-	mov bx, [es:testedFlags]
-	xor cx, bx
-	jnz undefinedOp0xC1F0Failed
-	mov bl, [es:testedException]
-	xor bl, [es:expectedException]
-	jz undefinedOp0xF6C8
-
-undefinedOp0xC1F0Failed:
-	mov si, testUndefined0xC1F0Str
 	call writeString
 	call printFailedResult
 	call checkKeyInput
@@ -7520,7 +7545,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230119",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230125",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -7599,6 +7624,7 @@ testUndefined0x8DCDStr: db "LEA dx,[di+bp] op 0x8DCD", 10, 0
 testUndefined0x8DCEStr: db "LEA dx,[bp+si] op 0x8DCE", 10, 0
 testUndefined0x8DCFStr: db "LEA dx,[bx+di] op 0x8DCF", 10, 0
 testUndefined0x8EF8Str: db "MOV SREGW opcode 0x8EF8", 10, 0
+testUndefined0x8FC0Str: db "POP WORD ax opcode 0x8FC0", 10, 0
 testUndefined0x9BStr: db "WAIT opcode 0x9B", 10, 0
 testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
 testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0

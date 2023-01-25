@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.0 (20230119)
+# WonderSwan CPU Test V0.7.0 (20230125)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
