@@ -115,6 +115,10 @@ initialize:
 	mov word [es:di], undefinedInstructionHandler
 	mov word [es:di + 2], MYSEGMENT
 
+	mov di, 7*4		; POLL
+	mov word [es:di], pollExceptionHandler
+	mov word [es:di + 2], MYSEGMENT
+
 	mov di, 0x10*4	; output char vector
 	mov word [es:di], outputCharHandler
 	mov word [es:di + 2], MYSEGMENT
@@ -332,6 +336,7 @@ testAll:
 	call testStack
 	call testJmp
 	call testUndefinedOps
+	call testBound
 	call testDaa
 	call testDas
 	call testAaa
@@ -392,6 +397,7 @@ testMisc:
 	call testStack
 	call testJmp
 	call testUndefinedOps
+	call testBound
 	call testDaa
 	call testDas
 	call testAaa
@@ -5526,6 +5532,116 @@ stackFailed:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test BOUND/CHKIND
+;-----------------------------------------------------------------------------
+testBound:
+	mov si, testingBoundStr
+	call writeString
+	mov si, test8x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 1
+
+	xor cx, cx
+	mov [es:expectedResult1], cx
+	mov [es:testedResult1], cx
+	mov word [es:inputVal3], 0x7000 ; AX
+	mov word [es:inputVal2], 0xd000 ; Bound low
+	mov word [es:inputVal1], 0x7200 ; Bound high
+testBoundLoop:
+	call calcBoundResult
+	call testBoundSingle
+	xor al, 0
+	jnz stopBoundTest
+continueBound:
+;	call getLFSR1Value
+	mov ax, cx
+	shl ax, 4
+	and ax, 0xF000
+	mov [es:inputVal1], ax
+;	call getLFSR1Value
+	mov ax, cx
+	shl ax, 8
+	and ax, 0xF000
+	mov [es:inputVal2], ax
+;	call getLFSR1Value
+	mov ax, cx
+	shl ax, 12
+	and ax, 0xF000
+	mov [es:inputVal3], ax
+	inc cx
+	cmp cx, 0x1000
+	jnz testBoundLoop
+
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, okStr
+	call writeString
+	xor ax, ax
+	mov [es:testedException], al
+	ret
+stopBoundTest:
+	call checkKeyInput
+	xor al, 0
+	jnz continueBound
+	mov byte [es:testedException], 0
+	ret
+
+;-----------------------------------------------------------------------------
+testBoundSingle:
+	push bx
+	push cx
+
+	mov byte [es:testedException], 0
+	mov ax, [es:inputVal3]
+	xor si, si
+	mov bx, boundLow
+	bound ax, [es:si + bx]
+
+	mov al, [es:testedException]
+	mov bl, [es:expectedException]
+	xor al, bl
+	jnz boundFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+boundFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcBoundResult:
+	push bx
+	push dx
+
+	mov ax, [es:inputVal3]
+	mov bx, [es:inputVal2]
+	mov dx, [es:inputVal1]
+	mov [es:inputFlags], ax
+	mov [es:boundLow], bx
+	mov [es:boundHigh], dx
+	cmp ax, bx
+	jl outOfBound
+	cmp dx, ax
+	jl outOfBound
+	xor al, al
+	jmp boundOk
+outOfBound:
+	mov al, 5
+boundOk:
+	mov [es:expectedException], al
+	pop dx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test undefined opcodes.
 ;-----------------------------------------------------------------------------
 testUndefinedOps:
@@ -7108,7 +7224,7 @@ keyCancel:
 	xor al, al
 	ret
 ;-----------------------------------------------------------------------------
-; Gets the next number from LFSR1
+; Gets the next number from LFSR1 in AX
 ;-----------------------------------------------------------------------------
 getLFSR1Value:
 	mov ax, [es:lfsr1]
@@ -7119,7 +7235,7 @@ noTaps1:
 	mov [es:lfsr1], ax
 	ret
 ;-----------------------------------------------------------------------------
-; Gets the next number from LFSR2
+; Gets the next number from LFSR2 in AX
 ;-----------------------------------------------------------------------------
 getLFSR2Value:
 	mov ax, [es:lfsr2]
@@ -7375,7 +7491,7 @@ overflowExceptionHandler:
 	mov byte [es:testedException], 4
 	iret
 ;-----------------------------------------------------------------------------
-; The CHKIND handler
+; The BOUND/CHKIND handler
 ; It is called on bounds exception for CHKIND (0x62).
 ;-----------------------------------------------------------------------------
 boundsExceptionHandler:
@@ -7390,6 +7506,13 @@ undefinedInstructionHandler:
 	mov byte [es:testedException], 6
 	iret
 
+;-----------------------------------------------------------------------------
+; The POLL exception handler
+; It is called if POLL instruction gives an exception (not on V30MZ).
+;-----------------------------------------------------------------------------
+pollExceptionHandler:
+	mov byte [es:testedException], 7
+	iret
 ;-----------------------------------------------------------------------------
 ; Write a char to background. al = char
 ;-----------------------------------------------------------------------------
@@ -7545,7 +7668,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230125",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230129",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -7584,6 +7707,8 @@ testingAaaStr: db "AAA/ADJBA", 10, 0
 testingAasStr: db "AAS/ADJBS", 10, 0
 testingDaaStr: db "DAA/ADJ4A", 10, 0
 testingDasStr: db "DAS/ADJ4S", 10, 0
+
+testingBoundStr: db "BOUND/CHKIND", 10, 0
 
 testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
 testingMulsStr: db "Signed Multiplication 8*8", 10, 0
@@ -7625,7 +7750,7 @@ testUndefined0x8DCEStr: db "LEA dx,[bp+si] op 0x8DCE", 10, 0
 testUndefined0x8DCFStr: db "LEA dx,[bx+di] op 0x8DCF", 10, 0
 testUndefined0x8EF8Str: db "MOV SREGW opcode 0x8EF8", 10, 0
 testUndefined0x8FC0Str: db "POP WORD ax opcode 0x8FC0", 10, 0
-testUndefined0x9BStr: db "WAIT opcode 0x9B", 10, 0
+testUndefined0x9BStr: db "WAIT/POLL opcode 0x9B", 10, 0
 testUndefined0xC0F0Str: db "Undefined opcode 0xC0F0", 10, 0
 testUndefined0xC1F0Str: db "Undefined opcode 0xC1F0", 10, 0
 testUndefined0xC4D8Str: db "LES bx,[ds:bx+ax] op 0xC4D8", 10, 0
@@ -7712,6 +7837,7 @@ lfsr2: resw 1
 
 inputVal1: resw 1
 inputVal2: resw 1
+inputVal3: resw 1
 inputFlags: resw 1
 inputCarry: resw 1
 
@@ -7724,6 +7850,9 @@ expectedResult1: resw 1
 expectedResult2: resw 1
 expectedFlags: resw 1
 expectedException: resw 1
+
+boundLow: resw 1
+boundHigh: resw 1
 
 isTesting: resb 1			; If currently running test.
 dummy: resb 1
