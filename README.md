@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.0 (20230129)
+# WonderSwan CPU Test V0.7.0 (20230204)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -204,6 +204,10 @@ AL is always masked to lower nybble.
 		SP = [SS:SP]
 	}
 
+## BOUND / CHKIND
+
+Comparison of values are done with signed values.
+
 ## Undefined opcodes
 
 ### 0x0F
@@ -232,7 +236,7 @@ The low 3 bits are mapped like this:
 0x6 = [ss:bp + si]
 0x7 = [ds:bx + di]
 
-### 0x9B (POLL/WAIT)
+### 0x9B (WAIT / POLL)
 
 On the WonderSwan it doesn't wait or cause exception, the POLL pin is probably held low at all times, works as a 1 byte NOP (9 cycles).
 

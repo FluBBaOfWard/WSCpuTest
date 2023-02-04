@@ -5545,9 +5545,9 @@ testBound:
 	xor cx, cx
 	mov [es:expectedResult1], cx
 	mov [es:testedResult1], cx
-	mov word [es:inputVal3], 0x7000 ; AX
-	mov word [es:inputVal2], 0xd000 ; Bound low
-	mov word [es:inputVal1], 0x7200 ; Bound high
+	mov [es:inputVal3], cx ; AX
+	mov [es:inputVal2], cx ; Bound low
+	mov [es:inputVal1], cx ; Bound high
 testBoundLoop:
 	call calcBoundResult
 	call testBoundSingle
@@ -5564,7 +5564,7 @@ continueBound:
 	shl ax, 8
 	and ax, 0xF000
 	mov [es:inputVal2], ax
-;	call getLFSR1Value
+;	call getLFSR2Value
 	mov ax, cx
 	shl ax, 12
 	and ax, 0xF000
@@ -5649,7 +5649,7 @@ testUndefinedOps:
 	call writeString
 
 undefinedOp0x0F:
-	mov byte [es:expectedException], 0
+	mov byte [es:testedException], 0
 	mov ax, 0x42
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5684,6 +5684,7 @@ undefinedOp0x0FFailed:
 
 
 undefinedOp0x63:
+	mov byte [es:testedException], 0
 	mov ax, 0x39
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5710,6 +5711,7 @@ undefinedOp0x63Failed:
 
 
 undefinedOp0x64:
+	mov byte [es:testedException], 0
 	mov ax, 0x6A
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5736,6 +5738,7 @@ undefinedOp0x64Failed:
 
 
 undefinedOp0x65:
+	mov byte [es:testedException], 0
 	mov ax, 0x73
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5762,6 +5765,7 @@ undefinedOp0x65Failed:
 
 
 undefinedOp0x66:
+	mov byte [es:testedException], 0
 	mov ax, 0xD9
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5788,6 +5792,7 @@ undefinedOp0x66Failed:
 
 
 undefinedOp0x67:
+	mov byte [es:testedException], 0
 	mov ax, 0x6D
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -5814,6 +5819,7 @@ undefinedOp0x67Failed:
 
 
 undefinedOp0x8CF8:
+	mov byte [es:testedException], 0
 	push ds
 	mov bx, 0x1234
 	mov ds, bx
@@ -5841,6 +5847,7 @@ undefinedOp0x8CF8Failed:
 
 
 undefinedOp0x8DC8:
+	mov byte [es:testedException], 0
 	mov ax, 0x1234
 	mov bx, 0x5678
 	xor cx, cx
@@ -5867,6 +5874,7 @@ undefinedOp0x8DC8Failed:
 	jz undefinedOpFailed
 
 undefinedOp0x8DC9:
+	mov byte [es:testedException], 0
 	mov bx, 0x1234
 	mov cx, 0x5678
 	mov [es:inputVal1], bx
@@ -5893,6 +5901,7 @@ undefinedOp0x8DC9Failed:
 
 undefinedOp0x8DCA:
 	xor cx, cx
+	mov [es:testedException], cl
 	mov dx, 0x5678
 	mov bp, 0x1234
 	mov [es:inputVal1], dx
@@ -5919,6 +5928,7 @@ undefinedOp0x8DCAFailed:
 
 undefinedOp0x8DCB:
 	xor cx, cx
+	mov [es:testedException], cl
 	mov bx, 0x1234
 	mov bp, 0x5678
 	mov [es:inputVal1], bx
@@ -5945,6 +5955,7 @@ undefinedOp0x8DCBFailed:
 
 undefinedOp0x8DCC:
 	xor cx, cx
+	mov [es:testedException], cl
 	mov si, 0x5678
 	mov [es:inputVal1], sp
 	mov [es:inputVal2], si
@@ -5970,6 +5981,7 @@ undefinedOp0x8DCCFailed:
 
 undefinedOp0x8DCD:
 	xor cx, cx
+	mov [es:testedException], cl
 	mov bp, 0x1234
 	mov di, 0x5678
 	mov [es:inputVal1], bp
@@ -5996,6 +6008,7 @@ undefinedOp0x8DCDFailed:
 
 undefinedOp0x8DCE:
 	xor cx, cx
+	mov [es:testedException], cl
 	mov bp, 0x1234
 	mov si, 0x5678
 	mov [es:inputVal1], bp
@@ -6023,6 +6036,7 @@ undefinedOp0x8DCEFailed:
 undefinedOp0x8DCF:
 	mov bx, 0x5678
 	xor cx, cx
+	mov [es:testedException], cl
 	mov di, 0x1234
 	mov [es:inputVal1], bx
 	mov [es:inputVal2], di
@@ -6048,6 +6062,7 @@ undefinedOp0x8DCFFailed:
 
 
 undefinedOp0x8EF8:
+	mov byte [es:testedException], 0
 	push ds
 	mov bx, 0x1234
 	mov ds, bx
@@ -6076,6 +6091,7 @@ undefinedOp0x8EF8Failed:
 
 
 undefinedOp0x8FC0:
+	mov byte [es:testedException], 0
 	mov bx, 0x1234
 	mov ax, 0xFEDC
 	mov [es:inputVal1], bx
@@ -6101,13 +6117,14 @@ undefinedOp0x8FC0Failed:
 
 
 undefinedOp0x9B:
+	mov byte [es:testedException], 0
 	mov ax, 0x71
 	mov [es:inputVal1], ax
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-	db 0x9B					;@ POLL
+	db 0x9B					;@ WAIT/POLL
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -6193,6 +6210,7 @@ undefinedOp0xC1F0Failed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4D8:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6231,6 +6249,7 @@ undefinedOp0xC4D8Failed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4D9:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6269,6 +6288,7 @@ undefinedOp0xC4D9Failed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4DA:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6313,6 +6333,7 @@ undefinedOp0xC4DAFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4DB:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6357,6 +6378,7 @@ undefinedOp0xC4DBFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4DC:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6397,6 +6419,7 @@ undefinedOp0xC4DCFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4DD:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6435,6 +6458,7 @@ undefinedOp0xC4DDFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4DE:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6479,6 +6503,7 @@ undefinedOp0xC4DEFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC4DF:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6518,6 +6543,7 @@ undefinedOp0xC4DFFailed:
 
 
 undefinedOp0xC5D8:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6556,6 +6582,7 @@ undefinedOp0xC5D8Failed:
 	jz undefinedOpFailed
 
 undefinedOp0xC5D9:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6594,6 +6621,7 @@ undefinedOp0xC5D9Failed:
 	jz undefinedOpFailed
 
 undefinedOp0xC5DA:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6636,6 +6664,7 @@ undefinedOp0xC5DAFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC5DB:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6678,6 +6707,7 @@ undefinedOp0xC5DBFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC5DC:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6718,6 +6748,7 @@ undefinedOp0xC5DCFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC5DD:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6756,6 +6787,7 @@ undefinedOp0xC5DDFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC5DE:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6798,6 +6830,7 @@ undefinedOp0xC5DEFailed:
 	jz undefinedOpFailed
 
 undefinedOp0xC5DF:
+	mov byte [es:testedException], 0
 	mov ax, 0xF0AB
 	mov cx, 0x570D
 	mov [es:expectedResult1], ax
@@ -6837,6 +6870,7 @@ undefinedOp0xC5DFFailed:
 
 
 undefinedOp0xD6:
+	mov byte [es:testedException], 0
 	mov ax, 0x1001
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -6896,6 +6930,7 @@ undefinedOp0xD6Failed:
 
 undefinedOp0xD8:
 	xor ax, ax
+	mov [es:testedException], al
 	mov [es:testedFlags], ax
 	mov [es:expectedFlags], ax
 	mov ax, 0x78
@@ -7393,9 +7428,7 @@ vblankInterruptHandler:
 	push di
 
 	; globalFrameCounter++
-	mov ax, [es:globalFrameCounter]
-	inc ax
-	mov [es:globalFrameCounter], ax
+	inc word [es:globalFrameCounter]
 
 	mov ax, [es:bgPos]
 	out IO_SCR1_SCRL_X, ax
@@ -7668,7 +7701,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230129",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230204",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
