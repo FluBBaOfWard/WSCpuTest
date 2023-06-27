@@ -164,7 +164,7 @@ If division exception:
 
 ### AAD / CVTDB
 
-The AAD opcode just as the AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL and AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
+The AAD opcode just as the AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL, AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
 
 ### DAA / ADJ4A
 
@@ -193,16 +193,16 @@ AL is always masked to lower nybble.
 
 ### PUSH/POP SP to/from stack
 
-	PUSH SP
-	{
-		SP      = SP - 2
-		[SS:SP] = SP
-	}
+PUSH SP
+{
+	SP      = SP - 2
+	[SS:SP] = SP
+}
 
-	POP SP
-	{
-		SP = [SS:SP]
-	}
+POP SP
+{
+	SP = [SS:SP]
+}
 
 ## BOUND / CHKIND
 
