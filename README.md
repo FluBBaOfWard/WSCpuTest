@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.0 (20230204)
+# WonderSwan CPU Test V0.7.0 (20230806)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -59,108 +59,130 @@ It's the same as doing a SUB with the destination set to 0.
 
 ### ROL
 
+```text
 AuxCarry, Parity, Sign & Zero are not changed.
-Overflow is set to xor of Carry value and bit 7/15 of destination.
+Overflow is set to xor of Carry value and bit 7/15 of result.
 Normaly:
-	Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
-	Carry is not changed.
+    Carry is not changed.
+```
 
 ### ROR
 
+```text
 AuxCarry, Parity, Sign & Zero are not changed.
-Overflow is set to xor of bit 6/14 & 7/15 of destination.
+Overflow is set to xor of bit 6/14 & 7/15 of result.
 Normaly:
-	Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
-	Carry is not changed.
+    Carry is not changed.
+```
 
 ### RCL/ROLC
 
+```text
 AuxCarry, Parity, Sign & Zero are not changed.
-Overflow is set to xor of Carry value and bit 7/15 of destination.
+Overflow is set to xor of Carry value and bit 7/15 of result.
 Normaly:
-	Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
-	Carry is not changed.
+    Carry is not changed.
+```
 
 ### RCR/RORC
 
+```text
 AuxCarry, Parity, Sign & Zero are not changed.
-Overflow is set to xor of bit 6/14 & 7/15 of destination.
+Overflow is set to xor of bit 6/14 & 7/15 of result.
 Normaly:
-	Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
-	Carry is not changed.
+    Carry is not changed.
+```
 
 ### SHL
 
+```text
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
-Overflow is set to xor of Carry value and bit 7/15 of destination.
+Overflow is set to xor of Carry value and bit 7/15 of result.
 Normaly:
-	Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
-	Carry is not changed.
+    Carry is not changed.
+```
 
 ### SHR
 
+```text
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
-Overflow is set to xor of bit 6/14 & 7/15 of destination.
+Overflow is set to xor of bit 6/14 & 7/15 of result.
 Normaly:
-	Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
-	Carry is not changed.
+    Carry is not changed.
+```
 
 ### SAR / SHRA
 
+```text
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
-Overflow is set to xor of bit 6/14 & 7/15 of destination.
+Overflow is set to xor of bit 6/14 & 7/15 of result.
 Normaly:
-	Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
-	Carry is not changed.
+    Carry is not changed.
+```
 
 ### MUL
 
+```text
 AuxCarry, Parity & Sign are always cleared.
 Zero is always set.
 Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
+```
 
 ### DIV / DIVU (unsigned division)
 
+```text
 Normaly:
-	AuxCarry, Parity & Sign are always cleared.
-	Carry & Overflow are from the last multiplication.
-	Zero is set when remainder is zero and bit 0 of result is set.
+    AuxCarry, Parity & Sign are always cleared.
+    Carry & Overflow are from the last multiplication.
+    Zero is set when remainder is zero and bit 0 of result is set.
 If division exception:
-	AuxCarry, Parity & Sign are always cleared.
-	Carry & Overflow are from the last multiplication.
-	Zero is set in some weird way (not tested).
+    AuxCarry, Parity & Sign are always cleared.
+    Carry & Overflow are from the last multiplication.
+    Zero is set in some weird way (not tested).
+```
 
 ### IDIV / DIV (signed division)
 
+```text
 If dividing 0x8000 by 0x00 you will not get a division exception but a result of 0x0081.
 Normaly:
-	AuxCarry, Carry & Overflow are cleared.
-	Parity, Sign & Zero are set according to result.
+    AuxCarry, Carry & Overflow are cleared.
+    Parity, Sign & Zero are set according to result.
 If division exception:
-	AuxCarry, Parity & Sign are always cleared.
-	Carry & Overflow are from the last multiplication.
-	Zero is set in some weird way (not tested).
+    AuxCarry, Parity & Sign are always cleared.
+    Carry & Overflow are from the last multiplication.
+    Zero is set in some weird way (not tested).
+```
 
 ### AAM / CVTBD
 
+```text
 The AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So it's basically a byte by byte divide though the result is in AH and remainder in AL.
 Normaly:
-	AuxCarry, Carry & Overflow are cleared.
-	Parity, Sign & Zero are set according to result (of AL, remainder).
+    AuxCarry, Carry & Overflow are cleared.
+    Parity, Sign & Zero are set according to result (of AL, remainder).
 If division exception:
-	AuxCarry, Parity & Sign are always cleared.
-	Carry & Overflow are from the last multiplication.
-	Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
+    AuxCarry, Parity & Sign are always cleared.
+    Carry & Overflow are from the last multiplication.
+    Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
+```
 
 ### AAD / CVTDB
 
@@ -177,8 +199,7 @@ Same calculation as DAA except it does a subtraction instead of an addition.
 
 ### AAA / ADJBA
 
-Overflow is always cleared.
-Parity is always set.
+Overflow is always cleared. Parity is always set.
 AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
 Sign is set when AuxCarry (, Carry & Zero) is not set.
 AL is always masked to lower nybble.
@@ -193,16 +214,18 @@ AL is always masked to lower nybble.
 
 ### PUSH/POP SP to/from stack
 
+```code
 PUSH SP
 {
-	SP      = SP - 2
-	[SS:SP] = SP
+    SP      = SP - 2
+    [SS:SP] = SP
 }
 
 POP SP
 {
-	SP = [SS:SP]
+    SP = [SS:SP]
 }
+```
 
 ## BOUND / CHKIND
 
@@ -224,6 +247,7 @@ This is to test that bit 5 (0x20) does not affect which segment register is acce
 
 ### 0x8D,0xC8 - 0x8D,0xCF (LEA cx)
 
+```text
 This is the LEA instruction but with address mode set to register.
 It doesn't use the registers directly but instead gives you a couple of new addressing modes.
 The low 3 bits are mapped like this:
@@ -235,6 +259,7 @@ The low 3 bits are mapped like this:
 0x5 = [ds:di + bp]
 0x6 = [ss:bp + si]
 0x7 = [ds:bx + di]
+```
 
 ### 0x9B (WAIT / POLL)
 
@@ -250,13 +275,11 @@ This doesn't work as Shift Arithmetic Left but instead zeros ax.
 
 ### 0xC4,0xD8 - 0xC4,0xDF (LES bx)
 
-This is the LES instruction but with address mode set to register.
-It doesn't use the registers directly but instead uses the same new addressing modes as LEA.
+This is the LES instruction but with address mode set to register. It doesn't use the registers directly but instead uses the same new addressing modes as LEA.
 
 ### 0xC5,0xD8 - 0xC5,0xDF (LDS bx)
 
-This is the LDS instruction but with address mode set to register.
-It doesn't use the registers directly but instead uses the same new addressing modes as LEA.
+This is the LDS instruction but with address mode set to register. It doesn't use the registers directly but instead uses the same new addressing modes as LEA.
 
 ### 0xD6 (SALC)
 
@@ -264,8 +287,7 @@ This is a one byte opcode called SALC, it sets AL to either 0x00 or 0xFF dependi
 
 ### 0xD8 - 0xDF
 
-These opcodes are called FPO on other NEC Vx0 CPUs, used to communicate with an FPU.
-On the V30MZ they are 2 byte NOPs (1 cycle).
+These opcodes are called FPO on other NEC Vx0 CPUs, used to communicate with an FPU. On the V30MZ they are 2 byte NOPs (1 cycle).
 
 ### 0xF1
 

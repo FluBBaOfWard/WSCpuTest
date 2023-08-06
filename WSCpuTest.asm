@@ -123,7 +123,7 @@ initialize:
 	mov word [es:di], outputCharHandler
 	mov word [es:di + 2], MYSEGMENT
 
-	mov ax, INT_BASE
+	mov ax, INT_BASE	; 0x20
 	out IO_INT_VECTOR, al
 
 	mov di, INTVEC_VBLANK_START
@@ -173,10 +173,12 @@ monoFontLoop:
 	mov cx, 2
 	rep movsw
 
-	mov al, 0xf0
-	out IO_LCD_GRAY_01, al
+	mov ax, 0x7f0
+	out IO_LCD_GRAY_01, ax
 	mov ax, 0x0010
 	out IOw_SCR_LUT_0, ax
+	mov ax, 0x0020
+	out IOw_SCR_LUT_1, ax
 
 ;-----------------------------------------------------------------------------
 ; Make background map point to our tiles, essentially "painting" the
@@ -514,15 +516,8 @@ testNeq16Loop:
 continueNeq16:
 	inc cx
 	jnz testNeq16Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 equ8Failed:
 	call printFailedResult
 	call checkKeyInput
@@ -580,15 +575,8 @@ testAnd8Loop:
 continueAnd8:
 	inc cx
 	jnz testAnd8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopAnd8Test:
 	call checkKeyInput
 	xor al, 0
@@ -682,15 +670,8 @@ continueNot8:
 	dec ch
 	inc cl
 	jnz testNot8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopNot8Test:
 	call checkKeyInput
 	xor al, 0
@@ -794,15 +775,8 @@ testOr8Loop:
 continueOr8:
 	inc cx
 	jnz testOr8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopOr8Test:
 	call checkKeyInput
 	xor al, 0
@@ -902,15 +876,8 @@ testTest8Loop:
 continueTest8:
 	inc cx
 	jnz testTest8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopTest8Test:
 	call checkKeyInput
 	xor al, 0
@@ -1014,15 +981,8 @@ testXor8Loop:
 continueXor8:
 	inc cx
 	jnz testXor8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	mov ax, 0
-	ret
 stopXor8Test:
 	call checkKeyInput
 	cmp al, 0
@@ -1113,15 +1073,8 @@ testInc8Loop:
 continueInc8:
 	inc cl
 	jnz testInc8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopInc8Test:
 	call checkKeyInput
 	xor al, 0
@@ -1237,15 +1190,8 @@ testDec8Loop:
 continueDec8:
 	inc cl
 	jnz testDec8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopDec8Test:
 	call checkKeyInput
 	xor al, 0
@@ -1369,15 +1315,8 @@ continueAdd8:
 	inc ch
 	mov [es:expectedResult1], ch
 	jnz testAdd8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopAdd8Test:
 	call checkKeyInput
 	xor al, 0
@@ -1523,15 +1462,8 @@ adc8NoInpCarry:
 	jmp testAdc8CLoop
 
 testAdcEnd:
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
 	mov byte [es:inputCarry], 0
-	xor ax, ax
-	ret
+	jmp endTestWriteOk
 stopAdc8Test:
 	call checkKeyInput
 	xor al, 0
@@ -1666,15 +1598,8 @@ continueSub8:
 	inc ch
 	mov [es:expectedResult1], ch
 	jnz testSub8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopSub8Test:
 	call checkKeyInput
 	xor al, 0
@@ -1819,15 +1744,8 @@ sbb8NoInpCarry:
 	jmp testSbb8CLoop
 
 testSbbEnd:
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
 	mov byte [es:inputCarry], 0
-	xor ax, ax
-	ret
+	jmp endTestWriteOk
 stopSbb8Test:
 	call checkKeyInput
 	xor al, 0
@@ -1962,15 +1880,8 @@ continueCmp8:
 	inc ch
 	mov [es:expectedResult2], ch
 	jnz testCmp8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopCmp8Test:
 	call checkKeyInput
 	xor al, 0
@@ -2094,15 +2005,8 @@ continueNeg8:
 	dec bx
 	inc cl
 	jnz testNeg8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopNeg8Test:
 	call checkKeyInput
 	xor al, 0
@@ -2218,15 +2122,8 @@ testRol8Loop:
 continueRol8:
 	inc cx
 	jnz testRol8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopRol8Test:
 	call checkKeyInput
 	xor al, 0
@@ -2382,15 +2279,8 @@ testRor8Loop:
 continueRor8:
 	inc cx
 	jnz testRor8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopRor8Test:
 	call checkKeyInput
 	xor al, 0
@@ -2547,15 +2437,8 @@ testRcl8Loop:
 continueRcl8:
 	inc cx
 	jnz testRcl8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopRcl8Test:
 	call checkKeyInput
 	xor al, 0
@@ -2693,15 +2576,8 @@ testRcr8Loop:
 continueRcr8:
 	inc cx
 	jnz testRcr8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopRcr8Test:
 	call checkKeyInput
 	xor al, 0
@@ -2844,15 +2720,8 @@ testShl8Loop:
 continueShl8:
 	inc cx
 	jnz testShl8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopShl8Test:
 	call checkKeyInput
 	xor al, 0
@@ -3012,15 +2881,8 @@ testShr8Loop:
 continueShr8:
 	inc cx
 	jnz testShr8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopShr8Test:
 	call checkKeyInput
 	xor al, 0
@@ -3172,15 +3034,8 @@ testSar8Loop:
 continueSar8:
 	inc cx
 	jnz testSar8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopSar8Test:
 	call checkKeyInput
 	xor al, 0
@@ -3347,15 +3202,8 @@ continueMulu:
 	jnz testMuluLoop
 	inc ch
 	jnz testMuluLoop2
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopMuluTest:
 	call checkKeyInput
 	xor al, 0
@@ -3467,14 +3315,8 @@ noMulsOverflow:
 continueMuls:
 	inc cx
 	jnz testMulsLoop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	ret
 stopMulsTest:
 	call checkKeyInput
 	xor al, 0
@@ -3575,15 +3417,8 @@ continueAad:
 	jnz testAadLoop
 	inc dl
 	jnz testAadLoop2
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopAadTest:
 	call checkKeyInput
 	xor al, 0
@@ -3685,15 +3520,8 @@ continueDivu8:
 	jnz testDivu8Loop
 	inc dl
 	jnz testDivu8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopDivu8Test:
 	call checkKeyInput
 	xor al, 0
@@ -3860,15 +3688,8 @@ continue8Divs:
 	jnz testDivs8Loop
 	inc dl
 	jnz testDivs8Loop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopDivs8Test:
 	call checkKeyInput
 	xor al, 0
@@ -4057,15 +3878,8 @@ testAamLoop:
 continueAam:
 	inc cx
 	jnz testAamLoop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopAamTest:
 	call checkKeyInput
 	xor al, 0
@@ -4219,15 +4033,8 @@ continueDaa:
 	inc cx
 	cmp cx, 0x400
 	jnz testDaaLoop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopDaaTest:
 	call checkKeyInput
 	xor al, 0
@@ -4390,15 +4197,8 @@ continueDas:
 	inc cx
 	cmp cx, 0x400
 	jnz testDasLoop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopDasTest:
 	call checkKeyInput
 	xor al, 0
@@ -4566,15 +4366,8 @@ continueAaa:
 	inc bl
 	cmp bl, 2
 	jnz testAaaLoop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopAaaTest:
 	call checkKeyInput
 	xor al, 0
@@ -4708,15 +4501,8 @@ continueAas:
 	inc bl
 	cmp bl, 2
 	jnz testAasLoop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopAasTest:
 	call checkKeyInput
 	xor al, 0
@@ -4844,15 +4630,8 @@ continueJmp:
 	inc cx
 	cmp ch, 0x04
 	jnz testJmpLoop
+	jmp endTestWriteOk
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
 stopJmpTest:
 	call checkKeyInput
 	xor al, 0
@@ -5520,10 +5299,7 @@ stackLeaveFailed:
 	jz stackFailed
 
 stackOk:
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
+	jmp writeTestOk
 
 stackFailed:
 	mov si, failedStr
@@ -5573,15 +5349,8 @@ continueBound:
 	cmp cx, 0x1000
 	jnz testBoundLoop
 
-	hlt						; Wait for VBlank
-	mov byte [es:isTesting], 0
-	mov al, 10
-	int 0x10
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	mov [es:testedException], al
-	ret
+	mov byte [es:testedException], 0
+	jmp endTestWriteOk
 stopBoundTest:
 	call checkKeyInput
 	xor al, 0
@@ -7225,10 +6994,7 @@ undefinedOp0xFFF8Failed:
 	jz undefinedOpFailed
 
 undefinedOpOk:
-	mov si, okStr
-	call writeString
-	xor ax, ax
-	ret
+	jmp writeTestOk
 
 undefinedOpFailed:
 	mov si, failedStr
@@ -7342,6 +7108,19 @@ printFailedResult:
 	mov al, 10
 	int 0x10
 
+	ret
+;-----------------------------------------------------------------------------
+; New Line, write OK, set result to OK.
+;-----------------------------------------------------------------------------
+endTestWriteOk:
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+writeTestOk:
+	mov si, okStr
+	call writeString
+	xor ax, ax
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -7554,21 +7333,20 @@ outputCharHandler:
 	push cx
 	push di
 
+	cmp al, 10
+	jz newLine
+	mov cl, [es:cursorXPos]
+	xor al, 0
+	jz endOutput
 	xor bh, bh
 	mov bl, [es:cursorYPos]
 	and bl, 0x1F
-	shl bx, 5		; ax * MAP_TWIDTH
-	mov cl, [es:cursorXPos]
+	shl bx, 5		; bx * MAP_TWIDTH
 	add bl, cl
 	shl bx, 1
 	mov di, backgroundMap
 	add di, bx
-	xor al, 0
-	jz endOutput
-	cmp al, 10
-	jz newLine
 	stosb
-	inc di
 	inc cl
 	cmp cl, 28
 	jnz endOutput
@@ -7701,7 +7479,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230204",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230806",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
