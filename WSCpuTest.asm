@@ -159,8 +159,7 @@ initialize:
 monoFontLoop:
 	lodsb
 	stosw
-	dec cx
-	jnz monoFontLoop
+	loop monoFontLoop
 
 ;-----------------------------------------------------------------------------
 ; Copy font palette into WSC's palette area
@@ -337,6 +336,7 @@ testAll:
 
 	call testStack
 	call testJmp
+	call testTrap
 	call testUndefinedOps
 	call testBound
 	call testDaa
@@ -398,6 +398,7 @@ testRolShift:
 testMisc:
 	call testStack
 	call testJmp
+	call testTrap
 	call testUndefinedOps
 	call testBound
 	call testDaa
@@ -5313,10 +5314,10 @@ stackFailed:
 testBound:
 	mov si, testingBoundStr
 	call writeString
-	mov si, test8x8InputStr
+	mov si, test16x16InputStr
 	call writeString
 
-	mov byte [es:isTesting], 1
+	mov byte [es:isTesting], 3
 
 	xor cx, cx
 	mov [es:expectedResult1], cx
@@ -5349,13 +5350,11 @@ continueBound:
 	cmp cx, 0x1000
 	jnz testBoundLoop
 
-	mov byte [es:testedException], 0
 	jmp endTestWriteOk
 stopBoundTest:
 	call checkKeyInput
 	xor al, 0
 	jnz continueBound
-	mov byte [es:testedException], 0
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -5408,6 +5407,38 @@ boundOk:
 	mov [es:expectedException], al
 	pop dx
 	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test Break/Trap functionality.
+;-----------------------------------------------------------------------------
+testTrap:
+	mov si, testingTrapStr
+	call writeString
+
+	mov byte [es:testedException], 0
+	mov byte [es:expectedException], 1
+	mov ax, 0x1C
+	mov [es:inputVal1], ax
+	mov bx, ax
+	add bl, bl
+	mov [es:expectedResult1], bx
+	pushf
+	pop bx
+	or bx, 0x0100				;@ Set Trap flag
+	push bx
+	popf						;@ Pop flags with Trap set.
+	clc							;@ Trap will happen after clc.
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz testTrapFailed
+	mov bl, [es:testedException]
+	xor bl, [es:expectedException]
+	jmp writeTestOk
+
+testTrapFailed:
+	call printFailedResult
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -6640,6 +6671,8 @@ undefinedOp0xC5DFFailed:
 
 undefinedOp0xD6:
 	mov byte [es:testedException], 0
+	xor ax, ax
+	mov [es:inputVal2], ax
 	mov ax, 0x1001
 	mov [es:inputVal1], ax
 	mov bx, ax
@@ -6857,6 +6890,7 @@ undefinedOp0xF1Failed:
 	jz undefinedOpFailed
 
 undefinedOp0xF6C8:
+	mov byte [es:testedException], 0
 	mov byte [es:expectedException], 0
 	mov ax, 0xD01A
 	mov [es:inputVal1], ax
@@ -7167,9 +7201,7 @@ textLoop:
 	lodsb
 	int 0x10
 	xor al, 0
-	jz endString
-	dec cx
-	jnz textLoop
+	loopne textLoop
 endString:
 	ret
 
@@ -7280,7 +7312,16 @@ divisionErrorHandler:
 ; It is called on INT1 (Trap).
 ;-----------------------------------------------------------------------------
 int1InstructionHandler:
+	adc al, al
+	push ax
+	push bp
+	mov bp, sp
+	mov ax, [bp + 8]	; Get original Flags
+	and ax, 0xFEFF		; Clear Trap
+	mov [bp + 8], ax	; Set back flags
 	mov byte [es:testedException], 1
+	pop bp
+	pop ax
 	iret
 ;-----------------------------------------------------------------------------
 ; The NMI handler
@@ -7479,7 +7520,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230806",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230909",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -7532,6 +7573,8 @@ testingDivu32Str: db "Unsigned Division 32/16", 10, 0
 testingDivs32Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8, add 8)", 10, 0
+
+testingTrapStr: db "BREAK/TRAP", 10, 0
 
 testingJmpStr: db "Conditional JMP/BRA", 10, 0
 

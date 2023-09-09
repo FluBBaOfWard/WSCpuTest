@@ -301,7 +301,7 @@ This doesn't seem to change flags or registers (1 cycle).
 
 Does the same as 0xFF variants (CALL, BRA & PUSH).
 
-### 0xFF,0xF8 (PUSH AX)
+### 0xFF,0xF8 (PUSH AX?)
 
 This doesn't seem to do anything.
 
