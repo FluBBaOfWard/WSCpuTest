@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.0 (20230806)
+# WonderSwan CPU Test V0.7.0 (20230924)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -137,7 +137,16 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
 
-### MUL
+### MUL / MULU (unsigned division)
+
+```text
+AuxCarry, Parity & Sign are always cleared.
+On Color/Crystal: Zero is always set.
+On Mono: Zero is always cleared.
+Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
+```
+
+### IMUL / MUL (signed division)
 
 ```text
 AuxCarry, Parity & Sign are always cleared.

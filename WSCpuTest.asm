@@ -61,6 +61,13 @@ initialize:
 	mov word [es:globalFrameCounter], 0
 	mov word [es:lfsr1], 0x0234
 	mov word [es:lfsr2], 0x1234
+	in al, SYSTEM_CTRL1
+	mov bx, 0xF242
+	test al, 2
+	jne notMonoMulu
+	mov bx, 0xF202
+notMonoMulu:
+	mov [es:muluFlags], bx
 
 ;-----------------------------------------------------------------------------
 ; Initialize video
@@ -91,8 +98,8 @@ initialize:
 	mov word [es:di], divisionErrorHandler
 	mov word [es:di + 2], MYSEGMENT
 
-	mov di, 1*4		; Int1
-	mov word [es:di], int1InstructionHandler
+	mov di, 1*4		; Trap/Brk
+	mov word [es:di], trapHandler
 	mov word [es:di + 2], MYSEGMENT
 
 	mov di, 2*4		; NMI
@@ -3185,7 +3192,7 @@ testMuluLoop2:
 	mov [es:expectedResult1], bx
 testMuluLoop:
 	mov [es:inputVal1], cl
-	mov ax, 0xF242
+	mov ax, [es:muluFlags]
 	mov bx, [es:expectedResult1]
 	xor bh, 0
 	jz noMuluOverflow
@@ -7308,19 +7315,18 @@ divisionErrorHandler:
 	mov byte [es:testedException], 1
 	iret
 ;-----------------------------------------------------------------------------
-; The Int1 handler
-; It is called on INT1 (Trap).
+; The Trap/Brk handler
+; It is called on Trap/Brk flag being set.
 ;-----------------------------------------------------------------------------
-int1InstructionHandler:
+trapHandler:
 	adc al, al
 	push ax
-	push bp
-	mov bp, sp
-	mov ax, [bp + 8]	; Get original Flags
-	and ax, 0xFEFF		; Clear Trap
-	mov [bp + 8], ax	; Set back flags
+	add sp, 6
+	pop ax				; Get original flags
+	and ah, 0xFE		; Clear Trap
+	push ax				; Set back flags
+	sub sp, 6
 	mov byte [es:testedException], 1
-	pop bp
 	pop ax
 	iret
 ;-----------------------------------------------------------------------------
@@ -7520,7 +7526,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230909",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230924",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -7707,6 +7713,8 @@ expectedException: resw 1
 
 boundLow: resw 1
 boundHigh: resw 1
+
+muluFlags: resw 1
 
 isTesting: resb 1			; If currently running test.
 dummy: resb 1
