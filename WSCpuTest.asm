@@ -317,119 +317,59 @@ dontMoveDown:
 ;
 ;-----------------------------------------------------------------------------
 testAll:
-	call testEqu
-	call testAnd8
-	call testNot8
-	call testOr8
-	call testTest8
-	call testXor8
-	call testInc8
-	call testDec8
+	call runLogic
 
-	call testAdd8
-	call testSub8
-	call testCmp8
-	call testNeg8
-	call testAdc8
-	call testSbb8
+	call runArithmetic
 
-	call testRol8
-	call testRor8
-	call testRcl8
-	call testRcr8
-	call testShl8
-	call testShr8
-	call testSar8
+	call runRolShift
 
-	call testStack
-	call testJmp
-	call testTrap
-	call testUndefinedOps
-	call testBound
-	call testDaa
-	call testDas
-	call testAaa
-	call testAas
+	call runMisc
 
-	call testMulu8
-	call testMuls8
-	call testAad
+	call runMultiplication
 
-	call testAam
-	call testDivu8
-	call testDivs8
+	call runDivision
 
 	call checkKeyInput
 	jmp main
 
 ;-----------------------------------------------------------------------------
 testLogic:
-	call testEqu
-	call testAnd8
-	call testNot8
-	call testOr8
-	call testTest8
-	call testXor8
-	call testInc8
-	call testDec8
+	call runLogic
 
 	call checkKeyInput
 	jmp main
 
 ;-----------------------------------------------------------------------------
 testArithmetic:
-	call testAdd8
-	call testSub8
-	call testCmp8
-	call testNeg8
-	call testAdc8
-	call testSbb8
+	call runArithmetic
 
 	call checkKeyInput
 	jmp main
 
 ;-----------------------------------------------------------------------------
 testRolShift:
-	call testRol8
-	call testRor8
-	call testRcl8
-	call testRcr8
-	call testShl8
-	call testShr8
-	call testSar8
+	call runRolShift
 
 	call checkKeyInput
 	jmp main
 
 ;-----------------------------------------------------------------------------
 testMisc:
-	call testStack
-	call testJmp
-	call testTrap
-	call testUndefinedOps
-	call testBound
-	call testDaa
-	call testDas
-	call testAaa
-	call testAas
+	call runMisc
 
 	call checkKeyInput
 	jmp main
 
 ;-----------------------------------------------------------------------------
 testMultiplication:
-	call testMulu8
-	call testMuls8
-	call testAad
+	call runMultiplication
 
 	call checkKeyInput
 	jmp main
 
 ;-----------------------------------------------------------------------------
 testDivision:
-	call testAam
-	call testDivu8
-	call testDivs8
+	call runDivision
 
 	call checkKeyInput
 	jmp main
@@ -439,6 +379,58 @@ testSDivision:
 
 	call checkKeyInput
 	jmp main
+;-----------------------------------------------------------------------------
+runDivision:
+	call testAam
+	call testDivu8
+	jmp testDivs8
+
+;-----------------------------------------------------------------------------
+runMultiplication:
+	call testMulu8
+	call testMuls8
+	jmp testAad
+
+;-----------------------------------------------------------------------------
+runMisc:
+	call testStack
+	call testJmp
+	call testTrap
+	call testUndefinedOps
+	call testBound
+	call testDaa
+	call testDas
+	call testAaa
+	jmp testAas
+
+;-----------------------------------------------------------------------------
+runRolShift:
+	call testRol8
+	call testRor8
+	call testRcl8
+	call testRcr8
+	call testShl8
+	call testShr8
+	jmp testSar8
+;-----------------------------------------------------------------------------
+runArithmetic:
+	call testAdd8
+	call testSub8
+	call testCmp8
+	call testNeg8
+	call testAdc8
+	jmp testSbb8
+;-----------------------------------------------------------------------------
+runLogic:
+	call testEqu
+	call testAnd8
+	call testAnd16
+	call testNot8
+	call testOr8
+	call testTest8
+	call testXor8
+	call testInc8
+	jmp testDec8
 ;-----------------------------------------------------------------------------
 ; Test equality by CMP, SUB & XOR of all byte/word values.
 ;-----------------------------------------------------------------------------
@@ -648,6 +640,119 @@ testAnd8Single:
 	ret
 
 and8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test logical AND of some word values.
+;-----------------------------------------------------------------------------
+testAnd16:
+	mov si, testingAnd16Str
+	call writeString
+	mov si, test16x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 3
+
+	xor cx, cx
+	mov [es:expectedResult1], cx
+testAnd16Loop:
+	call getLFSR2Value
+	mov bx, ax
+	call getLFSR1Value
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], bx
+	not ax
+	not bx
+	or ax, bx
+	not ax
+	mov dx, 0xf202
+	mov [es:expectedResult1], ax
+	or ax, ax			; Test flags
+	jns and16notsign
+	or dl, 0x80			; Sign
+and16notsign:
+	or ax, ax			; Test flags
+	jnz and16notzero
+	or dl, 0x40			; Zero
+and16notzero:
+	lea bx, PZSTable
+	xlat
+	and ax, 0x04		; Preserve parity only
+	or ax, dx
+	mov [es:expectedFlags], ax
+	call testAnd16Single
+	xor al, 0
+	jnz stopAnd16Test
+continueAnd16:
+	inc cx
+	jnz testAnd16Loop
+	jmp endTestWriteOk
+
+stopAnd16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueAnd16
+	ret
+
+;-----------------------------------------------------------------------------
+testAnd16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov bx, [es:inputVal2]
+	popf
+	and ax, bx
+	pushf
+
+	mov [es:testedResult1], ax
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz and16Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz and16Failed
+
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov cx, [es:inputVal2]
+	popf
+	and ax, cx
+	pushf
+
+	mov [es:testedResult1], ax
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz and16Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz and16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+and16Failed:
 	call printFailedResult
 	mov ax, 1
 	pop cx
@@ -7170,7 +7275,7 @@ writeTestOk:
 clearLine:
 	mov bl, [es:cursorYPos]
 	and bx, 0x1f
-	shl bx, 6		; ax * MAP_TWIDTH
+	shl bx, 6		; bx * MAP_TWIDTH
 	mov di, backgroundMap
 	add di, bx
 	mov cx, MAP_TWIDTH
@@ -7526,7 +7631,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230924",10 , 0
+headLineStr: db "WonderSwan CPU Test 20230930",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -7539,12 +7644,19 @@ menuTestSDivisionStr: db "  Test Signed Division.",10 , 0
 
 testingEquStr: db "Equal by CMP, SUB & XOR", 10, 0
 testingAnd8Str: db "Logical AND bytes", 10, 0
+testingAnd16Str: db "Logical AND words", 10, 0
 testingOr8Str: db "Logical OR bytes", 10, 0
+testingOr16Str: db "Logical OR words", 10, 0
 testingTest8Str: db "Logical TEST bytes", 10, 0
+testingTest16Str: db "Logical TEST words", 10, 0
 testingXor8Str: db "Logical XOR bytes", 10, 0
+testingXor16Str: db "Logical XOR words", 10, 0
 testingNot8Str: db "Logical NOT bytes", 10, 0
+testingNot16Str: db "Logical NOT words", 10, 0
 testingInc8Str: db "INC bytes", 10, 0
+testingInc16Str: db "INC words", 10, 0
 testingDec8Str: db "DEC bytes", 10, 0
+testingDec16Str: db "DEC words", 10, 0
 
 testingAdd8Str: db "ADD bytes", 10, 0
 testingSub8Str: db "SUB bytes", 10, 0

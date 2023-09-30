@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.0 (20230924)
+# WonderSwan CPU Test V0.7.1 (20230930)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
 
@@ -17,7 +17,6 @@ I use nasm <https://nasm.us/> by running "nasm -f bin -o WSCpuTest.wsc WSCpuTest
 
 ## How do the undefined flags / opcodes work?
 
-If there is a division exception the input (AL, AX/AW) is not modified.
 The flags marked as Undefined in the manual are always modified by the instructions, the flags are never kept as they were before the instruction.
 Most undefined opcodes are just 1 byte NOPs, the FPO1 (0xD8 - 0xDF) opcodes are 2 bytes NOPs.
 
@@ -137,7 +136,7 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
 
-### MUL / MULU (unsigned division)
+### MUL / MULU (unsigned multiplication, 8x8)
 
 ```text
 AuxCarry, Parity & Sign are always cleared.
@@ -146,7 +145,7 @@ On Mono: Zero is always cleared.
 Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
 ```
 
-### IMUL / MUL (signed division)
+### IMUL / MUL (signed multiplication, 8x8)
 
 ```text
 AuxCarry, Parity & Sign are always cleared.
@@ -154,7 +153,7 @@ Zero is always set.
 Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
 ```
 
-### DIV / DIVU (unsigned division)
+### DIV / DIVU (unsigned division, 16/8)
 
 ```text
 Normaly:
@@ -165,22 +164,24 @@ If division exception:
     AuxCarry, Parity & Sign are always cleared.
     Carry & Overflow are from the last multiplication.
     Zero is set in some weird way (not tested).
+    AL, AX/AW is not modified.
 ```
 
-### IDIV / DIV (signed division)
+### IDIV / DIV (signed division, 16/8)
 
 ```text
 If dividing 0x8000 by 0x00 you will not get a division exception but a result of 0x0081.
 Normaly:
     AuxCarry, Carry & Overflow are cleared.
-    Parity, Sign & Zero are set according to result.
+    Parity, Sign & Zero are set according to result (AL).
 If division exception:
     AuxCarry, Parity & Sign are always cleared.
     Carry & Overflow are from the last multiplication.
     Zero is set in some weird way (not tested).
+    AL, AX/AW is not modified.
 ```
 
-### AAM / CVTBD
+### AAM / CVTBD (8/8)
 
 ```text
 The AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So it's basically a byte by byte divide though the result is in AH and remainder in AL.
@@ -191,9 +192,10 @@ If division exception:
     AuxCarry, Parity & Sign are always cleared.
     Carry & Overflow are from the last multiplication.
     Zero is set if bit 6 or 7 of AL is set (AL > 0x3F).
+    AL, AX/AW is not modified.
 ```
 
-### AAD / CVTDB
+### AAD / CVTDB (8x8+8)
 
 The AAD opcode just as the AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So this is a byte by byte multiplication plus byte addition. The answear is only in AL, AH is always zero. Flags are calculated only from the add after the multiplication, the flags are exactly like a normal add.
 
