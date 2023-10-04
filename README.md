@@ -1,6 +1,6 @@
-# WonderSwan CPU Test V0.7.1 (20230930)
+# WonderSwan CPU Test V0.7.1 (20231004)
 
-This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & PocketChallenge V2.
+This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
 
 ## How to use
 
@@ -19,6 +19,10 @@ I use nasm <https://nasm.us/> by running "nasm -f bin -o WSCpuTest.wsc WSCpuTest
 
 The flags marked as Undefined in the manual are always modified by the instructions, the flags are never kept as they were before the instruction.
 Most undefined opcodes are just 1 byte NOPs, the FPO1 (0xD8 - 0xDF) opcodes are 2 bytes NOPs.
+
+## Differences between ASWAN & SPHINX(2)
+
+There is one difference between the SOCs and that is the Zero flag during unsigned Multiplication, it's allways set on ASWAN and allways clear on SPHINX(2).
 
 ### AND, OR, XOR & TEST
 

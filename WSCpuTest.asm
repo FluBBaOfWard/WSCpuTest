@@ -318,15 +318,10 @@ dontMoveDown:
 ;-----------------------------------------------------------------------------
 testAll:
 	call runLogic
-
 	call runArithmetic
-
 	call runRolShift
-
 	call runMisc
-
 	call runMultiplication
-
 	call runDivision
 
 	call checkKeyInput
@@ -379,18 +374,36 @@ testSDivision:
 
 	call checkKeyInput
 	jmp main
-;-----------------------------------------------------------------------------
-runDivision:
-	call testAam
-	call testDivu8
-	jmp testDivs8
 
 ;-----------------------------------------------------------------------------
-runMultiplication:
-	call testMulu8
-	call testMuls8
-	jmp testAad
-
+runLogic:
+	call testEqu
+	call testAnd8
+;	call testAnd16
+;	call testNot8
+	call testNot16
+	call testOr8
+	call testTest8
+	call testXor8
+	call testInc8
+	jmp testDec8
+;-----------------------------------------------------------------------------
+runArithmetic:
+	call testAdd8
+	call testSub8
+	call testCmp8
+	call testNeg8
+	call testAdc8
+	jmp testSbb8
+;-----------------------------------------------------------------------------
+runRolShift:
+	call testRol8
+	call testRor8
+	call testRcl8
+	call testRcr8
+	call testShl8
+	call testShr8
+	jmp testSar8
 ;-----------------------------------------------------------------------------
 runMisc:
 	call testStack
@@ -402,35 +415,19 @@ runMisc:
 	call testDas
 	call testAaa
 	jmp testAas
+;-----------------------------------------------------------------------------
+runMultiplication:
+	call testMulu8
+	call testMuls8
+	call testMulu16
+	call testMuls16
+	jmp testAad
+;-----------------------------------------------------------------------------
+runDivision:
+	call testAam
+	call testDivu8
+	jmp testDivs8
 
-;-----------------------------------------------------------------------------
-runRolShift:
-	call testRol8
-	call testRor8
-	call testRcl8
-	call testRcr8
-	call testShl8
-	call testShr8
-	jmp testSar8
-;-----------------------------------------------------------------------------
-runArithmetic:
-	call testAdd8
-	call testSub8
-	call testCmp8
-	call testNeg8
-	call testAdc8
-	jmp testSbb8
-;-----------------------------------------------------------------------------
-runLogic:
-	call testEqu
-	call testAnd8
-	call testAnd16
-	call testNot8
-	call testOr8
-	call testTest8
-	call testXor8
-	call testInc8
-	jmp testDec8
 ;-----------------------------------------------------------------------------
 ; Test equality by CMP, SUB & XOR of all byte/word values.
 ;-----------------------------------------------------------------------------
@@ -850,6 +847,101 @@ testNot8Single:
 	ret
 
 not8Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test logical NOT of all word values.
+;-----------------------------------------------------------------------------
+testNot16:
+	mov si, testingNot16Str
+	call writeString
+	mov si, test16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 5
+
+	xor cx, cx
+	xor dx, dx
+	dec dx
+testNot16Loop:
+	mov [es:inputVal1], cx
+	mov [es:expectedResult1], dx
+	call testNot16Single
+	xor al, 0
+	jnz stopNot16Test
+continueNot16:
+	dec dx
+	inc cx
+	jnz testNot16Loop
+	jmp endTestWriteOk
+
+stopNot16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueNot16
+	ret
+
+;-----------------------------------------------------------------------------
+testNot16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+	mov ax, 0xF202
+	mov [es:expectedFlags], ax
+
+	mov ax, [es:inputVal1]
+	popf
+	not ax
+	pushf
+
+	mov [es:testedResult1], ax
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz not16Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz not16Failed
+
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+	mov ax, 0xFAD7
+	mov [es:expectedFlags], ax
+
+	mov bx, [es:inputVal1]
+	popf
+	not bx
+	pushf
+
+	mov [es:testedResult1], bx
+	pop ax
+	mov [es:testedFlags], ax
+	mov cx, [es:expectedResult1]
+	xor bx, cx
+	jnz not16Failed
+	mov cx, [es:expectedFlags]
+	xor ax, cx
+	jnz not16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+not16Failed:
 	call printFailedResult
 	mov ax, 1
 	pop cx
@@ -3281,7 +3373,7 @@ sar8NoOv2:
 ; Test unsigned multiplication of all byte values.
 ;-----------------------------------------------------------------------------
 testMulu8:
-	mov si, testingMuluStr
+	mov si, testingMulu8Str
 	call writeString
 	mov si, test8x8InputStr
 	call writeString
@@ -3291,36 +3383,36 @@ testMulu8:
 	xor cx, cx
 	mov [es:inputVal1], cx
 	mov [es:inputVal2], cx
-testMuluLoop2:
+testMulu8Loop2:
 	mov [es:inputVal2], ch
 	xor bx, bx
 	mov [es:expectedResult1], bx
-testMuluLoop:
+testMulu8Loop:
 	mov [es:inputVal1], cl
 	mov ax, [es:muluFlags]
 	mov bx, [es:expectedResult1]
 	xor bh, 0
-	jz noMuluOverflow
+	jz noMulu8Overflow
 	or ax, 0x0801
-noMuluOverflow:
+noMulu8Overflow:
 	mov [es:expectedFlags], ax
 	call testMulu8Single
 	xor al, 0
 	jnz stopMuluTest
-continueMulu:
+continueMulu8:
 	xor bx, bx
 	mov bl, ch
 	add [es:expectedResult1], bx
 	inc cl
-	jnz testMuluLoop
+	jnz testMulu8Loop
 	inc ch
-	jnz testMuluLoop2
+	jnz testMulu8Loop2
 	jmp endTestWriteOk
 
 stopMuluTest:
 	call checkKeyInput
 	xor al, 0
-	jnz continueMulu
+	jnz continueMulu8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -3345,10 +3437,10 @@ testMulu8Single:
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
 	xor ax, cx
-	jnz muluFailed
+	jnz mulu8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
-	jnz muluFailed
+	jnz mulu8Failed
 
 	pushf
 	pop ax
@@ -3367,17 +3459,17 @@ testMulu8Single:
 	mov [es:testedFlags], bx
 	mov cx, [es:expectedResult1]
 	xor ax, cx
-	jnz muluFailed
+	jnz mulu8Failed
 	mov cx, [es:expectedFlags]
 	xor bx, cx
-	jnz muluFailed
+	jnz mulu8Failed
 
 	xor ax, ax
 	pop cx
 	pop bx
 	ret
 
-muluFailed:
+mulu8Failed:
 	call printFailedResult
 	mov ax, 1
 	pop cx
@@ -3388,7 +3480,7 @@ muluFailed:
 ; Test signed multiplication of all byte values.
 ;-----------------------------------------------------------------------------
 testMuls8:
-	mov si, testingMulsStr
+	mov si, testingMuls8Str
 	call writeString
 	mov si, test8x8InputStr
 	call writeString
@@ -3397,43 +3489,43 @@ testMuls8:
 
 	xor cx, cx
 	mov [es:inputVal2], cx
-testMulsLoop:
+testMuls8Loop:
 	mov bx, [es:expectedResult1]
 	mov al, ch
 	cbw
 	add bx, ax
 	cmp cl, 0x80
-	jnz noNeg
+	jnz noMuls8Neg
 	neg bx
-noNeg:
+noMuls8Neg:
 	mov [es:inputVal1], cl
 	xor cl, 0
-	jnz skipMulsVal2
+	jnz skipMuls8Val2
 	xor bx, bx
 	mov [es:inputVal2], ch
-skipMulsVal2:
+skipMuls8Val2:
 	mov [es:expectedResult1], bx
 	mov ax, 0xF242
 	sar bx, 7
-	jz noMulsOverflow
+	jz noMuls8Overflow
 	not bx
 	xor bx, 0
-	jz noMulsOverflow
+	jz noMuls8Overflow
 	or ax, 0x0801
-noMulsOverflow:
+noMuls8Overflow:
 	mov [es:expectedFlags], ax
 	call testMuls8Single
 	xor al, 0
-	jnz stopMulsTest
-continueMuls:
+	jnz stopMuls8Test
+continueMuls8:
 	inc cx
-	jnz testMulsLoop
+	jnz testMuls8Loop
 	jmp endTestWriteOk
 
-stopMulsTest:
+stopMuls8Test:
 	call checkKeyInput
 	xor al, 0
-	jnz continueMuls
+	jnz continueMuls8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -3458,10 +3550,10 @@ testMuls8Single:
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz mulsFailed
+	jnz muls8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	jnz mulsFailed
+	jnz muls8Failed
 
 	pushf
 	pop ax
@@ -3480,21 +3572,289 @@ testMuls8Single:
 	mov [es:testedFlags], cx
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz mulsFailed
+	jnz muls8Failed
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	jnz mulsFailed
+	jnz muls8Failed
 
 	xor ax, ax
 	pop cx
 	pop bx
 	ret
 
-mulsFailed:
+muls8Failed:
 	call printFailedResult
 	mov ax, 1
 	pop cx
 	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test unsigned multiplication of all word values.
+;-----------------------------------------------------------------------------
+testMulu16:
+	mov si, testingMulu16Str
+	call writeString
+	mov si, test16x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 3
+
+	xor cx, cx
+testMulu16Loop:
+	call getLFSR2Value
+	mov bx, ax
+	call getLFSR1Value
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], bx
+	call calcMulu16Result
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], dx
+	mov ax, [es:muluFlags]
+	xor dx, 0
+	jz noMulu16Overflow
+	or ax, 0x0801
+noMulu16Overflow:
+	mov [es:expectedFlags], ax
+	call testMulu16Single
+	xor al, 0
+	jnz stopMulu16Test
+continueMulu16:
+	inc cx
+	jnz testMulu16Loop
+	jmp endTestWriteOk
+
+stopMulu16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueMulu16
+	ret
+
+;-----------------------------------------------------------------------------
+testMulu16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov bx, [es:inputVal2]
+	popf
+	mul bx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz mulu16Failed
+	mov cx, [es:expectedResult2]
+	xor dx, cx
+	jnz mulu16Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz mulu16Failed
+
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov cx, [es:inputVal2]
+	popf
+	mul cx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz mulu16Failed
+	mov cx, [es:expectedResult2]
+	xor dx, cx
+	jnz mulu16Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz mulu16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+mulu16Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+calcMulu16Result:	; AX & BX is input, AX & DX is output
+	push cx
+
+	mov di, ax
+	xor si, si
+	xor ax, ax
+	xor dx, dx
+
+	mov cx, 16
+calcMulu16loop:
+	shr bx, 1
+	jnc mulu16NoBit
+	add ax, di
+	adc dx, si
+mulu16NoBit:
+	add di, di
+	adc si, si
+	loop calcMulu16loop
+
+	pop cx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test signed multiplication of all word values.
+;-----------------------------------------------------------------------------
+testMuls16:
+	mov si, testingMuls16Str
+	call writeString
+	mov si, test16x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 3
+
+	xor cx, cx
+testMuls16Loop:
+	call getLFSR2Value
+	mov bx, ax
+	call getLFSR1Value
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], bx
+	call calcMuls16Result
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], dx
+	mov bx, 0xF242
+	sar ax, 15
+	xor ax, dx
+	jz noMuls16Overflow
+	or bx, 0x0801
+noMuls16Overflow:
+	mov [es:expectedFlags], bx
+	call testMuls16Single
+	xor al, 0
+	jnz stopMuls16Test
+continueMuls16:
+	inc cx
+	jnz testMuls16Loop
+	jmp endTestWriteOk
+
+stopMuls16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueMuls16
+	ret
+
+;-----------------------------------------------------------------------------
+testMuls16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov bx, [es:inputVal2]
+	popf
+	imul bx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz muls16Failed
+	mov cx, [es:expectedResult2]
+	xor dx, cx
+	jnz muls16Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz muls16Failed
+
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov cx, [es:inputVal2]
+	popf
+	imul cx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz muls16Failed
+	mov cx, [es:expectedResult2]
+	xor dx, cx
+	jnz muls16Failed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz muls16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+muls16Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+calcMuls16Result:	; AX & BX is input, AX & DX is output
+	push cx
+
+	mov di, ax
+	mov si, ax
+	sar si, 16
+	xor ax, ax
+	xor dx, dx
+
+	mov cx, 32
+calcMuls16loop:
+	sar bx, 1
+	jnc muls16NoBit
+	add ax, di
+	adc dx, si
+muls16NoBit:
+	add di, di
+	adc si, si
+	loop calcMuls16loop
+
+	pop cx
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -7387,7 +7747,7 @@ skipValue8x8Print:
 	jmp skipValuePrint
 skipValue16x8Print:
 	cmp al, 3
-	jnz skipValue8Print
+	jnz skipValue16x16Print
 	mov byte [es:cursorXPos], 15
 	mov ax, [es:inputVal2]
 	call printHexW
@@ -7395,12 +7755,19 @@ skipValue16x8Print:
 	mov ax, [es:inputVal1]
 	call printHexW
 	jmp skipValuePrint
-skipValue8Print:
+skipValue16x16Print:
 	cmp al, 4
-	jnz skipValuePrint
+	jnz skipValue16Print
 	mov byte [es:cursorXPos], 17
 	mov al, [es:inputVal1]
 	call printHexB
+	jmp skipValuePrint
+skipValue16Print:
+	cmp al, 5
+	jnz skipValuePrint
+	mov byte [es:cursorXPos], 17
+	mov ax, [es:inputVal1]
+	call printHexW
 	jmp skipValuePrint
 skipValuePrint:
 acknowledgeVBlankInterrupt:
@@ -7631,7 +7998,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20230930",10 , 0
+headLineStr: db "WonderSwan CPU Test 20231004",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -7680,9 +8047,9 @@ testingDasStr: db "DAS/ADJ4S", 10, 0
 
 testingBoundStr: db "BOUND/CHKIND", 10, 0
 
-testingMuluStr: db "Unsigned Multiplication 8*8", 10, 0
-testingMulsStr: db "Signed Multiplication 8*8", 10, 0
-testingMulu16Str: db "Unsigned Multiplication 16*16", 0
+testingMulu8Str: db "Unsigned Multiplication 8*8", 10, 0
+testingMuls8Str: db "Signed Multiplication 8*8", 10, 0
+testingMulu16Str: db "Unsigned Multiplicatio 16*16", 0
 testingMuls16Str: db "Signed Multiplication 16*16", 10, 0
 
 testingDivuStr: db "Unsigned Division 16/8", 10, 0
