@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.1 (20231004)
+# WonderSwan CPU Test V0.7.1 (20231005)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
 

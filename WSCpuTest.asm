@@ -380,8 +380,8 @@ runLogic:
 	call testEqu
 	call testAnd8
 ;	call testAnd16
-;	call testNot8
-	call testNot16
+	call testNot8
+;	call testNot16
 	call testOr8
 	call testTest8
 	call testXor8
@@ -421,6 +421,8 @@ runMultiplication:
 	call testMuls8
 	call testMulu16
 	call testMuls16
+	call testMulsIm
+	call testMulsIm8
 	jmp testAad
 ;-----------------------------------------------------------------------------
 runDivision:
@@ -3855,6 +3857,180 @@ muls16NoBit:
 	loop calcMuls16loop
 
 	pop cx
+	ret
+
+;-----------------------------------------------------------------------------
+testMulsImOpcode:
+	imul ax, bx, 0x1234
+	retf
+;-----------------------------------------------------------------------------
+; Test signed immediate multiplication of all word values.
+;-----------------------------------------------------------------------------
+testMulsIm:
+	mov si, testingMulsIm16Str
+	call writeString
+	mov si, test16x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 3
+	mov si, testMulsImOpcode
+	mov di, selfModifyingCode
+	mov cx, 5
+	rep movsb
+
+	xor cx, cx
+testMulsImLoop:
+	call getLFSR2Value
+	mov bx, ax
+	call getLFSR1Value
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], bx
+	mov [es:selfModifyingCode+2], ax
+	call calcMuls16Result
+	mov [es:expectedResult1], ax
+	mov bx, 0xF242
+	sar ax, 15
+	xor ax, dx
+	jz noMulsImOverflow
+	or bx, 0x0801
+noMulsImOverflow:
+	mov [es:expectedFlags], bx
+	mov dx, cx
+	mov [es:expectedResult2], dx
+	call testMulsImSingle
+	xor al, 0
+	jnz stopMulsImTest
+continueMulsIm:
+	inc cx
+	jnz testMulsImLoop
+	jmp endTestWriteOk
+
+stopMulsImTest:
+	call checkKeyInput
+	xor al, 0
+	jnz continueMulsIm
+	ret
+
+;-----------------------------------------------------------------------------
+testMulsImSingle:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov bx, [es:inputVal2]
+	popf
+	call 0x0000:selfModifyingCode
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz mulsImFailed
+	mov cx, [es:expectedResult2]
+	cmp dx, cx
+	jnz mulsImFailed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz mulsImFailed
+
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+
+	mov ax, [es:inputVal1]
+	mov bx, [es:inputVal2]
+	popf
+	call 0x0000:selfModifyingCode
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop bx
+	mov [es:testedFlags], bx
+	mov cx, [es:expectedResult1]
+	xor ax, cx
+	jnz mulsImFailed
+	mov cx, [es:expectedResult2]
+	xor dx, cx
+	jnz mulsImFailed
+	mov cx, [es:expectedFlags]
+	xor bx, cx
+	jnz mulsImFailed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+mulsImFailed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+testMulsIm8Opcode:
+	imul ax, bx, 0x12
+	retf
+;-----------------------------------------------------------------------------
+; Test signed multiplication of all byte values.
+;-----------------------------------------------------------------------------
+testMulsIm8:
+	mov si, testingMuls168Str
+	call writeString
+	mov si, test16x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+	mov si, testMulsIm8Opcode
+	mov di, selfModifyingCode
+	mov cx, 4
+	rep movsb
+
+	xor cx, cx
+testMulsIm8Loop:
+	call getLFSR2Value
+	mov bx, ax
+	call getLFSR1Value
+	cbw
+	mov [es:inputVal1], ax
+	mov [es:inputVal2], bx
+	mov [es:selfModifyingCode+2], al
+	call calcMuls16Result
+	mov [es:expectedResult1], ax
+	mov bx, 0xF242
+	sar ax, 15
+	xor ax, dx
+	jz noMulsIm8Overflow
+	or bx, 0x0801
+noMulsIm8Overflow:
+	mov [es:expectedFlags], bx
+	mov dx, cx
+	mov [es:expectedResult2], dx
+	call testMulsImSingle
+	xor al, 0
+	jnz stopMulsIm8Test
+continueMulsIm8:
+	inc cx
+	jnz testMulsIm8Loop
+	jmp endTestWriteOk
+
+stopMulsIm8Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueMulsIm8
 	ret
 
 ;-----------------------------------------------------------------------------
@@ -7998,7 +8174,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20231004",10 , 0
+headLineStr: db "WonderSwan CPU Test 20231005",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -8051,6 +8227,8 @@ testingMulu8Str: db "Unsigned Multiplication 8*8", 10, 0
 testingMuls8Str: db "Signed Multiplication 8*8", 10, 0
 testingMulu16Str: db "Unsigned Multiplicatio 16*16", 0
 testingMuls16Str: db "Signed Multiplication 16*16", 10, 0
+testingMulsIm16Str: db "Signed Immediate Mul 16*16", 10, 0
+testingMuls168Str: db "Signed Immediate Mul 16*8", 10, 0
 
 testingDivuStr: db "Unsigned Division 16/8", 10, 0
 testingDivsStr: db "Signed Division 16/8", 10, 0
