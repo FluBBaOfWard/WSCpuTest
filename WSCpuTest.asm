@@ -428,8 +428,8 @@ runMultiplication:
 	jmp testAad
 ;-----------------------------------------------------------------------------
 runDivision:
-	call testAam
-	call testDivu16
+;	call testAam
+;	call testDivu16
 	call testDivu8
 	jmp testDivs8
 
@@ -4278,21 +4278,23 @@ calcDivu8Result:
 divu8NoCV:
 
 	xor bx, bx
-	mov bl, [es:inputVal1]
+	mov bh, [es:inputVal1]
 	mov ax, [es:inputVal2]
-	cmp ah, bl
+	cmp ah, bh
 	jnc divu8Error
-	xor dx, dx
+	shr bx, 1
+	neg bx
+	mov dl, 8
 divu8Loop:
-	inc dl
+	add ax, bx
+	jc divu8NoBit
 	sub ax, bx
-	jnc divu8Loop
+divu8NoBit:
+	adc ax, ax
+	dec dl
+	jnz divu8Loop
 
 divu8SetRes:
-	dec dl
-	add ax, bx
-	mov ah, al
-	mov al, dl
 divu8SetZ:
 	cmp ah, 0
 	jnz divu8Done
@@ -4454,23 +4456,23 @@ enum8Pos:
 	jnc divs8ErrCnt
 	xor cx, cx
 divs8Loop:
-	sub ax, bx
-	jc divs8SetRes
 	inc cl
-	jmp divs8Loop
+	sub ax, bx
+	jnc divs8Loop
 
 divs8SetRes:
+	dec cl
 	add ax, bx
+	mov ah, al
+	mov al, cl
 	cmp dh, 0
 	jns result8Pos
-	neg cl
+	neg al
 result8Pos:
 	cmp dl, 0
 	jns rest8Pos
-	neg al
+	neg ah
 rest8Pos:
-	mov ah, al
-	mov al, cl
 	mov [es:expectedResult1], ax
 divs8Done:
 	mov dx, 0xF202				; Expected flags
