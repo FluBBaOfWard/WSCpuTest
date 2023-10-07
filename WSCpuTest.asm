@@ -4451,20 +4451,22 @@ den8Pos:
 	neg ax
 enum8Pos:
 	mov cx, ax
-	shr cx, 7
+	shl bx, 7
 	cmp cx, bx
 	jnc divs8ErrCnt
-	xor cx, cx
+;	xor cx, cx
+	neg bx
+	mov cl, 8
 divs8Loop:
-	inc cl
+	add ax, bx
+	jc divs8NoBit
 	sub ax, bx
-	jnc divs8Loop
+divs8NoBit:
+	adc ax, ax
+	dec cl
+	jnz divs8Loop
 
 divs8SetRes:
-	dec cl
-	add ax, bx
-	mov ah, al
-	mov al, cl
 	cmp dh, 0
 	jns result8Pos
 	neg al
