@@ -60,7 +60,9 @@ initialize:
 ;-----------------------------------------------------------------------------
 	mov word [es:globalFrameCounter], 0
 	mov word [es:lfsr1], 0x0234
-	mov word [es:lfsr2], 0x1234
+	mov word [es:lfsr2], 0x7321
+	mov word [es:lfsr3], 0x0001
+	mov word [es:lfsr3+2], 0x8420
 	in al, SYSTEM_CTRL1
 	mov bx, 0xF242
 	test al, 2
@@ -427,6 +429,7 @@ runMultiplication:
 ;-----------------------------------------------------------------------------
 runDivision:
 	call testAam
+	call testDivu16
 	call testDivu8
 	jmp testDivs8
 
@@ -4176,7 +4179,6 @@ stopDivu8Test:
 	xor al, 0
 	jnz continueDivu8
 	ret
-
 ;-----------------------------------------------------------------------------
 testDivu8Single:
 	push bx
@@ -4260,7 +4262,6 @@ divu8Failed:
 	pop bx
 	mov ax, 1
 	ret
-
 ;-----------------------------------------------------------------------------
 calcDivu8Result:
 	push bx
@@ -4268,42 +4269,39 @@ calcDivu8Result:
 	push dx
 
 	mov byte [es:expectedException], 0
-	xor bx, bx
-	xor cx, cx
-	mov dx, 0xF202				; Expected flags
+	mov cx, 0xF202				; Expected flags
 	call getLFSR1Value
 	and al, 0x10
-	imul al
+	imul al						; Set magical C & V flags depending on al
 	jnc divu8NoCV
-	or dx, 0x0801				; Carry & Overflow
+	or cx, 0x0801				; Carry & Overflow
 divu8NoCV:
 
+	xor bx, bx
 	mov bl, [es:inputVal1]
 	mov ax, [es:inputVal2]
-	mov [es:expectedResult1], ax
 	cmp ah, bl
 	jnc divu8Error
-	cmp ax, 0
-	jz divu8Done
+	xor dx, dx
 divu8Loop:
+	inc dl
 	sub ax, bx
-	jc divu8SetRes
-	inc cl
-	jmp divu8Loop
+	jnc divu8Loop
 
 divu8SetRes:
+	dec dl
 	add ax, bx
 	mov ah, al
-	mov al, cl
-	mov [es:expectedResult1], ax
+	mov al, dl
 divu8SetZ:
 	cmp ah, 0
 	jnz divu8Done
 	test al, 1
 	jz divu8Done
-	or dl, 0x40
+	or cl, 0x40
 divu8Done:
-	mov [es:expectedFlags], dx
+	mov [es:expectedResult1], ax
+	mov [es:expectedFlags], cx
 	pop dx
 	pop cx
 	pop bx
@@ -4311,6 +4309,7 @@ divu8Done:
 divu8Error:
 	mov byte [es:expectedException], 1
 	jmp divu8Done
+
 ;-----------------------------------------------------------------------------
 ; Test signed division of all word/byte values.
 ;-----------------------------------------------------------------------------
@@ -4344,7 +4343,6 @@ stopDivs8Test:
 	xor al, 0
 	jnz continue8Divs
 	ret
-
 ;-----------------------------------------------------------------------------
 testDivs8Single:
 	push bx
@@ -4425,7 +4423,6 @@ divs8Failed:
 	pop cx
 	pop bx
 	ret
-
 ;-----------------------------------------------------------------------------
 calcDivs8Result:
 	push bx
@@ -4497,12 +4494,177 @@ divs8ErrCnt:
 	mov dx, 0xF202				; Expected flags
 	call getLFSR1Value
 	and al, 0x10
-	mov al, 0x10
-	imul al
+	imul al						; Set magical C & V flags depending on al
 	jnc divs8NoCV
 	or dx, 0x0801				; Carry & Overflow
 divs8NoCV:
 	jmp divs8End
+
+;-----------------------------------------------------------------------------
+; Test unsigned division of all longword/word values.
+;-----------------------------------------------------------------------------
+testDivu16:
+	mov si, testingDivu16Str
+	call writeString
+	mov si, test32x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 6
+
+	xor cx, cx
+testDivu16Loop:
+	call getLFSR1Value
+	mov [es:inputVal1], ax
+	call getLFSR3Value
+	mov [es:inputVal2], ax
+	mov [es:inputVal3], dx
+	call calcDivu16Result
+	call testDivu16Single
+	xor al, 0
+	jnz stopDivu16Test
+continueDivu16:
+	loop testDivu16Loop
+	jmp endTestWriteOk
+
+stopDivu16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueDivu16
+	ret
+
+;-----------------------------------------------------------------------------
+testDivu16Single:
+	push bx
+	push cx
+	push dx
+
+	mov byte [es:testedException], 0
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, [es:inputVal3]
+	popf
+	div bx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz divu16Failed
+	mov bx, [es:expectedResult2]
+	xor dx, bx
+	jnz divu16Failed
+	mov al, [es:testedException]
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	cmp al, 0
+	jz divu16DoZTst
+	and cx, 0xFFBF				; Mask out Zero flag
+divu16DoZTst:
+	cmp cx, 0
+	jnz divu16Failed
+	mov bl, [es:expectedException]
+	xor al, bl
+	jnz divu16Failed
+
+	mov byte [es:testedException], 0
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, [es:inputVal3]
+	popf
+	div cx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz divu16Failed
+	mov bx, [es:expectedResult2]
+	xor dx, bx
+	jnz divu16Failed
+	mov al, [es:testedException]
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	cmp al, 0
+	jz divu16DoZTst2
+	and cx, 0xFFBF				; Mask out Zero flag
+divu16DoZTst2:
+	cmp cx, 0
+	jnz divu16Failed
+	mov bl, [es:expectedException]
+	xor al, bl
+	jnz divu16Failed
+
+	pop dx
+	pop cx
+	pop bx
+	xor ax, ax
+	ret
+
+divu16Failed:
+	call printFailedResult32
+	pop dx
+	pop cx
+	pop bx
+	mov ax, 1
+	ret
+
+;-----------------------------------------------------------------------------
+calcDivu16Result:
+	push bx
+	push cx
+	push dx
+
+	call getLFSR1Value
+	and al, 0x10
+	imul al						; Set magical C & V flags depending on al
+
+	mov cx, 0xF202				; Expected flags
+	mov bx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, [es:inputVal3]
+	cmp dx, bx
+	jnc divu16Error
+divu16Loop:
+	div bx
+
+divu16SetRes:
+	mov byte [es:expectedException], 0
+divu16SetZ:
+	cmp dx, 0
+	jnz divu16Done
+	test al, 1
+	jz divu16Done
+	or cl, 0x40
+divu16Done:
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], dx
+	mov [es:expectedFlags], cx
+	pop dx
+	pop cx
+	pop bx
+	ret
+divu16Error:
+	mov byte [es:expectedException], 1
+	jmp divu16Done
+
 ;-----------------------------------------------------------------------------
 ; Test unsigned division of all byte/byte values.
 ;-----------------------------------------------------------------------------
@@ -4534,7 +4696,6 @@ stopAamTest:
 	xor al, 0
 	jnz continueAam
 	ret
-
 ;-----------------------------------------------------------------------------
 testAamSingle:
 	push bx
@@ -7713,7 +7874,7 @@ getLFSR1Value:
 	mov ax, [es:lfsr1]
 	shr ax, 1
 	jnc noTaps1
-	xor ax, 0xD008
+	xor ax, 0x8016
 noTaps1:
 	mov [es:lfsr1], ax
 	ret
@@ -7724,9 +7885,24 @@ getLFSR2Value:
 	mov ax, [es:lfsr2]
 	shr ax, 1
 	jnc noTaps2
-	xor ax, 0xD008
+	xor ax, 0x8016
 noTaps2:
 	mov [es:lfsr2], ax
+	ret
+;-----------------------------------------------------------------------------
+; Gets the next number from LFSR3 in AX & DX
+;-----------------------------------------------------------------------------
+getLFSR3Value:
+	mov ax, [es:lfsr3]
+	mov dx, [es:lfsr3+2]
+	add ax, ax
+	adc dx, dx
+	jnc noTaps3
+	xor ax, 0x0001
+	xor dx, 0xEA00
+noTaps3:
+	mov [es:lfsr3], ax
+	mov [es:lfsr3+2], dx
 	ret
 ;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
@@ -7777,6 +7953,75 @@ printFailedResult:
 	mov ax, [es:testedResult1]
 	call printHexW
 	mov si, flagsStr
+	call writeString
+	mov ax, [es:testedFlags]
+	call printHexW
+	mov al, ' '
+	int 0x10
+	mov al, 'X'
+	int 0x10
+	mov al, [es:testedException]
+	add al, '0'
+	int 0x10
+	mov al, 10
+	int 0x10
+
+	ret
+;-----------------------------------------------------------------------------
+; Print expected result and flags plus tested result and flags.
+;-----------------------------------------------------------------------------
+printFailedResult32:
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, input32Str
+	call writeString
+
+	mov ax, [es:inputVal3]
+	call printHexW
+	mov ax, [es:inputVal2]
+	call printHexW
+	mov si, hexPrefixStr
+	call writeString
+	mov ax, [es:inputVal1]
+	call printHexW
+	mov si, fHexPrefixStr
+	call writeString
+	mov ax, [es:inputFlags]
+	call printHexW
+	mov al, 10
+	int 0x10
+
+	mov si, expectedStr
+	call writeString
+	mov si, valueStr
+	call writeString
+	mov ax, [es:expectedResult2]
+	call printHexW
+	mov ax, [es:expectedResult1]
+	call printHexW
+	mov si, fHexPrefixStr
+	call writeString
+	mov ax, [es:expectedFlags]
+	call printHexW
+	mov al, ' '
+	int 0x10
+	mov al, 'X'
+	int 0x10
+	mov al, [es:expectedException]
+	add al, '0'
+	int 0x10
+
+	mov si, testedStr
+	call writeString
+	mov si, valueStr
+	call writeString
+	mov ax, [es:testedResult2]
+	call printHexW
+	mov ax, [es:testedResult1]
+	call printHexW
+	mov si, fHexPrefixStr
 	call writeString
 	mov ax, [es:testedFlags]
 	call printHexW
@@ -7933,18 +8178,32 @@ skipValue16x8Print:
 	jmp skipValuePrint
 skipValue16x16Print:
 	cmp al, 4
-	jnz skipValue16Print
+	jnz skipValue8Print
 	mov byte [es:cursorXPos], 17
 	mov al, [es:inputVal1]
 	call printHexB
 	jmp skipValuePrint
-skipValue16Print:
+skipValue8Print:
 	cmp al, 5
-	jnz skipValuePrint
+	jnz skipValue16Print
 	mov byte [es:cursorXPos], 17
 	mov ax, [es:inputVal1]
 	call printHexW
 	jmp skipValuePrint
+skipValue16Print:
+	cmp al, 6
+	jnz skipValue32x16Print
+	mov byte [es:cursorXPos], 23
+	mov ax, [es:inputVal1]
+	call printHexW
+	mov byte [es:cursorXPos], 15
+	mov ax, [es:inputVal2]
+	call printHexW
+	mov byte [es:cursorXPos], 11
+	mov ax, [es:inputVal3]
+	call printHexW
+	jmp skipValuePrint
+skipValue32x16Print:
 skipValuePrint:
 acknowledgeVBlankInterrupt:
 	mov al, INT_VBLANK_START
@@ -8174,7 +8433,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20231005",10 , 0
+headLineStr: db "WonderSwan CPU Test 20231007",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -8232,8 +8491,8 @@ testingMuls168Str: db "Signed Immediate Mul 16*8", 10, 0
 
 testingDivuStr: db "Unsigned Division 16/8", 10, 0
 testingDivsStr: db "Signed Division 16/8", 10, 0
-testingDivu32Str: db "Unsigned Division 32/16", 10, 0
-testingDivs32Str: db "Signed Division 32/16", 10, 0
+testingDivu16Str: db "Unsigned Division 32/16", 10, 0
+testingDivs16Str: db "Signed Division 32/16", 10, 0
 testingAamStr: db "AAM/CVTBD (division 8/8)", 10, 0
 testingAadStr: db "AAD/CVTDB (mulu 8*8, add 8)", 10, 0
 
@@ -8299,7 +8558,9 @@ test16InputStr: db "Testing Input: 0x0000", 0
 test8x8InputStr: db "Testing Input: 0x00, 0x00", 0
 test16x8InputStr: db "Testing Input: 0x0000, 0x00", 0
 test16x16InputStr: db "Testing Inp: 0x0000, 0x0000", 0
+test32x16InputStr: db "Testing: 0x00000000, 0x0000", 0
 inputStr: db "Input:0x", 0
+input32Str: db "I:0x", 0
 expectedStr: db "Expected Result:", 10, 0
 testedStr: db "Tested Result:", 10, 0
 valueStr: db "Value:0x",0
@@ -8351,6 +8612,7 @@ keysDown: resb 1
 
 lfsr1: resw 1
 lfsr2: resw 1
+lfsr3: resw 2
 
 inputVal1: resw 1
 inputVal2: resw 1

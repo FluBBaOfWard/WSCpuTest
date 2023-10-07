@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.1 (20231005)
+# WonderSwan CPU Test V0.7.1 (20231007)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
 
@@ -168,7 +168,19 @@ If division exception:
     AuxCarry, Parity & Sign are always cleared.
     Carry & Overflow are from the last multiplication.
     Zero is set in some weird way (not tested).
-    AL, AX/AW is not modified.
+    AX/AW is not modified.
+```
+
+### DIV / DIVU (unsigned division, 32/16)
+
+```text
+Normaly:
+    AuxCarry, Carry, Overflow, Parity, & Sign are always cleared.
+    Zero is set when remainder is zero and bit 0 of result is set.
+If division exception:
+    AuxCarry, Carry, Overflow, Parity, & Sign are always cleared.
+    Zero is set in some weird way (not tested).
+    AX/AW, DX/DW is not modified.
 ```
 
 ### IDIV / DIV (signed division, 16/8)
@@ -182,7 +194,7 @@ If division exception:
     AuxCarry, Parity & Sign are always cleared.
     Carry & Overflow are from the last multiplication.
     Zero is set in some weird way (not tested).
-    AL, AX/AW is not modified.
+    AX/AW is not modified.
 ```
 
 ### AAM / CVTBD (8/8)
