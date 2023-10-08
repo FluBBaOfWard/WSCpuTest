@@ -428,8 +428,8 @@ runMultiplication:
 	jmp testAad
 ;-----------------------------------------------------------------------------
 runDivision:
-;	call testAam
-;	call testDivu16
+	call testAam
+	call testDivu16
 	call testDivu8
 	jmp testDivs8
 
@@ -4450,11 +4450,10 @@ den8Pos:
 	jns enum8Pos
 	neg ax
 enum8Pos:
-	mov cx, ax
 	shl bx, 7
-	cmp cx, bx
+	cmp ax, bx
 	jnc divs8ErrCnt
-;	xor cx, cx
+	xor cx, cx
 	neg bx
 	mov cl, 8
 divs8Loop:
@@ -4463,8 +4462,7 @@ divs8Loop:
 	sub ax, bx
 divs8NoBit:
 	adc ax, ax
-	dec cl
-	jnz divs8Loop
+	loop divs8Loop
 
 divs8SetRes:
 	cmp dh, 0
@@ -4636,20 +4634,37 @@ calcDivu16Result:
 	push cx
 	push dx
 
-	call getLFSR1Value
+	call getLFSR2Value
 	and al, 0x10
 	imul al						; Set magical C & V flags depending on al
 
-	mov cx, 0xF202				; Expected flags
 	mov bx, [es:inputVal1]
 	mov ax, [es:inputVal2]
 	mov dx, [es:inputVal3]
 	cmp dx, bx
 	jnc divu16Error
+	mov si, bx
+	shl si, 15
+	shr bx, 1
+	mov cx, 16
 divu16Loop:
-	div bx
+	sub ax, si
+	sbb dx, bx
+	jc divu16NoBit
+	add ax, ax
+	adc dx, dx
+	or ax, 1
+	loop divu16Loop
+	jmp divu16SetRes
+divu16NoBit:
+	add ax, si
+	adc dx, bx
+	add ax, ax
+	adc dx, dx
+	loop divu16Loop
 
 divu16SetRes:
+	mov cx, 0xF202				; Expected flags
 	mov byte [es:expectedException], 0
 divu16SetZ:
 	cmp dx, 0
@@ -4666,6 +4681,7 @@ divu16Done:
 	pop bx
 	ret
 divu16Error:
+	mov cx, 0xF202				; Expected flags
 	mov byte [es:expectedException], 1
 	jmp divu16Done
 
@@ -8437,7 +8453,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20231007",10 , 0
+headLineStr: db "WonderSwan CPU Test 20231008",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
