@@ -430,6 +430,7 @@ runMultiplication:
 runDivision:
 	call testAam
 	call testDivu16
+	call testDivs16
 	call testDivu8
 	jmp testDivs8
 
@@ -4686,6 +4687,229 @@ divu16Error:
 	jmp divu16Done
 
 ;-----------------------------------------------------------------------------
+; Test signed division of all longword/word values.
+;-----------------------------------------------------------------------------
+testDivs16:
+	mov si, testingDivs16Str
+	call writeString
+	mov si, test32x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 6
+
+	xor cx, cx
+testDivs16Loop:
+	call getLFSR1Value
+	mov [es:inputVal1], ax
+	call getLFSR3Value
+	mov [es:inputVal2], ax
+	mov [es:inputVal3], dx
+	call calcDivs16Result
+	call testDivs16Single
+	xor al, 0
+	jnz stopDivs16Test
+continueDivs16:
+	loop testDivs16Loop
+	jmp endTestWriteOk
+
+stopDivs16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueDivs16
+	ret
+
+;-----------------------------------------------------------------------------
+testDivs16Single:
+	push bx
+	push cx
+	push dx
+
+	mov byte [es:testedException], 0
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, [es:inputVal3]
+	popf
+	idiv bx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz divs16Failed
+	mov bx, [es:expectedResult2]
+	xor dx, bx
+	jnz divs16Failed
+	mov al, [es:testedException]
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	cmp al, 0
+	jz divs16DoZTst
+	and cx, 0xFFBF				; Mask out Zero flag
+divs16DoZTst:
+	cmp cx, 0
+;	jnz divs16Failed
+	mov bl, [es:expectedException]
+	xor al, bl
+	jnz divs16Failed
+
+	mov byte [es:testedException], 0
+	pushf
+	pop ax
+	or ax, 0x78FF
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, [es:inputVal3]
+	popf
+	idiv cx
+	pushf
+
+	mov [es:testedResult1], ax
+	mov [es:testedResult2], dx
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz divs16Failed
+	mov bx, [es:expectedResult2]
+	xor dx, bx
+	jnz divs16Failed
+	mov al, [es:testedException]
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	cmp al, 0
+	jz divs16DoZTst2
+	and cx, 0xFFBF				; Mask out Zero flag
+divs16DoZTst2:
+	cmp cx, 0
+;	jnz divs16Failed
+	mov bl, [es:expectedException]
+	xor al, bl
+	jnz divs16Failed
+
+	pop dx
+	pop cx
+	pop bx
+	xor ax, ax
+	ret
+
+divs16Failed:
+	call printFailedResult32
+	pop dx
+	pop cx
+	pop bx
+	mov ax, 1
+	ret
+
+;-----------------------------------------------------------------------------
+calcDivs16Result:
+	push bx
+	push cx
+	push dx
+
+	call getLFSR2Value
+	and al, 0x10
+	imul al						; Set magical C & V flags depending on al
+
+	mov bx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov dx, [es:inputVal3]
+	mov ch, dh
+	sar cx, 8
+	xor ch, bh
+	mov di, cx
+	cmp bx, 0
+	jz divs16Error
+	jns den16Pos
+	neg bx
+den16Pos:
+	cmp dx, 0
+	jz divs16Done
+	jns enum16Pos
+	not ax
+	not dx
+	add ax, 1
+	adc dx, 0
+enum16Pos:
+	mov si, bx
+	shl si, 15
+	shr bx, 1
+	mov bp, ax
+	mov cx, dx
+	sub bp, si
+	sbb cx, bx
+	jnc divs16ErrCnt
+	mov cx, 16
+divs16Loop:
+	sub ax, si
+	sbb dx, bx
+	jc divs16NoBit
+	add ax, ax
+	adc dx, dx
+	or ax, 1
+	loop divs16Loop
+	jmp divs16SetRes
+divs16NoBit:
+	add ax, si
+	adc dx, bx
+	add ax, ax
+	adc dx, dx
+	loop divs16Loop
+
+divs16SetRes:
+	mov cx, di
+	cmp ch, 0
+	jns result16Pos
+	neg ax
+result16Pos:
+	cmp cl, 0
+	jns rest16Pos
+	neg dx
+rest16Pos:
+	mov cx, 0xF202				; Expected flags
+	mov byte [es:expectedException], 0
+divs16SetZ:
+;	cmp dx, 0
+;	jnz divs16Done
+;	test al, 1
+;	jz divs16Done
+;	or cl, 0x40
+divs16Done:
+	mov [es:expectedResult1], ax
+	mov [es:expectedResult2], dx
+	mov [es:expectedFlags], cx
+	pop dx
+	pop cx
+	pop bx
+	ret
+divs16Error:
+	cmp dx, 0x8000
+	jnz divs16ErrCnt
+	cmp ax, 0x0000
+	jnz divs16ErrCnt
+	mov ax, 0x8100
+	xor dx, dx
+	mov cx, 0xF202				; Expected flags
+	jmp divs16SetRes
+divs16ErrCnt:
+	mov cx, 0xF202				; Expected flags
+	mov byte [es:expectedException], 1
+	mov ax, [es:inputVal2]
+	mov dx, [es:inputVal3]
+	jmp divs16Done
+
+;-----------------------------------------------------------------------------
 ; Test unsigned division of all byte/byte values.
 ;-----------------------------------------------------------------------------
 testAam:
@@ -8453,7 +8677,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20231008",10 , 0
+headLineStr: db "WonderSwan CPU Test 20231011",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
