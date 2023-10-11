@@ -197,6 +197,19 @@ If division exception:
     AX/AW is not modified.
 ```
 
+### IDIV / DIV (signed division, 32/16)
+
+```text
+If dividing 0x80000000 by 0x0000 you will not get a division exception but a result of 0x00008001.
+Normaly:
+    AuxCarry, Carry, Overflow, Parity & Sign are all cleared.
+    Zero is set when remainder is zero and bit 0 of result is set.
+If division exception:
+    AuxCarry, Carry, Overflow, Parity & Sign are all cleared.
+    Zero is set in some weird way (not tested).
+    AX/AW, DX/DW is not modified.
+```
+
 ### AAM / CVTBD (8/8)
 
 ```text

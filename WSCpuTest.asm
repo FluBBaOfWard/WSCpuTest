@@ -4756,7 +4756,7 @@ testDivs16Single:
 	and cx, 0xFFBF				; Mask out Zero flag
 divs16DoZTst:
 	cmp cx, 0
-;	jnz divs16Failed
+	jnz divs16Failed
 	mov bl, [es:expectedException]
 	xor al, bl
 	jnz divs16Failed
@@ -4793,7 +4793,7 @@ divs16DoZTst:
 	and cx, 0xFFBF				; Mask out Zero flag
 divs16DoZTst2:
 	cmp cx, 0
-;	jnz divs16Failed
+	jnz divs16Failed
 	mov bl, [es:expectedException]
 	xor al, bl
 	jnz divs16Failed
@@ -4835,7 +4835,6 @@ calcDivs16Result:
 	neg bx
 den16Pos:
 	cmp dx, 0
-	jz divs16Done
 	jns enum16Pos
 	not ax
 	not dx
@@ -4880,11 +4879,11 @@ rest16Pos:
 	mov cx, 0xF202				; Expected flags
 	mov byte [es:expectedException], 0
 divs16SetZ:
-;	cmp dx, 0
-;	jnz divs16Done
-;	test al, 1
-;	jz divs16Done
-;	or cl, 0x40
+	cmp dx, 0
+	jnz divs16Done
+	test al, 1
+	jz divs16Done
+	or cl, 0x40
 divs16Done:
 	mov [es:expectedResult1], ax
 	mov [es:expectedResult2], dx
@@ -4898,10 +4897,10 @@ divs16Error:
 	jnz divs16ErrCnt
 	cmp ax, 0x0000
 	jnz divs16ErrCnt
-	mov ax, 0x8100
+	mov ax, 0x8001
 	xor dx, dx
 	mov cx, 0xF202				; Expected flags
-	jmp divs16SetRes
+	jmp rest16Pos
 divs16ErrCnt:
 	mov cx, 0xF202				; Expected flags
 	mov byte [es:expectedException], 1
