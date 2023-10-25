@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.1 (20231011)
+# WonderSwan CPU Test V0.7.1 (20231025)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
 
@@ -8,8 +8,7 @@ Load the ROM in an emulator or flash it to a flashcart and put it in your Wonder
 The program will go through all the tests and then write "Ok".
 If run in an emulator and it doesn't emulate the WonderSwan CPU correctly,
 the program will stop at the first failure and print out intput value/flags and  expected value/flags (and exception for division). Press A to try the next value or B to try the next test.
-Now you can use the X1-X4 to navigate the menus, A to select an option,
-B to go back.
+You use the X1-X4 to navigate the menus, A to select an option, B to go back.
 
 ## Building
 
@@ -22,7 +21,7 @@ Most undefined opcodes are just 1 byte NOPs, the FPO1 (0xD8 - 0xDF) opcodes are 
 
 ## Differences between ASWAN & SPHINX(2)
 
-There is one difference between the SOCs and that is the Zero flag during unsigned Multiplication, it's allways set on ASWAN and allways clear on SPHINX(2).
+There is one difference between the SOCs and that is the Zero flag during Unsigned Multiplication, it's allways cleared on ASWAN and allways set on SPHINX(2).
 
 ### AND, OR, XOR & TEST
 
@@ -140,21 +139,21 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
 
-### MUL / MULU (unsigned multiplication, 8x8)
+### MUL / MULU (unsigned multiplication, 8x8/16x16)
 
 ```text
 AuxCarry, Parity & Sign are always cleared.
 On Color/Crystal: Zero is always set.
 On Mono: Zero is always cleared.
-Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
+Carry & Overflow are set if the result doesn't fit in 8/16 bits for 8/16bit multiplies.
 ```
 
-### IMUL / MUL (signed multiplication, 8x8)
+### IMUL / MUL (signed multiplication, 8x8/16x16)
 
 ```text
 AuxCarry, Parity & Sign are always cleared.
 Zero is always set.
-Carry & Overflow are set if the result doesn't fit in 8 bits for 8bit multiplies.
+Carry & Overflow are set if the result doesn't fit in 8/16 bits for 8/16bit multiplies.
 ```
 
 ### DIV / DIVU (unsigned division, 16/8)

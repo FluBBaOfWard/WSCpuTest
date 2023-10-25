@@ -4504,6 +4504,25 @@ divs8NoCV:
 	jmp divs8End
 
 ;-----------------------------------------------------------------------------
+; Fetch values for all longword/word divisions.
+;-----------------------------------------------------------------------------
+fetchDiv16Values:
+	test cx,0xFFFE
+	jz useTableValues
+	call getLFSR1Value
+	mov [es:inputVal1], ax
+	call getLFSR3Value
+	mov [es:inputVal2], ax
+	mov [es:inputVal3], dx
+	ret
+useTableValues:
+	mov ax, 0
+	mov [es:inputVal1], ax
+	mov dx, 0x8000
+	mov [es:inputVal2], ax
+	mov [es:inputVal3], dx
+	ret
+;-----------------------------------------------------------------------------
 ; Test unsigned division of all longword/word values.
 ;-----------------------------------------------------------------------------
 testDivu16:
@@ -4516,11 +4535,7 @@ testDivu16:
 
 	xor cx, cx
 testDivu16Loop:
-	call getLFSR1Value
-	mov [es:inputVal1], ax
-	call getLFSR3Value
-	mov [es:inputVal2], ax
-	mov [es:inputVal3], dx
+	call fetchDiv16Values
 	call calcDivu16Result
 	call testDivu16Single
 	xor al, 0
@@ -4699,11 +4714,7 @@ testDivs16:
 
 	xor cx, cx
 testDivs16Loop:
-	call getLFSR1Value
-	mov [es:inputVal1], ax
-	call getLFSR3Value
-	mov [es:inputVal2], ax
-	mov [es:inputVal3], dx
+	call fetchDiv16Values
 	call calcDivs16Result
 	call testDivs16Single
 	xor al, 0
@@ -8676,7 +8687,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20231011",10 , 0
+headLineStr: db "WonderSwan CPU Test 20231025",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
