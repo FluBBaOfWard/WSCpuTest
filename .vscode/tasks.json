@@ -6,7 +6,8 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "${workspaceFolder}/build.sh"
+            "command": "${workspaceFolder}/build.sh",
+            "problemMatcher": []
         },
         {
             "label": "run",

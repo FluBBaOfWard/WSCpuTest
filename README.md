@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.1 (20231025)
+# WonderSwan CPU Test V0.7.2 (20240807)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
 
@@ -22,6 +22,8 @@ Most undefined opcodes are just 1 byte NOPs, the FPO1 (0xD8 - 0xDF) opcodes are 
 ## Differences between ASWAN & SPHINX(2)
 
 There is one difference between the SOCs and that is the Zero flag during Unsigned Multiplication, it's allways cleared on ASWAN and allways set on SPHINX(2).
+
+## How the tests works
 
 ### AND, OR, XOR & TEST
 
@@ -65,7 +67,7 @@ It's the same as doing a SUB with the destination set to 0.
 AuxCarry, Parity, Sign & Zero are not changed.
 Overflow is set to xor of Carry value and bit 7/15 of result.
 Normaly:
-    Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted out bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
@@ -76,7 +78,7 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 AuxCarry, Parity, Sign & Zero are not changed.
 Overflow is set to xor of bit 6/14 & 7/15 of result.
 Normaly:
-    Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted out bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
@@ -87,7 +89,7 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 AuxCarry, Parity, Sign & Zero are not changed.
 Overflow is set to xor of Carry value and bit 7/15 of result.
 Normaly:
-    Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted out bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
@@ -98,7 +100,7 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 AuxCarry, Parity, Sign & Zero are not changed.
 Overflow is set to xor of bit 6/14 & 7/15 of result.
 Normaly:
-    Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted out bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
@@ -110,7 +112,7 @@ AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
 Overflow is set to xor of Carry value and bit 7/15 of result.
 Normaly:
-    Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted out bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
@@ -120,9 +122,9 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 ```text
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
-Overflow is set to xor of bit 6/14 & 7/15 of result.
+Overflow is set to xor of bit 6/14 & 7/15 of result (only possible with shift of 0 or 1).
 Normaly:
-    Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted out bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```
@@ -132,9 +134,9 @@ If the argument is & 0x1F = zero, ie. no shift is taking place:
 ```text
 AuxCarry is always cleared.
 Parity, Sign & Zero are set according to result.
-Overflow is set to xor of bit 6/14 & 7/15 of result.
+Overflow is set to xor of bit 6/14 & 7/15 of result (only possible with shift of 0).
 Normaly:
-    Carry is set if the last shifted bit was 1, otherwise cleared.
+    Carry is set if the last shifted out bit was 1, otherwise cleared.
 If the argument is & 0x1F = zero, ie. no shift is taking place:
     Carry is not changed.
 ```

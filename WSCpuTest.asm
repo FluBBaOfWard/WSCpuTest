@@ -1,7 +1,7 @@
 ;-----------------------------------------------------------------------------
 ;
 ;  WonderSwan CPU Test
-;         by Fredrik Ahlström, 2022-2023
+;         by Fredrik Ahlström, 2022-2024
 ;         https://github.com/FluBBaOfWard/WSCpuTest
 ;
 ;  UP/DOWN    - Choose option
@@ -402,7 +402,11 @@ runRolShift:
 	call testRol8
 	call testRor8
 	call testRcl8
+;	call testRcl16
+	call testRcl16Rnd
 	call testRcr8
+;	call testRcr16
+	call testRcr16Rnd
 	call testShl8
 	call testShr8
 	jmp testSar8
@@ -2579,7 +2583,7 @@ ror8Normal2:
 	ret
 
 ror8Failed:
-	call printFailedResult
+	call printFailedResult8
 	mov ax, 1
 	pop cx
 	pop bx
@@ -2721,7 +2725,7 @@ rcl8NormalC2:
 	ret
 
 rcl8Failed:
-	call printFailedResult
+	call printFailedResult8
 	mov ax, 1
 	pop cx
 	pop bx
@@ -2760,6 +2764,177 @@ rcl8NoCy:
 	xor ch, 0x08
 rcl8NoOv:
 	mov [es:expectedResult1], ah
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test RCL/ROLC for some word & all 5bit values.
+;-----------------------------------------------------------------------------
+testRcl16Rnd:
+	mov si, testingRcl16Str
+	call writeString
+	mov si, test16x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+
+	xor cx, cx
+testRcl16RndLoop:
+	call getLFSR1Value
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ax
+	call calcRcl16Result
+	call testRcl16Single
+	xor al, 0
+	jnz stopRcl16RndTest
+continueRcl16Rnd:
+	inc cx
+	jnz testRcl16RndLoop
+	jmp endTestWriteOk
+
+stopRcl16RndTest:
+	call checkKeyInput
+	xor al, 0
+	jnz continueRcl16Rnd
+	ret
+
+;-----------------------------------------------------------------------------
+; Test RCL/ROLC for all word & 5bit values.
+;-----------------------------------------------------------------------------
+testRcl16:
+	mov si, testingRcl16Str
+	call writeString
+	mov si, test16x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+
+	xor cx, cx
+	xor dx, dx
+testRcl16Loop:
+	mov [es:inputVal1], dl
+	mov [es:inputVal2], cx
+	call calcRcl16Result
+	call testRcl16Single
+	xor al, 0
+	jnz stopRcl16Test
+continueRcl16:
+	inc cx
+	jnz testRcl16Loop
+	inc dl
+	jnz testRcl16Loop
+	jmp endTestWriteOk
+
+stopRcl16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueRcl16
+	ret
+
+;-----------------------------------------------------------------------------
+testRcl16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jz rcl16NormalC1
+	or al, 0x01
+rcl16NormalC1:
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bx, [es:inputVal2]
+
+	popf
+	rcl bx, cl
+	pushf
+
+	mov [es:testedResult1], bx
+	pop cx
+	mov [es:testedFlags], cx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz rcl16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcl16Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jnz rcl16NormalC2
+	and bl, 0xFE
+rcl16NormalC2:
+	push bx
+	mov [es:inputFlags], bx
+
+	mov ax, [es:inputVal2]
+	or byte [es:expectedFlags], 0xD4
+	popf
+	rcl ax, cl
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz rcl16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcl16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+rcl16Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcRcl16Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov bh, bl
+	and bh, 0x80
+	and bl, 0x1F
+	jz rcl16SetRes
+rcl16Loop:
+	add bh, bh
+	adc ax, ax
+	jnc rcl16NoC
+	or bh, 0x80
+rcl16NoC:
+	dec bl
+	jnz rcl16Loop
+
+rcl16SetRes:
+	test bh, 0x80
+	jz rcl16NoCy
+	or cl, 0x01
+	or ch, 0x08
+rcl16NoCy:
+	test ah, 0x80
+	jz rcl16NoOv
+	xor ch, 0x08
+rcl16NoOv:
+	mov [es:expectedResult1], ax
 	mov [es:expectedFlags], cx
 	pop cx
 	pop bx
@@ -2860,7 +3035,7 @@ rcr8NormalC2:
 	ret
 
 rcr8Failed:
-	call printFailedResult
+	call printFailedResult8
 	mov ax, 1
 	pop cx
 	pop bx
@@ -2904,6 +3079,182 @@ rcr8NoOv:
 	xor ch, 0x08
 rcr8NoOv2:
 	mov [es:expectedResult1], ah
+	mov [es:expectedFlags], cx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test RCR/RORC for some word & and 5bit values.
+;-----------------------------------------------------------------------------
+testRcr16Rnd:
+	mov si, testingRcr16Str
+ 	call writeString
+	mov si, test16x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+
+	xor cx, cx
+testRcr16RndLoop:
+	call getLFSR1Value
+	mov [es:inputVal1], cl
+	mov [es:inputVal2], ax
+	call calcRcr16Result
+	call testRcr16Single
+	xor al, 0
+	jnz stopRcr16RndTest
+continueRcr16Rnd:
+	inc cx
+	jnz testRcr16RndLoop
+	jmp endTestWriteOk
+
+stopRcr16RndTest:
+	call checkKeyInput
+	xor al, 0
+	jnz continueRcr16Rnd
+	ret
+
+;-----------------------------------------------------------------------------
+; Test RCR/RORC for all word & 5bit values.
+;-----------------------------------------------------------------------------
+testRcr16:
+	mov si, testingRcr16Str
+	call writeString
+	mov si, test16x8InputStr
+	call writeString
+
+	mov byte [es:isTesting], 2
+
+	xor cx, cx
+	xor dx, dx
+testRcr16Loop:
+	mov [es:inputVal1], dl
+	mov [es:inputVal2], cx
+	call calcRcr16Result
+	call testRcr16Single
+	xor al, 0
+	jnz stopRcr16Test
+continueRcr16:
+	inc cx
+	jnz testRcr16Loop
+	inc dl
+	jnz testRcr16Loop
+	jmp endTestWriteOk
+
+stopRcr16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueRcr16
+	ret
+
+;-----------------------------------------------------------------------------
+testRcr16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jz rcr16NormalC1
+	or al, 0x01
+rcr16NormalC1:
+	push ax
+	mov [es:inputFlags], ax
+
+	mov bx, [es:inputVal2]
+
+	popf
+	rcr bx, cl
+	pushf
+
+	mov [es:testedResult1], bx
+	pop cx
+	mov [es:testedFlags], cx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz rcr16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcr16Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FF
+	mov cl, [es:inputVal1]
+	test cl, 0x80
+	jnz rcr16NormalC2
+	and bl, 0xFE
+rcr16NormalC2:
+	push bx
+	mov [es:inputFlags], bx
+
+	mov ax, [es:inputVal2]
+	or byte [es:expectedFlags], 0xD4
+	popf
+	rcr ax, cl
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz rcr16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz rcr16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+rcr16Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcRcr16Result:
+	push bx
+	push cx
+
+	mov cx, 0xF202
+	mov bl, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	mov bh, bl
+	and bh, 0x80
+	and bl, 0x1F
+	jz rcr16SetRes
+	neg bl
+	add bl, 17*2
+rcr16Loop:
+	add bh, bh
+	adc ax, ax
+	jnc rcr16NoC
+	or bh, 0x80
+rcr16NoC:
+	dec bl
+	jnz rcr16Loop
+
+rcr16SetRes:
+	test bh, 0x80
+	jz rcr16NoCy
+	or cl, 0x01
+rcr16NoCy:
+	test ah, 0x40
+	jz rcr16NoOv
+	or ch, 0x08
+rcr16NoOv:
+	test ah, 0x80
+	jz rcr16NoOv2
+	xor ch, 0x08
+rcr16NoOv2:
+	mov [es:expectedResult1], ax
 	mov [es:expectedFlags], cx
 	pop cx
 	pop bx
@@ -3596,7 +3947,7 @@ muls8Failed:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test unsigned multiplication of all word values.
+; Test unsigned multiplication of some word values.
 ;-----------------------------------------------------------------------------
 testMulu16:
 	mov si, testingMulu16Str
@@ -3868,7 +4219,7 @@ testMulsImOpcode:
 	imul ax, bx, 0x1234
 	retf
 ;-----------------------------------------------------------------------------
-; Test signed immediate multiplication of all word values.
+; Test signed immediate multiplication of some word values.
 ;-----------------------------------------------------------------------------
 testMulsIm:
 	mov si, testingMulsIm16Str
@@ -8161,6 +8512,69 @@ noTaps3:
 ;-----------------------------------------------------------------------------
 ; Print expected result and flags plus tested result and flags.
 ;-----------------------------------------------------------------------------
+printFailedResult8:
+	hlt						; Wait for VBlank
+	mov byte [es:isTesting], 0
+	mov al, 10
+	int 0x10
+	mov si, inputStr
+	call writeString
+
+	mov ax, [es:inputVal2]
+	call printHexB
+	mov si, hexPrefixStr
+	call writeString
+	mov ax, [es:inputVal1]
+	call printHexB
+	mov si, fHexPrefixStr
+	call writeString
+	mov ax, [es:inputFlags]
+	call printHexW
+	mov al, 10
+	int 0x10
+
+	mov si, expectedStr
+	call writeString
+	mov si, valueStr
+	call writeString
+	mov ax, [es:expectedResult1]
+	call printHexB
+	mov si, flagsStr
+	call writeString
+	mov ax, [es:expectedFlags]
+	call printHexW
+	mov al, ' '
+	int 0x10
+	mov al, 'X'
+	int 0x10
+	mov al, [es:expectedException]
+	add al, '0'
+	int 0x10
+
+	mov si, testedStr
+	call writeString
+	mov si, valueStr
+	call writeString
+	mov ax, [es:testedResult1]
+	call printHexW
+	mov si, flagsStr
+	call writeString
+	mov ax, [es:testedFlags]
+	call printHexW
+	mov al, ' '
+	int 0x10
+	mov al, 'X'
+	int 0x10
+	mov al, [es:testedException]
+	add al, '0'
+	int 0x10
+	mov al, 10
+	int 0x10
+
+	ret
+;-----------------------------------------------------------------------------
+; Print expected result and flags plus tested result and flags.
+;-----------------------------------------------------------------------------
 printFailedResult:
 	hlt						; Wait for VBlank
 	mov byte [es:isTesting], 0
@@ -8687,7 +9101,7 @@ prepareData:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20231025",10 , 0
+headLineStr: db "WonderSwan CPU Test 20240807",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -8721,13 +9135,20 @@ testingNeg8Str: db "NEG bytes", 10, 0
 testingAdc8Str: db "ADC/ADDC bytes", 10, 0
 testingSbb8Str: db "SBB/SUBC bytes", 10, 0
 
-testingRol8Str: db "ROL byte by CL", 10, 0
-testingRor8Str: db "ROR byte by CL", 10, 0
-testingRcl8Str: db "RCL/ROLC byte by CL", 10, 0
-testingRcr8Str: db "RCR/RORC byte by CL", 10, 0
-testingShl8Str: db "SHL byte by CL", 10, 0
-testingShr8Str: db "SHR byte by CL", 10, 0
-testingSar8Str: db "SAR/SHRA byte by CL", 10, 0
+testingRol8Str:  db "ROL bytes by CL", 10, 0
+testingRol16Str: db "ROL words by CL", 10, 0
+testingRor8Str:  db "ROR bytes by CL", 10, 0
+testingRor16Str: db "ROR words by CL", 10, 0
+testingRcl8Str:  db "RCL/ROLC bytes by CL", 10, 0
+testingRcl16Str: db "RCL/ROLC words by CL", 10, 0
+testingRcr8Str:  db "RCR/RORC bytes by CL", 10, 0
+testingRcr16Str: db "RCR/RORC words by CL", 10, 0
+testingShl8Str:  db "SHL bytes by CL", 10, 0
+testingShl16Str: db "SHL words by CL", 10, 0
+testingShr8Str:  db "SHR bytes by CL", 10, 0
+testingShr16Str: db "SHR words by CL", 10, 0
+testingSar8Str:  db "SAR/SHRA bytes by CL", 10, 0
+testingSar16Str: db "SAR/SHRA words by CL", 10, 0
 
 testingAaaStr: db "AAA/ADJBA", 10, 0
 testingAasStr: db "AAS/ADJBS", 10, 0
