@@ -236,6 +236,8 @@ All flags are the same as a normal addition except that AuxCarry & Carry are nev
 ### DAS / ADJ4S
 
 Compare is done for AL > 0x99 first and then lower nybble ((AL & 0xF) > 0x9).
+AuxCarry & Carry can only be set from the comparison, not the adjustment,
+(S, Z & V are set from the ajustment).
 Same calculation as DAA except it does a subtraction instead of an addition.
 
 ### AAA / ADJBA
