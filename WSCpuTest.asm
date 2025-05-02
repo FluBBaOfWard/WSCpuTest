@@ -418,12 +418,12 @@ runMisc:
 	call testStack
 	call testJmp
 	call testTrap
-	call testUndefinedOps
 	call testBound
 	call testDaa
 	call testDas
 	call testAaa
-	jmp testAas
+	call testAas
+	jmp testUndefinedOps
 ;-----------------------------------------------------------------------------
 runMultiplication:
 	call testMulu8
@@ -7228,11 +7228,7 @@ undefinedOp0x0F:
 
 undefinedOp0x0FFailed:
 	mov si, testUndefined0x0FStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x63:
@@ -7255,11 +7251,7 @@ undefinedOp0x63:
 
 undefinedOp0x63Failed:
 	mov si, testUndefined0x63Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x64:
@@ -7282,11 +7274,7 @@ undefinedOp0x64:
 
 undefinedOp0x64Failed:
 	mov si, testUndefined0x64Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x65:
@@ -7309,11 +7297,7 @@ undefinedOp0x65:
 
 undefinedOp0x65Failed:
 	mov si, testUndefined0x65Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x66:
@@ -7336,11 +7320,7 @@ undefinedOp0x66:
 
 undefinedOp0x66Failed:
 	mov si, testUndefined0x66Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x67:
@@ -7363,11 +7343,7 @@ undefinedOp0x67:
 
 undefinedOp0x67Failed:
 	mov si, testUndefined0x67Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x8CF8:
@@ -7391,11 +7367,7 @@ undefinedOp0x8CF8:
 
 undefinedOp0x8CF8Failed:
 	mov si, testUndefined0x8CF8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x8DC8:
@@ -7419,11 +7391,7 @@ undefinedOp0x8DC8:
 
 undefinedOp0x8DC8Failed:
 	mov si, testUndefined0x8DC8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0x8DC9:
 	mov byte [es:testedException], 0
@@ -7445,11 +7413,7 @@ undefinedOp0x8DC9:
 
 undefinedOp0x8DC9Failed:
 	mov si, testUndefined0x8DC9Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0x8DCA:
 	xor cx, cx
@@ -7472,11 +7436,7 @@ undefinedOp0x8DCA:
 
 undefinedOp0x8DCAFailed:
 	mov si, testUndefined0x8DCAStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0x8DCB:
 	xor cx, cx
@@ -7499,11 +7459,7 @@ undefinedOp0x8DCB:
 
 undefinedOp0x8DCBFailed:
 	mov si, testUndefined0x8DCBStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0x8DCC:
 	xor cx, cx
@@ -7525,11 +7481,7 @@ undefinedOp0x8DCC:
 
 undefinedOp0x8DCCFailed:
 	mov si, testUndefined0x8DCCStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0x8DCD:
 	xor cx, cx
@@ -7552,11 +7504,7 @@ undefinedOp0x8DCD:
 
 undefinedOp0x8DCDFailed:
 	mov si, testUndefined0x8DCDStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0x8DCE:
 	xor cx, cx
@@ -7579,11 +7527,7 @@ undefinedOp0x8DCE:
 
 undefinedOp0x8DCEFailed:
 	mov si, testUndefined0x8DCEStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0x8DCF:
 	mov bx, 0x5678
@@ -7606,11 +7550,7 @@ undefinedOp0x8DCF:
 
 undefinedOp0x8DCFFailed:
 	mov si, testUndefined0x8DCFStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x8EF8:
@@ -7635,11 +7575,7 @@ undefinedOp0x8EF8:
 
 undefinedOp0x8EF8Failed:
 	mov si, testUndefined0x8EF8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x8FC0:
@@ -7661,11 +7597,7 @@ undefinedOp0x8FC0:
 
 undefinedOp0x8FC0Failed:
 	mov si, testUndefined0x8FC0Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0x9B:
@@ -7688,11 +7620,7 @@ undefinedOp0x9B:
 
 undefinedOp0x9BFailed:
 	mov si, testUndefined0x9BStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0xC0F0:
@@ -7722,11 +7650,7 @@ undefinedOp0xC0F0:
 
 undefinedOp0xC0F0Failed:
 	mov si, testUndefined0xC0F0Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC1F0:
 	mov byte [es:expectedException], 0
@@ -7755,11 +7679,7 @@ undefinedOp0xC1F0:
 
 undefinedOp0xC1F0Failed:
 	mov si, testUndefined0xC1F0Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4D8:
 	mov byte [es:testedException], 0
@@ -7794,11 +7714,7 @@ undefinedOp0xC4D8:
 
 undefinedOp0xC4D8Failed:
 	mov si, testUndefined0xC4D8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4D9:
 	mov byte [es:testedException], 0
@@ -7833,11 +7749,7 @@ undefinedOp0xC4D9:
 
 undefinedOp0xC4D9Failed:
 	mov si, testUndefined0xC4D9Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4DA:
 	mov byte [es:testedException], 0
@@ -7878,11 +7790,7 @@ undefinedOp0xC4DA:
 
 undefinedOp0xC4DAFailed:
 	mov si, testUndefined0xC4DAStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4DB:
 	mov byte [es:testedException], 0
@@ -7923,11 +7831,7 @@ undefinedOp0xC4DB:
 
 undefinedOp0xC4DBFailed:
 	mov si, testUndefined0xC4DBStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4DC:
 	mov byte [es:testedException], 0
@@ -7964,11 +7868,7 @@ undefinedOp0xC4DC:
 
 undefinedOp0xC4DCFailed:
 	mov si, testUndefined0xC4DCStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4DD:
 	mov byte [es:testedException], 0
@@ -8003,11 +7903,7 @@ undefinedOp0xC4DD:
 
 undefinedOp0xC4DDFailed:
 	mov si, testUndefined0xC4DDStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4DE:
 	mov byte [es:testedException], 0
@@ -8048,11 +7944,7 @@ undefinedOp0xC4DE:
 
 undefinedOp0xC4DEFailed:
 	mov si, testUndefined0xC4DEStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC4DF:
 	mov byte [es:testedException], 0
@@ -8087,11 +7979,7 @@ undefinedOp0xC4DF:
 
 undefinedOp0xC4DFFailed:
 	mov si, testUndefined0xC4DFStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0xC5D8:
@@ -8127,11 +8015,7 @@ undefinedOp0xC5D8:
 
 undefinedOp0xC5D8Failed:
 	mov si, testUndefined0xC5D8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC5D9:
 	mov byte [es:testedException], 0
@@ -8166,11 +8050,7 @@ undefinedOp0xC5D9:
 
 undefinedOp0xC5D9Failed:
 	mov si, testUndefined0xC5D9Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC5DA:
 	mov byte [es:testedException], 0
@@ -8209,11 +8089,7 @@ undefinedOp0xC5DA:
 
 undefinedOp0xC5DAFailed:
 	mov si, testUndefined0xC5DAStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC5DB:
 	mov byte [es:testedException], 0
@@ -8252,11 +8128,7 @@ undefinedOp0xC5DB:
 
 undefinedOp0xC5DBFailed:
 	mov si, testUndefined0xC5DBStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC5DC:
 	mov byte [es:testedException], 0
@@ -8293,11 +8165,7 @@ undefinedOp0xC5DC:
 
 undefinedOp0xC5DCFailed:
 	mov si, testUndefined0xC5DCStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC5DD:
 	mov byte [es:testedException], 0
@@ -8332,11 +8200,7 @@ undefinedOp0xC5DD:
 
 undefinedOp0xC5DDFailed:
 	mov si, testUndefined0xC5DDStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC5DE:
 	mov byte [es:testedException], 0
@@ -8375,11 +8239,7 @@ undefinedOp0xC5DE:
 
 undefinedOp0xC5DEFailed:
 	mov si, testUndefined0xC5DEStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xC5DF:
 	mov byte [es:testedException], 0
@@ -8414,11 +8274,7 @@ undefinedOp0xC5DF:
 
 undefinedOp0xC5DFFailed:
 	mov si, testUndefined0xC5DFStr
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0xD6:
@@ -8475,11 +8331,7 @@ undefinedOp0xD6:
 
 undefinedOp0xD6Failed:
 	mov si, testUndefined0xD6Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 
 undefinedOp0xD8:
@@ -8609,11 +8461,7 @@ undefinedOp0xD8:
 
 undefinedOp0xD8Failed:
 	mov si, testUndefined0xD8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xF1:
 	mov byte [es:expectedException], 0
@@ -8635,11 +8483,7 @@ undefinedOp0xF1:
 
 undefinedOp0xF1Failed:
 	mov si, testUndefined0xF1Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xF6C8:
 	mov byte [es:testedException], 0
@@ -8669,11 +8513,7 @@ undefinedOp0xF6C8:
 
 undefinedOp0xF6C8Failed:
 	mov si, testUndefined0xF6C8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
 undefinedOp0xF7C8:
 	mov byte [es:expectedException], 0
@@ -8698,17 +8538,13 @@ undefinedOp0xF7C8:
 	jnz undefinedOp0xF7C8Failed
 	mov bl, [es:testedException]
 	xor bl, [es:expectedException]
-	jz undefinedOp0xFED0
+	jz undefinedOp0xFEF0
 
 undefinedOp0xF7C8Failed:
 	mov si, testUndefined0xF7C8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
 
-undefinedOp0xFED0:
+undefinedOp0xFEF0:
 	mov byte [es:expectedException], 0
 	mov ax, 0xFE5A
 	mov [es:inputVal1], ax
@@ -8727,21 +8563,17 @@ undefinedOp0xFED0:
 	mov sp, dx
 	mov bx, [es:expectedResult1]
 	xor ax, bx
-	jnz undefinedOp0xFED0Failed
+	jnz undefinedOp0xFEF0Failed
 	mov bx, [es:testedFlags]
 	xor cx, bx
-	jnz undefinedOp0xFED0Failed
+	jnz undefinedOp0xFEF0Failed
 	mov bl, [es:testedException]
 	xor bl, [es:expectedException]
 	jz undefinedOp0xFFF8
 
-undefinedOp0xFED0Failed:
-	mov si, testUndefined0xFED0Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+undefinedOp0xFEF0Failed:
+	mov si, testUndefined0xFEF0Str
+	call handleUndefinedOpFailed
 
 undefinedOp0xFFF8:
 	mov byte [es:expectedException], 0
@@ -8769,19 +8601,81 @@ undefinedOp0xFFF8:
 	jnz undefinedOp0xFFF8Failed
 	mov bl, [es:testedException]
 	xor bl, [es:expectedException]
-	jz undefinedOpOk
+	jz undefinedOp0xFFD8
 
 undefinedOp0xFFF8Failed:
 	mov si, testUndefined0xFFF8Str
-	call writeString
-	call printFailedResult
-	call checkKeyInput
-	xor al, 0
-	jz undefinedOpFailed
+	call handleUndefinedOpFailed
+
+undefinedOp0xFFD8:
+	mov ax, 0x1337
+	mov [es:expectedResult1], ax
+	mov ax, failOpFFD8		; dw testOpFFD8, MYSEGMENT
+	mov [es:inputVal1], ax
+	mov cx, 0x1111
+	mov dx, 0x2222
+	mov bx, opFFD8Data-failOpFFD8
+	mov bp, 0x4444
+	mov si, 0x5555
+	mov di, 0x6666
+	db 0xFF, 0xD8				;@ Call Far [ds:bx+ax]
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xFFD8Failed
+	jmp undefinedOp0xFFE8
+
+testOpFFD8:
+	mov ax, 0x1337
+	retf
+
+failOpFFD8:
+	mov ax, 0x57A9
+	retf
+
+undefinedOp0xFFD8Failed:
+	mov si, testUndefined0xFFD8Str
+	call handleUndefinedOpFailed
+
+undefinedOp0xFFE8:
+	mov ax, 0x2337
+	mov [es:expectedResult1], ax
+	mov ax, opFFE8Data-0x3333	; dw testOpFFE8, MYSEGMENT
+	mov [es:inputVal1], ax
+	mov cx, 0x1111
+	mov dx, 0x2222
+	mov bx, 0x3333
+	mov bp, 0x4444
+	mov si, 0x5555
+	mov di, 0x6666
+	db 0xFF, 0xE8				;@ Bra Far [ds:bx+ax]
+testOpFFE8Cont:
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xFFE8Failed
+	jmp undefinedOpOk
+
+testOpFFE8:
+	mov ax, 0x2337
+	jmp testOpFFE8Cont
+
+undefinedOp0xFFE8Failed:
+	mov si, testUndefined0xFFE8Str
+	call handleUndefinedOpFailed
 
 undefinedOpOk:
 	jmp writeTestOk
 
+handleUndefinedOpFailed:
+	call writeString
+	call printFailedResult
+	call checkKeyInput
+	xor al, 0
+	jz undefinedOpFailedPop
+	ret
+undefinedOpFailedPop:
+	pop ax
 undefinedOpFailed:
 	mov si, failedStr
 	call writeString
@@ -9435,11 +9329,15 @@ MonoFont:
 
 prepareData:
 	dw 0xF0AB, 0x570D
+opFFD8Data:
+	dw testOpFFD8, MYSEGMENT
+opFFE8Data:
+	dw testOpFFE8, MYSEGMENT
 
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20240807",10 , 0
+headLineStr: db "WonderSwan CPU Test 20250502",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -9565,8 +9463,10 @@ testUndefined0xD8Str: db "ESC/FPO1 opcode 0xD8-0xDF", 10, 0
 testUndefined0xF1Str: db "INT1/BRKS opcode 0xF1", 10, 0
 testUndefined0xF6C8Str: db "Undefined opcode 0xF6C8", 10, 0
 testUndefined0xF7C8Str: db "Undefined opcode 0xF7C8", 10, 0
-testUndefined0xFED0Str: db "Undefined opcode 0xFED0", 10, 0
+testUndefined0xFEF0Str: db "Undefined opcode 0xFEF0", 10, 0
 testUndefined0xFFF8Str: db "Undefined opcode 0xFFF8", 10, 0
+testUndefined0xFFD8Str: db "Call Far [ds:bx+ax] 0xFFD8", 10, 0
+testUndefined0xFFE8Str: db "Jmp Far [ds:bx+ax] op 0xFFE8", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
 test16InputStr: db "Testing Input: 0x0000", 0
