@@ -397,6 +397,8 @@ runArithmetic:
 	call testNeg8
 	call testAdc8
 	call testSbb8
+	call testAdd16
+	call testSub16
 	call testAdc16
 	jmp testSbb16
 ;-----------------------------------------------------------------------------
@@ -1631,6 +1633,140 @@ add8NoAC:
 	ret
 
 ;-----------------------------------------------------------------------------
+; Test ADD for all some & words values.
+; Uses add8 & adc8 to calculate add16.
+;-----------------------------------------------------------------------------
+testAdd16:
+	mov si, testingAdd16Str
+	call writeString
+	mov si, test16x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 3
+
+	xor cx, cx
+testAdd16Loop:
+	call getLFSR2Value
+	mov [es:inputVal1], ax
+	call getLFSR1Value
+	mov [es:inputVal2], ax
+	call calcAdd16Result
+	call testAdd16Single
+	xor al, 0
+	jnz stopAdd16Test
+continueAdd16:
+	inc cx
+	jnz testAdd16Loop
+
+testAdd16End:
+	jmp endTestWriteOk
+stopAdd16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueAdd16
+	ret
+
+;-----------------------------------------------------------------------------
+testAdd16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cx, [es:inputVal1]
+	mov bx, [es:inputVal2]
+	popf
+	add bx, cx
+	pushf
+
+	mov [es:testedResult1], bx
+	pop cx
+	mov [es:testedFlags], cx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz add16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz add16Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FE
+	push bx
+	mov [es:inputFlags], bx
+
+	mov cx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	popf
+	add ax, cx
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz add16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz add16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+add16Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcAdd16Result:
+	push bx
+	push cx
+	push dx
+
+	mov ax, [es:inputVal1]
+	mov bx, [es:inputVal2]
+
+	mov dx, ax
+	xor dx, bx
+	add al, bl
+	adc ah, bh
+	pushf
+	mov [es:expectedResult1], ax
+	xor dx, ax
+
+	pop cx
+	and cx, 0xFA83
+
+	xor ax, 0
+	jnz add16NoZ
+	or cl, 0x40
+add16NoZ:
+
+	test dl, 0x10
+	jz add16NoAC
+	or cl, 0x10
+add16NoAC:
+	lea bx, PZSTable
+	xlat
+	and al, 0x04
+	or cl, al
+	mov [es:expectedFlags], cx
+
+	pop dx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
 ; Test ADC/ADDC for all bytes & bytes values + carry.
 ;-----------------------------------------------------------------------------
 testAdc8:
@@ -1786,7 +1922,7 @@ adc8NoAC:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test ADC/ADDC for all words & words values + carry.
+; Test ADC/ADDC for all some & words values + carry.
 ; Uses adc8 to calculate adc16.
 ;-----------------------------------------------------------------------------
 testAdc16:
@@ -2218,7 +2354,146 @@ sbb8NoAC:
 	ret
 
 ;-----------------------------------------------------------------------------
-; Test SBB/SUBC for all words & words values + carry.
+; Test SUB for some words & words values.
+; Uses sub8 & sbb8 to calculate sub16.
+;-----------------------------------------------------------------------------
+testSub16:
+	mov si, testingSub16Str
+	call writeString
+	mov si, test16x16InputStr
+	call writeString
+
+	mov byte [es:isTesting], 3
+
+	xor cx, cx
+testSub16Loop:
+	call getLFSR2Value
+	mov [es:inputVal1], ax
+	call getLFSR1Value
+	mov [es:inputVal2], ax
+	call calcSub16Result
+	call testSub16Single
+	xor al, 0
+	jnz stopSub16Test
+continueSub16:
+	inc cx
+	jnz testSub16Loop
+
+testSub16End:
+	mov byte [es:inputCarry], 0
+	jmp endTestWriteOk
+stopSub16Test:
+	call checkKeyInput
+	xor al, 0
+	jnz continueSub16
+	mov byte [es:inputCarry], 0
+	ret
+
+;-----------------------------------------------------------------------------
+testSub16Single:
+	push bx
+	push cx
+
+	pushf
+	pop ax
+	and ax, 0x8700
+	push ax
+	mov [es:inputFlags], ax
+
+	mov cx, [es:inputVal1]
+	mov bx, [es:inputVal2]
+	popf
+	sub bx, cx
+	pushf
+
+	mov [es:testedResult1], bx
+	pop cx
+	mov [es:testedFlags], cx
+	mov ax, [es:expectedResult1]
+	xor ax, bx
+	jnz sub16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sub16Failed
+
+	pushf
+	pop bx
+	or bx, 0x78FE
+	mov al, [es:inputCarry]
+	and al, 1
+	or bl, al
+	push bx
+	mov [es:inputFlags], bx
+
+	mov cx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+	popf
+	sbb ax, cx
+	pushf
+
+	mov [es:testedResult1], ax
+	pop cx
+	mov [es:testedFlags], cx
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz sub16Failed
+	mov bx, [es:expectedFlags]
+	xor cx, bx
+	jnz sub16Failed
+
+	xor ax, ax
+	pop cx
+	pop bx
+	ret
+
+sub16Failed:
+	call printFailedResult
+	mov ax, 1
+	pop cx
+	pop bx
+	ret
+;-----------------------------------------------------------------------------
+calcSub16Result:
+	push bx
+	push cx
+	push dx
+
+	mov bx, [es:inputVal1]
+	mov ax, [es:inputVal2]
+
+	mov dx, ax
+	xor dx, bx
+	sub al, bl
+	sbb ah, bh
+	pushf
+	mov [es:expectedResult1], ax
+	xor dx, ax
+
+	pop cx
+	and cx, 0xFA83
+
+	xor ax, 0
+	jnz sub16NoZ
+	or cl, 0x40
+sub16NoZ:
+
+	test dl, 0x10
+	jz sub16NoAC
+	or cl, 0x10
+sub16NoAC:
+	lea bx, PZSTable
+	xlat
+	and al, 0x04
+	or cl, al
+	mov [es:expectedFlags], cx
+
+	pop dx
+	pop cx
+	pop bx
+	ret
+
+;-----------------------------------------------------------------------------
+; Test SBB/SUBC for some words & words values + carry.
 ; Uses sbb8 to calculate sbb16.
 ;-----------------------------------------------------------------------------
 testSbb16:
@@ -9365,7 +9640,9 @@ testingDec8Str: db "DEC bytes", 10, 0
 testingDec16Str: db "DEC words", 10, 0
 
 testingAdd8Str: db "ADD bytes", 10, 0
+testingAdd16Str: db "ADD words", 10, 0
 testingSub8Str: db "SUB bytes", 10, 0
+testingSub16Str: db "SUB words", 10, 0
 testingCmp8Str: db "CMP bytes", 10, 0
 testingNeg8Str: db "NEG bytes", 10, 0
 testingAdc8Str: db "ADC/ADDC bytes", 10, 0
