@@ -12,11 +12,10 @@
 ;
 ;-----------------------------------------------------------------------------
 
-	ORG 0x0000
+	ORG 0xF0000
 	CPU 186
 	BITS 16
 
-SECTION .data
 	%include "WonderSwan.inc"
 
 	MYSEGMENT equ 0xf000
@@ -28,8 +27,7 @@ SECTION .data
 	PSR_Z equ 0x40
 	PSR_P equ 0x04
 
-SECTION .text
-	;PADDING 15
+SECTION .text start=0xF0000
 
 initialize:
 	cli
@@ -204,7 +202,7 @@ main:
 	call writeString
 	mov si, menuTestArithmeticStr
 	call writeString
-	mov si, menuTestRolShiftStr
+	mov si, menuTestRotShiftStr
 	call writeString
 	mov si, menuTestMiscStr
 	call writeString
@@ -7452,10 +7450,10 @@ testTrap:
 	mov [es:expectedResult1], bx
 	pushf
 	pop bx
-	or bx, 0x0100				;@ Set Trap flag
+	or bx, 0x0100				; Set Trap flag
 	push bx
-	popf						;@ Pop flags with Trap set.
-	clc							;@ Trap will happen after clc.
+	popf						; Pop flags with Trap set.
+	clc							; Trap will happen after clc.
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
@@ -7486,7 +7484,7 @@ undefinedOp0x0F:
 	mov bp, sp
 	mov [es:expectedResult2], bp
 	clc
-	db 0x0F, 0x10, 0xC0			;@ POP CS / TEST1 al, cl / ADC al, al
+	db 0x0F, 0x10, 0xC0			; POP CS / TEST1 al, cl / ADC al, al
 	mov [es:testedResult1], ax
 	mov [es:testedResult2], sp
 	mov bx, sp
@@ -7514,7 +7512,7 @@ undefinedOp0x63:
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-	db 0x63						;@ ARPL
+	db 0x63						; ARPL
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -7537,7 +7535,7 @@ undefinedOp0x64:
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-	db 0x64						;@ REPNC
+	db 0x64						; REPNC
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -7560,7 +7558,7 @@ undefinedOp0x65:
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-	db 0x65						;@ REPC
+	db 0x65						; REPC
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -7583,7 +7581,7 @@ undefinedOp0x66:
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-	db 0x66						;@ FPO2
+	db 0x66						; FPO2
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -7606,7 +7604,7 @@ undefinedOp0x67:
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-	db 0x67						;@ FPO2
+	db 0x67						; FPO2
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -7630,7 +7628,7 @@ undefinedOp0x8CF8:
 	mov [es:inputVal1], ax
 	mov [es:inputVal2], bx
 	mov [es:expectedResult1], bx
-	db 0x8C, 0xF8				;@ mov ax, sreg DS + 4
+	db 0x8C, 0xF8				; mov ax, sreg DS + 4
 	pop ds
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -7655,7 +7653,7 @@ undefinedOp0x8DC8:
 	mov dx, ax
 	add dx, bx
 	mov [es:expectedResult1], dx
-	db 0x8D, 0xC8				;@ lea cx, [bx + ax]
+	db 0x8D, 0xC8				; lea cx, [bx + ax]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7677,7 +7675,7 @@ undefinedOp0x8DC9:
 	mov ax, bx
 	add ax, cx
 	mov [es:expectedResult1], ax
-	db 0x8D, 0xC9				;@ lea cx, [bx + cx]
+	db 0x8D, 0xC9				; lea cx, [bx + cx]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7700,7 +7698,7 @@ undefinedOp0x8DCA:
 	mov ax, dx
 	add ax, bp
 	mov [es:expectedResult1], ax
-	db 0x8D, 0xCA				;@ lea cx, [bp + dx]
+	db 0x8D, 0xCA				; lea cx, [bp + dx]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7723,7 +7721,7 @@ undefinedOp0x8DCB:
 	mov ax, bx
 	add ax, bp
 	mov [es:expectedResult1], ax
-	db 0x8D, 0xCB				;@ lea cx, [bp + bx]
+	db 0x8D, 0xCB				; lea cx, [bp + bx]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7745,7 +7743,7 @@ undefinedOp0x8DCC:
 	mov ax, sp
 	add ax, si
 	mov [es:expectedResult1], ax
-	db 0x8D, 0xCC				;@ lea cx, [si + sp]
+	db 0x8D, 0xCC				; lea cx, [si + sp]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7768,7 +7766,7 @@ undefinedOp0x8DCD:
 	mov ax, bp
 	add ax, di
 	mov [es:expectedResult1], ax
-	db 0x8D, 0xCD				;@ lea cx, [di + bp]
+	db 0x8D, 0xCD				; lea cx, [di + bp]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7791,7 +7789,7 @@ undefinedOp0x8DCE:
 	mov ax, bp
 	add ax, si
 	mov [es:expectedResult1], ax
-	db 0x8D, 0xCE				;@ lea cx, [bp + si]
+	db 0x8D, 0xCE				; lea cx, [bp + si]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7814,7 +7812,7 @@ undefinedOp0x8DCF:
 	mov ax, bx
 	add ax, di
 	mov [es:expectedResult1], ax
-	db 0x8D, 0xCF				;@ lea cx, [bx + di]
+	db 0x8D, 0xCF				; lea cx, [bx + di]
 	mov [es:testedResult1], cx
 	mov bx, [es:expectedResult1]
 	xor cx, bx
@@ -7837,7 +7835,7 @@ undefinedOp0x8EF8:
 	mov [es:inputVal1], bx
 	mov [es:inputVal2], ax
 	mov [es:expectedResult1], ax
-	db 0x8E, 0xF8				;@ mov sreg DS + 4, ax
+	db 0x8E, 0xF8				; mov sreg DS + 4, ax
 	mov ax, ds
 	pop ds
 	mov [es:testedResult1], ax
@@ -7861,7 +7859,7 @@ undefinedOp0x8FC0:
 	mov [es:inputVal2], ax
 	mov [es:expectedResult1], bx
 	push bx
-	db 0x8F, 0xC0				;@ pop word ax
+	db 0x8F, 0xC0				; pop word ax
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
@@ -7883,7 +7881,7 @@ undefinedOp0x9B:
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-	db 0x9B					;@ WAIT/POLL
+	db 0x9B					; WAIT/POLL
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -7906,7 +7904,7 @@ undefinedOp0xC0F0:
 	xor bl, bl
 	mov [es:expectedResult1], bx
 	pushf
-	db 0xC0, 0xF0, 0x02				;@ SAL al, 2
+	db 0xC0, 0xF0, 0x02				; SAL al, 2
 	pushf
 	mov [es:testedResult1], ax
 	pop cx
@@ -7935,7 +7933,7 @@ undefinedOp0xC1F0:
 	xor bx, bx
 	mov [es:expectedResult1], bx
 	pushf
-	db 0xC1, 0xF0, 0x03				;@ SAL ax, 3
+	db 0xC1, 0xF0, 0x03				; SAL ax, 3
 	pushf
 	mov [es:testedResult1], ax
 	pop cx
@@ -7972,7 +7970,7 @@ undefinedOp0xC4D8:
 	mov [es:inputVal1], ax
 	mov [es:inputVal2], bx
 	push es
-	db 0xC4, 0xD8				;@ les bx, [ds:bx + ax]
+	db 0xC4, 0xD8				; les bx, [ds:bx + ax]
 	mov dx, es
 	pop es
 	mov [es:testedResult1], bx
@@ -8007,7 +8005,7 @@ undefinedOp0xC4D9:
 	mov [es:inputVal1], cx
 	mov [es:inputVal2], bx
 	push es
-	db 0xC4, 0xD9				;@ les bx, [ds:bx + cx]
+	db 0xC4, 0xD9				; les bx, [ds:bx + cx]
 	mov dx, es
 	pop es
 	mov [es:testedResult1], bx
@@ -8046,7 +8044,7 @@ undefinedOp0xC4DA:
 	mov ax, MYSEGMENT
 	mov ss, ax
 	mov ds, bx
-	db 0xC4, 0xDA				;@ les bx, [ss:bp + dx]
+	db 0xC4, 0xDA				; les bx, [ss:bp + dx]
 	mov dx, es
 	mov ss, di
 	pop ds
@@ -8087,7 +8085,7 @@ undefinedOp0xC4DB:
 	mov ax, MYSEGMENT
 	mov ss, ax
 	mov ds, dx
-	db 0xC4, 0xDB				;@ les bx, [ss:bp + bx]
+	db 0xC4, 0xDB				; les bx, [ss:bp + bx]
 	mov dx, es
 	mov ss, di
 	pop ds
@@ -8125,7 +8123,7 @@ undefinedOp0xC4DC:
 	mov sp, 0x7777
 	mov [es:inputVal1], si
 	mov [es:inputVal2], sp
-	db 0xC4, 0xDC				;@ les bx, [ds:si + sp]
+	db 0xC4, 0xDC				; les bx, [ds:si + sp]
 	mov dx, es
 	mov sp, di
 	pop es
@@ -8161,7 +8159,7 @@ undefinedOp0xC4DD:
 	mov [es:inputVal1], di
 	mov [es:inputVal2], bp
 	push es
-	db 0xC4, 0xDD				;@ les bx, [ds:di + bp]
+	db 0xC4, 0xDD				; les bx, [ds:di + bp]
 	mov dx, es
 	pop es
 	mov [es:testedResult1], dx
@@ -8200,7 +8198,7 @@ undefinedOp0xC4DE:
 	mov ax, MYSEGMENT
 	mov ss, ax
 	mov ds, bx
-	db 0xC4, 0xDE				;@ les bx, [ss:bp + si]
+	db 0xC4, 0xDE				; les bx, [ss:bp + si]
 	mov dx, es
 	mov ss, di
 	pop ds
@@ -8237,7 +8235,7 @@ undefinedOp0xC4DF:
 	mov [es:inputVal1], di
 	mov [es:inputVal2], bx
 	push es
-	db 0xC4, 0xDF				;@ les bx, [ds:bx + di]
+	db 0xC4, 0xDF				; les bx, [ds:bx + di]
 	mov dx, es
 	pop es
 	mov [es:testedResult1], dx
@@ -8273,7 +8271,7 @@ undefinedOp0xC5D8:
 	mov [es:inputVal1], ax
 	mov [es:inputVal2], bx
 	push ds
-	db 0xC5, 0xD8				;@ lds bx, [ds:bx + ax]
+	db 0xC5, 0xD8				; lds bx, [ds:bx + ax]
 	mov dx, ds
 	pop ds
 	mov [es:testedResult1], bx
@@ -8308,7 +8306,7 @@ undefinedOp0xC5D9:
 	mov [es:inputVal1], cx
 	mov [es:inputVal2], bx
 	push ds
-	db 0xC5, 0xD9				;@ lds bx, [ds:bx + cx]
+	db 0xC5, 0xD9				; lds bx, [ds:bx + cx]
 	mov dx, ds
 	pop ds
 	mov [es:testedResult1], bx
@@ -8346,7 +8344,7 @@ undefinedOp0xC5DA:
 	mov ax, MYSEGMENT
 	mov ss, ax
 	mov ds, bx
-	db 0xC5, 0xDA				;@ lds bx, [ss:bp + dx]
+	db 0xC5, 0xDA				; lds bx, [ss:bp + dx]
 	mov dx, ds
 	mov ss, di
 	pop ds
@@ -8385,7 +8383,7 @@ undefinedOp0xC5DB:
 	mov ax, MYSEGMENT
 	mov ss, ax
 	mov ds, dx
-	db 0xC5, 0xDB				;@ lds bx, [ss:bp + bx]
+	db 0xC5, 0xDB				; lds bx, [ss:bp + bx]
 	mov dx, ds
 	mov ss, di
 	pop ds
@@ -8422,7 +8420,7 @@ undefinedOp0xC5DC:
 	mov sp, 0x7777
 	mov [es:inputVal1], si
 	mov [es:inputVal2], sp
-	db 0xC5, 0xDC				;@ lds bx, [ds:si + sp]
+	db 0xC5, 0xDC				; lds bx, [ds:si + sp]
 	mov dx, ds
 	mov sp, di
 	pop ds
@@ -8458,7 +8456,7 @@ undefinedOp0xC5DD:
 	mov [es:inputVal1], di
 	mov [es:inputVal2], bp
 	push ds
-	db 0xC5, 0xDD				;@ lds bx, [ds:di + bp]
+	db 0xC5, 0xDD				; lds bx, [ds:di + bp]
 	mov dx, ds
 	pop ds
 	mov [es:testedResult1], dx
@@ -8496,7 +8494,7 @@ undefinedOp0xC5DE:
 	mov ax, MYSEGMENT
 	mov ss, ax
 	mov ds, bx
-	db 0xC5, 0xDE				;@ lds bx, [ss:bp + si]
+	db 0xC5, 0xDE				; lds bx, [ss:bp + si]
 	mov dx, ds
 	mov ss, di
 	pop ds
@@ -8532,7 +8530,7 @@ undefinedOp0xC5DF:
 	mov [es:inputVal1], di
 	mov [es:inputVal2], bx
 	push ds
-	db 0xC5, 0xDF				;@ lds bx, [ds:bx + di]
+	db 0xC5, 0xDF				; lds bx, [ds:bx + di]
 	mov dx, ds
 	pop ds
 	mov [es:testedResult1], dx
@@ -8619,7 +8617,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xD8, 0xC0					;@ FPO1
+	db 0xD8, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8634,7 +8632,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xD9, 0xC0					;@ FPO1
+	db 0xD9, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8649,7 +8647,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xDA, 0xC0					;@ FPO1
+	db 0xDA, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8664,7 +8662,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xDB, 0xC0					;@ FPO1
+	db 0xDB, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8679,7 +8677,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xDC, 0xC0					;@ FPO1
+	db 0xDC, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8694,7 +8692,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xDD, 0xC0					;@ FPO1
+	db 0xDD, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8709,7 +8707,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xDE, 0xC0					;@ FPO1
+	db 0xDE, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8724,7 +8722,7 @@ undefinedOp0xD8:
 	mov bx, ax
 	add bl, bl
 	mov [es:expectedResult1], bx
-	db 0xDF, 0xC0					;@ FPO1
+	db 0xDF, 0xC0					; FPO1
 	add al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8746,7 +8744,7 @@ undefinedOp0xF1:
 	add bl, bl
 	mov [es:expectedResult1], bx
 	clc
-;	db 0xF1, 0x01				;@ BRKS
+;	db 0xF1, 0x01				; BRKS
 	adc al, al
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -8825,11 +8823,11 @@ undefinedOp0xFEF0:
 	mov [es:inputVal1], ax
 	mov [es:expectedResult1], ax
 	mov dx, sp
-	push dx						;@ Go down 1 step so we dont overwrite return value.
+	push dx						; Go down 1 step so we dont overwrite return value.
 	pushf
 	pop cx
 	mov [es:expectedFlags], cx
-	db 0xFE, 0xF0				;@ PUSH AX
+	db 0xFE, 0xF0				; PUSH AX
 	pop ax
 	pushf
 	mov [es:testedResult1], ax
@@ -8861,7 +8859,7 @@ undefinedOp0xFFF8:
 	pushf
 	pop cx
 	mov [es:expectedFlags], cx
-	db 0xFF, 0xF8				;@ undefined opcode, not PUSH AX
+	db 0xFF, 0xF8				; undefined opcode, not PUSH AX
 	pop ax
 	pushf
 	mov [es:testedResult1], ax
@@ -8882,18 +8880,19 @@ undefinedOp0xFFF8Failed:
 	mov si, testUndefined0xFFF8Str
 	call handleUndefinedOpFailed
 
-undefinedOp0xFFD8:
+undefinedOp0xFFD8:			; Call Far [ds:bx+ax], some emus use AX as both ofs & seg.
 	mov ax, 0x1337
 	mov [es:expectedResult1], ax
-	mov ax, failOpFFD8		; dw testOpFFD8, MYSEGMENT
+	mov ax, failOpFFD8
 	mov [es:inputVal1], ax
 	mov cx, 0x1111
 	mov dx, 0x2222
-	mov bx, opFFD8Data-failOpFFD8
+	mov bx, opFFD8Data		; dw testOpFFD8, MYSEGMENT
+	sub bx, ax
 	mov bp, 0x4444
 	mov si, 0x5555
 	mov di, 0x6666
-	db 0xFF, 0xD8				;@ Call Far [ds:bx+ax]
+	db 0xFF, 0xD8			; Call Far [ds:bx+ax]
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
 	xor ax, bx
@@ -8904,10 +8903,6 @@ testOpFFD8:
 	mov ax, 0x1337
 	retf
 
-failOpFFD8:
-	mov ax, 0x57A9
-	retf
-
 undefinedOp0xFFD8Failed:
 	mov si, testUndefined0xFFD8Str
 	call handleUndefinedOpFailed
@@ -8915,15 +8910,17 @@ undefinedOp0xFFD8Failed:
 undefinedOp0xFFE8:
 	mov ax, 0x2337
 	mov [es:expectedResult1], ax
-	mov ax, opFFE8Data-0x3333	; dw testOpFFE8, MYSEGMENT
+	mov ax, failOpFFE8	; dw testOpFFE8, MYSEGMENT
+	and ax, 0xF00F
 	mov [es:inputVal1], ax
 	mov cx, 0x1111
 	mov dx, 0x2222
-	mov bx, 0x3333
+	mov bx, opFFE8Data
+	sub bx, ax
 	mov bp, 0x4444
 	mov si, 0x5555
 	mov di, 0x6666
-	db 0xFF, 0xE8				;@ Bra Far [ds:bx+ax]
+	db 0xFF, 0xE8				; Bra Far [ds:bx+ax]
 testOpFFE8Cont:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -9602,6 +9599,13 @@ MonoFont:
 	db 0x10,0x10,0x10,0x00,0x10,0x10,0x10,0x00,0x20,0x10,0x10,0x08,0x10,0x10,0x20,0x00
 	db 0x00,0x00,0x60,0x92,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 
+pcv2udl:
+	db 0x0, 0x8, 0x0, 0x8, 0x4, 0xC, 0x4, 0xC, 0x1, 0x9, 0x1, 0x9, 0x5, 0xD, 0x5, 0xD
+pcv2rev:
+	db 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1
+pcv2pcc:
+	db 0x0, 0x8, 0x0, 0x4, 0x8, 0xC, 0x8, 0xC, 0x0, 0x4, 0x0, 0x4, 0x8, 0xC, 0x8, 0xC
+
 prepareData:
 	dw 0xF0AB, 0x570D
 opFFD8Data:
@@ -9612,12 +9616,12 @@ opFFE8Data:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20250502",10 , 0
+headLineStr: db "WonderSwan CPU Test 20250518",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
 menuTestArithmeticStr: db "  Test Arithmetic.",10 , 0
-menuTestRolShiftStr: db "  Test Rol & Shift.",10 , 0
+menuTestRotShiftStr: db "  Test Rotate & Shift.",10 , 0
 menuTestMiscStr: db "  Test Misc.",10 , 0
 menuTestMultiplicationStr: db "  Test Multiplication.",10 , 0
 menuTestDivisionStr: db "  Test Division.",10 , 0
@@ -9782,6 +9786,18 @@ jleFailedStr: db "JLE/JNG/BLE Failed", 10, 0
 jnleFailedStr: db "JNLE/JG/BGT Failed", 10, 0
 
 author: db "Written by Fredrik Ahlström, 2023"
+
+SECTION code2 start=0xFF000
+
+failOpFFD8:
+	mov ax, 0x57A9
+	retf
+
+SECTION code3 start=0xFF011
+
+failOpFFE8:
+	mov ax, 0xA351
+	jmp testOpFFE8Cont
 
 	ROM_HEADER initialize, MYSEGMENT, RH_WS_COLOR, RH_ROM_4MBITS, RH_NO_SRAM, RH_HORIZONTAL
 

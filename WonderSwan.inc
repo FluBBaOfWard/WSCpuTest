@@ -79,8 +79,8 @@ INTVEC_SERIAL_SEND	equ	0
 
 %define BG_CHR(tile,pal,bank,hflip,vflip)	(((vflip) << 15) | ((hflip) << 14) | ((bank) << 13) | ((pal) << 9) | (tile))
 
-%macro	ROM_HEADER	6	; Label, Segment, WSType, RomSize, SRamSize, WSSpec
-	times	((64*1024)-16)-$+%1 db 0xFF
+%macro	ROM_HEADER	6	; Label, Segment, WSType, RomSize, NVRamSize, WSSpec
+SECTION header start=0xFFFF0
 
 	db	0xEA	; jmpf
 	dw	%1	; Label
