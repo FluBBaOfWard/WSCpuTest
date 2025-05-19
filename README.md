@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.4 (20250518)
+# WonderSwan CPU Test V0.7.4 (20250519)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
 
@@ -351,6 +351,10 @@ This doesn't seem to do anything.
 ### 0xFF,0xD8 - 0xFF,0xDF (CALL far)
 
 This is the CALL far instruction but with address mode set to register. It doesn't use the registers directly but instead uses the same new addressing modes as LEA. I can't really write out if it fails since people had different ideas on how it worked (ie where it called), the mostly likely event is that the rom locks, crashes or restarts if it fails.
+
+### 0xFF,0x5E (CALL far bp)
+
+This tests that CALL far pushes the return address before reading the destination address.
 
 ### 0xFF,0xE8 - 0xFF,0xEF (BRA/JMP far)
 

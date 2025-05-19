@@ -8897,7 +8897,7 @@ undefinedOp0xFFD8:			; Call Far [ds:bx+ax], some emus use AX as both ofs & seg.
 	mov bx, [es:expectedResult1]
 	xor ax, bx
 	jnz undefinedOp0xFFD8Failed
-	jmp undefinedOp0xFFE8
+	jmp undefinedOp0xFF5E
 
 testOpFFD8:
 	mov ax, 0x1337
@@ -8907,20 +8907,55 @@ undefinedOp0xFFD8Failed:
 	mov si, testUndefined0xFFD8Str
 	call handleUndefinedOpFailed
 
-undefinedOp0xFFE8:
+undefinedOp0xFF5E:			; call far [bp], check if old value pushed before new value read.
+	mov ax, testOpFF5E
+	mov [es:expectedResult1], ax
+	mov [es:inputVal1], ax
+	mov cx, 0x7777
+	mov dx, 0x5555
+	mov bx, 0x6666
+	mov si, 0x8888
+	mov di, 0xBBBB
+	push cs
+	push failOpFF5E
+	mov bp, sp
+	pop ax
+	pop ax
+	call far [bp]			; Call Far [bp]
+testOpFF5E:
+	pop ax
+	pop bx
+testOpFF5ECont:
+	mov [es:testedResult1], ax
+	mov bx, [es:expectedResult1]
+	xor ax, bx
+	jnz undefinedOp0xFF5EFailed
+	jmp undefinedOp0xFFE8
+
+failOpFF5E:
+	pop ax
+	pop ax
+	mov ax, 0x1337
+	jmp testOpFF5ECont
+
+undefinedOp0xFF5EFailed:
+	mov si, testUndefined0xFF5EStr
+	call handleUndefinedOpFailed
+
+undefinedOp0xFFE8:			; Bra Far [ds:bx+ax]
 	mov ax, 0x2337
 	mov [es:expectedResult1], ax
-	mov ax, failOpFFE8	; dw testOpFFE8, MYSEGMENT
+	mov ax, failOpFFE8
 	and ax, 0xF00F
 	mov [es:inputVal1], ax
 	mov cx, 0x1111
 	mov dx, 0x2222
-	mov bx, opFFE8Data
+	mov bx, opFFE8Data	; dw testOpFFE8, MYSEGMENT
 	sub bx, ax
 	mov bp, 0x4444
 	mov si, 0x5555
 	mov di, 0x6666
-	db 0xFF, 0xE8				; Bra Far [ds:bx+ax]
+	db 0xFF, 0xE8			; Bra Far [ds:bx+ax]
 testOpFFE8Cont:
 	mov [es:testedResult1], ax
 	mov bx, [es:expectedResult1]
@@ -9616,7 +9651,7 @@ opFFE8Data:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20250518",10 , 0
+headLineStr: db "WonderSwan CPU Test 20250519",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0
@@ -9747,6 +9782,7 @@ testUndefined0xF7C8Str: db "Undefined opcode 0xF7C8", 10, 0
 testUndefined0xFEF0Str: db "Undefined opcode 0xFEF0", 10, 0
 testUndefined0xFFF8Str: db "Undefined opcode 0xFFF8", 10, 0
 testUndefined0xFFD8Str: db "Call Far [ds:bx+ax] 0xFFD8", 10, 0
+testUndefined0xFF5EStr: db "Call Far [bp]", 10, 0
 testUndefined0xFFE8Str: db "Jmp Far [ds:bx+ax] op 0xFFE8", 10, 0
 
 test8InputStr: db "Testing Input: 0x00", 0
