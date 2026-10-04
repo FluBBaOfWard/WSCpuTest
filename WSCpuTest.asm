@@ -300,7 +300,7 @@ dontMoveDown:
 	cmp cl, 2
 	jz testArithmetic
 	cmp cl, 3
-	jz testRolShift
+	jz testRotShift
 	cmp cl, 4
 	jz testMisc
 	cmp cl, 5
@@ -319,10 +319,11 @@ dontMoveDown:
 testAll:
 	call runLogic
 	call runArithmetic
-	call runRolShift
+	call runRotShift
 	call runMisc
 	call runMultiplication
-	call runDivision
+	call runUDivision
+	call runSDivision
 
 	call checkKeyInput
 	jmp main
@@ -342,8 +343,8 @@ testArithmetic:
 	jmp main
 
 ;-----------------------------------------------------------------------------
-testRolShift:
-	call runRolShift
+testRotShift:
+	call runRotShift
 
 	call checkKeyInput
 	jmp main
@@ -364,13 +365,13 @@ testMultiplication:
 
 ;-----------------------------------------------------------------------------
 testDivision:
-	call runDivision
+	call runUDivision
 
 	call checkKeyInput
 	jmp main
 ;-----------------------------------------------------------------------------
 testSDivision:
-	call testDivs8
+	call runSDivision
 
 	call checkKeyInput
 	jmp main
@@ -400,7 +401,7 @@ runArithmetic:
 	call testAdc16
 	jmp testSbb16
 ;-----------------------------------------------------------------------------
-runRolShift:
+runRotShift:
 ;	call runShiftRotate
 	call testRol8
 	call testRor8
@@ -434,11 +435,13 @@ runMultiplication:
 	call testMulsIm8
 	jmp testAad
 ;-----------------------------------------------------------------------------
-runDivision:
+runUDivision:
 	call testAam
 	call testDivu16
+	jmp testDivu8
+;-----------------------------------------------------------------------------
+runSDivision:
 	call testDivs16
-	call testDivu8
 	jmp testDivs8
 
 ;-----------------------------------------------------------------------------
@@ -5170,11 +5173,6 @@ testDivu8Single:
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	cmp al, 0
-	jz divu8DoZTst
-	and cx, 0xFFBF				; Mask out Zero flag
-divu8DoZTst:
-	cmp cx, 0
 	jnz divu8Failed
 	mov bl, [es:expectedException]
 	xor al, bl
@@ -5202,11 +5200,6 @@ divu8DoZTst:
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	cmp al, 0
-	jz divu8DoZTst2
-	and cx, 0xFFBF				; Mask out Zero flag
-divu8DoZTst2:
-	cmp cx, 0
 	jnz divu8Failed
 	mov bl, [es:expectedException]
 	xor al, bl
@@ -5258,12 +5251,12 @@ divu8NoBit:
 	jnz divu8Loop
 
 divu8SetRes:
-divu8SetZ:
 	cmp ah, 0
 	jnz divu8Done
 	test al, 1
 	jz divu8Done
-	or cl, 0x40
+divu8SetZ:
+	or cl, 0x40					; Set Zero flag
 divu8Done:
 	mov [es:expectedResult1], ax
 	mov [es:expectedFlags], cx
@@ -5273,6 +5266,20 @@ divu8Done:
 	ret
 divu8Error:
 	mov byte [es:expectedException], 1
+	neg bh
+	jz divu8Zero
+	shr bx, 2
+	mov dx, ax
+	and dl, 0xC0
+	add dx, bx
+	jz divu8SetZ
+	add dx, bx
+	add dx, bx
+	jz divu8SetZ
+	jmp divu8Done
+divu8Zero:
+	test ax, 0x3FC0
+	jz divu8SetZ
 	jmp divu8Done
 
 ;-----------------------------------------------------------------------------
@@ -9651,7 +9658,7 @@ opFFE8Data:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20250519",10 , 0
+headLineStr: db "WonderSwan CPU Test 20261006",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0

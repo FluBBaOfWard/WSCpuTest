@@ -1,13 +1,18 @@
-# WonderSwan CPU Test V0.7.4 (20250519)
+# WonderSwan CPU Test V0.7.5 (20261006)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
+
+There are also 2 other test programs that I have made.
+
+* [WSTimingTest](https://github.com/FluBBaOfWard/WSTimingTest) - Tests timing of the NEC V30MZ CPU instruction.
+* [WSHWTest](https://github.com/FluBBaOfWard/WSHWTest) - Tests functions of the other hardware on WonderSwan.
 
 ## How to use
 
 Load the ROM in an emulator or flash it to a flashcart and put it in your WonderSwan.
 The program will go through all the tests and then write "Ok".
 If run in an emulator and it doesn't emulate the WonderSwan CPU correctly,
-the program will stop at the first failure and print out intput value/flags and  expected value/flags (and exception for division). Press A to try the next value or B to try the next test.
+the program will stop at the first failure and print out input value/flags and expected value/flags (and exception for division). Press A to try the next value or B to try the next test.
 You use the X1-X4 to navigate the menus, A to select an option, B to go back.
 
 ## Building
@@ -168,7 +173,9 @@ Normaly:
 If division exception:
     AuxCarry, Parity & Sign are always cleared.
     Carry & Overflow are from the last multiplication.
-    Zero is set in some weird way (not tested).
+    Zero is complicated:
+        If divisor is 0, ZF is set if dividend >>6, masked by 0xFF is 0.
+        If divisor is !0, ZF is set if dividend >>6, == 0x100-d or == (0x100-d)*3.
     AX/AW is not modified.
 ```
 
@@ -214,7 +221,7 @@ If division exception:
 ### AAM / CVTBD (8/8)
 
 ```text
-The AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So it's basically a byte by byte divide though the result is in AH and remainder in AL.
+The AAM opcode is a 2 byte opcode, and the second byte can be any value not just 10. So it's basically a byte by byte divide though the result is in AH and remainder in AL. Exception only happens with div by zero.
 Normaly:
     AuxCarry, Carry & Overflow are cleared.
     Parity, Sign & Zero are set according to result (of AL, remainder).
@@ -270,7 +277,7 @@ POP SP
 }
 ```
 
-## BOUND / CHKIND
+### BOUND / CHKIND
 
 Comparison of values are done with signed values.
 
@@ -368,6 +375,8 @@ Use WS X1-X4 to navigate the menus. A to select/continue failed test, B to go ba
 
 Fredrik Ahlström
 
-Twitter @TheRealFluBBa
+<https://bsky.app/profile/therealflubba.bsky.social>
 
-<https://github.com/FluBBaOfWard/WSCpuTest>
+<https://www.github.com/FluBBaOfWard>
+
+X/Twitter @TheRealFluBBa
