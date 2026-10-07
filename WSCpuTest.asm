@@ -5552,11 +5552,6 @@ testDivu16Single:
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	cmp al, 0
-	jz divu16DoZTst
-	and cx, 0xFFBF				; Mask out Zero flag
-divu16DoZTst:
-	cmp cx, 0
 	jnz divu16Failed
 	mov bl, [es:expectedException]
 	xor al, bl
@@ -5589,11 +5584,6 @@ divu16DoZTst:
 	mov al, [es:testedException]
 	mov bx, [es:expectedFlags]
 	xor cx, bx
-	cmp al, 0
-	jz divu16DoZTst2
-	and cx, 0xFFBF				; Mask out Zero flag
-divu16DoZTst2:
-	cmp cx, 0
 	jnz divu16Failed
 	mov bl, [es:expectedException]
 	xor al, bl
@@ -5651,11 +5641,11 @@ divu16NoBit:
 divu16SetRes:
 	mov cx, 0xF202				; Expected flags
 	mov byte [es:expectedException], 0
-divu16SetZ:
 	cmp dx, 0
 	jnz divu16Done
 	test al, 1
 	jz divu16Done
+divu16SetZ:
 	or cl, 0x40
 divu16Done:
 	mov [es:expectedResult1], ax
@@ -5668,6 +5658,42 @@ divu16Done:
 divu16Error:
 	mov cx, 0xF202				; Expected flags
 	mov byte [es:expectedException], 1
+	neg bx
+	jz divu16Zero
+	push ax
+	push cx
+	push dx
+	and ah, 0xC0
+	mov al, bl
+	shl al, 6
+	shr bx, 2
+	add ah, al
+	adc dx, bx
+	mov ch, dh
+	or ch, dl
+	or ch, ah
+	jz divu16GoZ
+	add ah, al
+	adc dx, bx
+	add ah, al
+	jnz divu16NoZ
+	adc dx, bx
+	jz divu16GoZ
+divu16NoZ:
+	pop dx
+	pop cx
+	pop ax
+	jmp divu16Done
+divu16GoZ:
+	pop dx
+	pop cx
+	pop ax
+	jmp divu16SetZ
+divu16Zero:
+	test dx, 0x3FFF
+	jnz divu16Done
+	test ah, 0xC0
+	jz divu16SetZ
 	jmp divu16Done
 
 ;-----------------------------------------------------------------------------
@@ -9658,7 +9684,7 @@ opFFE8Data:
 alphabet: db "ABCDEFGHIJKLMNOPQRSTUVWXYZ!", 10, 0
 alphabet2: db "abcdefghijklmnopqrstuvwxyz.,", 10, 0
 
-headLineStr: db "WonderSwan CPU Test 20261006",10 , 0
+headLineStr: db "WonderSwan CPU Test 20261007",10 , 0
 
 menuTestAllStr: db "  Test All.",10 , 0
 menuTestLogicStr: db "  Test Logic.",10 , 0

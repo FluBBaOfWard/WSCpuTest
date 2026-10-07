@@ -1,4 +1,4 @@
-# WonderSwan CPU Test V0.7.5 (20261006)
+# WonderSwan CPU Test V0.7.5 (20261007)
 
 This is a CPU Test program for Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2.
 
@@ -174,8 +174,9 @@ If division exception:
     AuxCarry, Parity & Sign are always cleared.
     Carry & Overflow are from the last multiplication.
     Zero is complicated:
-        If divisor is 0, ZF is set if dividend >>6, masked by 0xFF is 0.
-        If divisor is !0, ZF is set if dividend >>6, == 0x100-d or == (0x100-d)*3.
+        If divisor is 0, ZF is set if dividend & 0x3FC0 == 0.
+        If divisor is !0, ZF is set if (dividend + ((0x100-d)<<6)) & 0xFFC0 == 0,
+         or (dividend + (((0x100-d)*3)<<6)) & 0xFFC0 == 0.
     AX/AW is not modified.
 ```
 
@@ -187,8 +188,11 @@ Normaly:
     Zero is set when remainder is zero and bit 0 of result is set.
 If division exception:
     AuxCarry, Carry, Overflow, Parity, & Sign are always cleared.
-    Zero is set in some weird way (not tested).
-    AX/AW, DX/DW is not modified.
+    Zero is complicated:
+        If divisor is 0, ZF is set if dividend & 0x3FFFC000 == 0.
+        If divisor is !0, ZF is set if (dividend + ((0x10000-d)<<14)) & 0xFFFFC000 == 0,
+         or (dividend + (((0x10000-d)*3)<<14)) & 0xFFFFC000 == 0.
+    AX/AW & DX/DW is not modified.
 ```
 
 ### IDIV / DIV (signed division, 16/8)
@@ -215,7 +219,7 @@ Normaly:
 If division exception:
     AuxCarry, Carry, Overflow, Parity & Sign are all cleared.
     Zero is set in some weird way (not tested).
-    AX/AW, DX/DW is not modified.
+    AX/AW & DX/DW is not modified.
 ```
 
 ### AAM / CVTBD (8/8)
@@ -249,7 +253,8 @@ Same calculation as DAA except it does a subtraction instead of an addition.
 
 ### AAA / ADJBA
 
-Overflow is always cleared. Parity is always set.
+Overflow is always cleared.
+Parity is always set.
 AuxCarry, Carry & Zero are set if AuxCarry is set before or (AL & 0xF) > 0x9.
 Sign is set when AuxCarry (, Carry & Zero) is not set.
 AL is always masked to lower nybble.
